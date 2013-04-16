@@ -240,6 +240,34 @@ static int ath10k_wmi_event_scan(struct ath10k *ar, struct sk_buff *skb)
 	return 0;
 }
 
+static inline enum ieee80211_band phy_mode_to_band(u32 phy_mode)
+{
+	enum ieee80211_band band;
+
+	switch (phy_mode) {
+	case MODE_11A:
+	case MODE_11NA_HT20:
+	case MODE_11NA_HT40:
+	case MODE_11AC_VHT20:
+	case MODE_11AC_VHT40:
+	case MODE_11AC_VHT80:
+		band = IEEE80211_BAND_5GHZ;
+		break;
+	case MODE_11G:
+	case MODE_11B:
+	case MODE_11GONLY:
+	case MODE_11NG_HT20:
+	case MODE_11NG_HT40:
+	case MODE_11AC_VHT20_2G:
+	case MODE_11AC_VHT40_2G:
+	case MODE_11AC_VHT80_2G:
+	default:
+		band = IEEE80211_BAND_2GHZ;
+	}
+
+	return band;
+}
+
 static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 {
 	struct wmi_mgmt_rx_event *event = (void *)skb->data;
@@ -247,6 +275,7 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 	struct ieee80211_hdr *hdr;
 	u32 rx_status;
 	u32 channel;
+	u32 phy_mode;
 	u32 snr;
 	u32 buf_len;
 	u16 fc;
@@ -255,6 +284,7 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 	buf_len   = __le32_to_cpu(event->hdr.buf_len);
 	rx_status = __le32_to_cpu(event->hdr.status);
 	snr       = __le32_to_cpu(event->hdr.snr);
+	phy_mode  = __le32_to_cpu(event->hdr.phy_mode);
 
 	memset(status, 0, sizeof(*status));
 
@@ -275,12 +305,7 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 	if (rx_status & WMI_RX_STATUS_ERR_MIC)
 		status->flag |= RX_FLAG_MMIC_ERROR;
 
-	/* FIXME: We probably should use event->phy_mode for that */
-	if (channel > 14)
-		status->band = IEEE80211_BAND_5GHZ;
-	else
-		status->band = IEEE80211_BAND_2GHZ;
-
+	status->band = phy_mode_to_band(phy_mode);
 	status->freq = ieee80211_channel_to_frequency(channel, status->band);
 	status->signal = snr + ATH10K_DEFAULT_NOISE_FLOOR;
 
