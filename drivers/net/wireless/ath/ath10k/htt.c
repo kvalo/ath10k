@@ -87,7 +87,7 @@ struct htt_struct *ath10k_htt_attach(struct ath10k *ar, void *htc_target)
 	if (ath10k_htt_htc_attach(htt))
 		goto fail2;
 
-	htt_tx_attach(htt);
+	ath10k_htt_tx_attach(htt);
 
 	if (htt_rx_attach(htt))
 		goto fail3;
@@ -107,7 +107,7 @@ struct htt_struct *ath10k_htt_attach(struct ath10k *ar, void *htc_target)
 	return htt;
 
 fail3:
-	htt_tx_detach(htt);
+	ath10k_htt_tx_detach(htt);
 fail2:
 	kfree(htt);
 fail1:
@@ -142,7 +142,7 @@ int ath10k_htt_attach_target(struct htt_struct *htt)
 
 	init_completion(&htt->target_version_received);
 
-	status = htt_h2t_ver_req_msg(htt);
+	status = ath10k_htt_h2t_ver_req_msg(htt);
 	if (status)
 		return status;
 
@@ -157,13 +157,13 @@ int ath10k_htt_attach_target(struct htt_struct *htt)
 	if (status)
 		return status;
 
-	return htt_send_rx_ring_cfg_ll(htt);
+	return ath10k_htt_send_rx_ring_cfg_ll(htt);
 
 }
 
 void ath10k_htt_detach(struct htt_struct *htt)
 {
 	htt_rx_detach(htt);
-	htt_tx_detach(htt);
+	ath10k_htt_tx_detach(htt);
 	kfree(htt);
 }

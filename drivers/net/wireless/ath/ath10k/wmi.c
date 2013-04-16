@@ -202,7 +202,7 @@ static int ath10k_wmi_event_scan(struct ath10k *ar, struct sk_buff *skb)
 		}
 
 		if (ar->scan.is_roc) {
-			ath10k_offchan_tx_purge(ar);
+			ath10k_ath10k_offchan_tx_purge(ar);
 
 			if (!ar->scan.aborting)
 				ieee80211_remain_on_channel_expired(ar->hw);

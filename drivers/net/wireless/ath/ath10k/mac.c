@@ -1270,9 +1270,9 @@ static void ath10k_tx_htt(struct ath10k *ar, struct sk_buff *skb)
 	int ret;
 
 	if (ieee80211_is_mgmt(hdr->frame_control))
-		ret = htt_mgmt_tx(ar->htt, skb);
+		ret = ath10k_htt_mgmt_tx(ar->htt, skb);
 	else
-		ret = htt_tx(ar->htt, skb);
+		ret = ath10k_htt_tx(ar->htt, skb);
 
 	if (ret) {
 		ath10k_warn("tx failed (%d). dropping packet.\n", ret);
@@ -1280,7 +1280,7 @@ static void ath10k_tx_htt(struct ath10k *ar, struct sk_buff *skb)
 	}
 }
 
-void ath10k_offchan_tx_purge(struct ath10k *ar)
+void ath10k_ath10k_offchan_tx_purge(struct ath10k *ar)
 {
 	struct sk_buff *skb;
 
@@ -1293,7 +1293,7 @@ void ath10k_offchan_tx_purge(struct ath10k *ar)
 	}
 }
 
-void ath10k_offchan_tx_work(struct work_struct *work)
+void ath10k_ath10k_offchan_tx_work(struct work_struct *work)
 {
 	struct ath10k *ar = container_of(work, struct ath10k, offchan_tx_work);
 	struct ath10k_peer *peer;
@@ -1369,7 +1369,7 @@ void ath10k_offchan_tx_work(struct work_struct *work)
  * This may indicate the FW has hung and we need to abort the
  * scan manually to prevent cancel_hw_scan() from deadlocking
  */
-void ath10k_reset_scan(unsigned long ptr)
+void ath10k_ath10k_reset_scan(unsigned long ptr)
 {
 	struct ath10k *ar = (struct ath10k *)ptr;
 
@@ -1427,7 +1427,7 @@ static void ath10k_abort_scan(struct ath10k *ar)
 	if (ar->scan.in_progress) {
 		ath10k_warn("%s: could not stop scan (%d)\n", __func__, ret);
 		ar->scan.in_progress = false;
-		ath10k_offchan_tx_purge(ar);
+		ath10k_ath10k_offchan_tx_purge(ar);
 	}
 	spin_unlock_bh(&ar->scan.lock);
 }
@@ -1529,7 +1529,7 @@ static void ath10k_stop(struct ieee80211_hw *hw)
 
 	/* avoid leaks in case FW never confirms scan for offchannel */
 	cancel_work_sync(&ar->offchan_tx_work);
-	ath10k_offchan_tx_purge(ar);
+	ath10k_ath10k_offchan_tx_purge(ar);
 }
 
 static int ath10k_config(struct ieee80211_hw *hw, u32 changed)

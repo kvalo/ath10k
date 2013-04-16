@@ -1299,20 +1299,20 @@ struct htt_struct *ath10k_htt_attach(struct ath10k *ar, void *htc);
 int ath10k_htt_attach_target(struct htt_struct *htt);
 void ath10k_htt_detach(struct htt_struct *htt);
 
-void htt_tx_attach(struct htt_struct *htt);
-void htt_tx_detach(struct htt_struct *htt);
+void ath10k_htt_tx_attach(struct htt_struct *htt);
+void ath10k_htt_tx_detach(struct htt_struct *htt);
 int htt_rx_attach(struct htt_struct *htt);
 void htt_rx_detach(struct htt_struct *htt);
 void htt_t2h_msg_handler(void *context, struct sk_buff *skb);
-int htt_h2t_ver_req_msg(struct htt_struct *htt);
-int htt_send_rx_ring_cfg_ll(struct htt_struct *htt);
+int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt);
+int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt);
 
-struct htt_tx_info *htt_tx_info_alloc(struct htt_struct *htt);
-void htt_tx_info_free(struct htt_struct *htt, struct htt_tx_info *pkt);
-void htt_tx_info_unref(struct htt_struct *htt, struct htt_tx_info *pkt,
+struct htt_tx_info *ath10k_htt_tx_info_alloc(struct htt_struct *htt);
+void ath10k_htt_tx_info_free(struct htt_struct *htt, struct htt_tx_info *pkt);
+void ath10k_htt_tx_info_unref(struct htt_struct *htt, struct htt_tx_info *pkt,
 		       struct sk_buff *skb);
-struct htt_tx_info *htt_tx_info_lookup(struct htt_struct *htt, u16 msdu_id);
+struct htt_tx_info *ath10k_htt_tx_info_lookup(struct htt_struct *htt, u16 msdu_id);
 void htt_t2h_stats_handler(struct htt_struct *htt, u8 *stats_msg_buf);
-int htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *);
-int htt_tx(struct htt_struct *htt, struct sk_buff *);
+int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *);
+int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *);
 #endif

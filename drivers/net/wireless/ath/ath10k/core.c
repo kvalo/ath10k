@@ -499,7 +499,7 @@ struct ath10k *ath10k_core_create(void *hif_priv, struct device *dev,
 	init_completion(&ar->vdev_setup_done);
 	mutex_init(&ar->vdev_mtx);
 
-	setup_timer(&ar->scan.timeout, ath10k_reset_scan, (unsigned long)ar);
+	setup_timer(&ar->scan.timeout, ath10k_ath10k_reset_scan, (unsigned long)ar);
 
 	ar->workqueue = create_singlethread_workqueue("ath10k_wq");
 	if (!ar->workqueue)
@@ -512,7 +512,7 @@ struct ath10k *ath10k_core_create(void *hif_priv, struct device *dev,
 	init_waitqueue_head(&ar->peer_mapping_wq);
 
 	init_completion(&ar->offchan_tx_completed);
-	INIT_WORK(&ar->offchan_tx_work, ath10k_offchan_tx_work);
+	INIT_WORK(&ar->offchan_tx_work, ath10k_ath10k_offchan_tx_work);
 	skb_queue_head_init(&ar->offchan_tx_queue);
 
 #if defined(CONFIG_PM_SLEEP)

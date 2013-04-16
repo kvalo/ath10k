@@ -20,7 +20,7 @@
 #include "mac.h"
 #include "debug.h"
 
-static void htt_tx_info_pool_setup(struct htt_struct *htt)
+static void ath10k_htt_tx_info_pool_setup(struct htt_struct *htt)
 {
 	int i;
 
@@ -31,7 +31,7 @@ static void htt_tx_info_pool_setup(struct htt_struct *htt)
 	}
 }
 
-struct htt_tx_info *htt_tx_info_alloc(struct htt_struct *htt)
+struct htt_tx_info *ath10k_htt_tx_info_alloc(struct htt_struct *htt)
 {
 	struct htt_tx_info *txi = NULL;
 	int i;
@@ -56,7 +56,7 @@ struct htt_tx_info *htt_tx_info_alloc(struct htt_struct *htt)
 	return txi;
 }
 
-void htt_tx_info_free(struct htt_struct *htt, struct htt_tx_info *txi)
+void ath10k_htt_tx_info_free(struct htt_struct *htt, struct htt_tx_info *txi)
 {
 	int pending;
 
@@ -71,8 +71,8 @@ void htt_tx_info_free(struct htt_struct *htt, struct htt_tx_info *txi)
 		wake_up(&htt->empty_tx_wq);
 }
 
-void htt_tx_info_unref(struct htt_struct *htt, struct htt_tx_info *txi,
-		       struct sk_buff *skb)
+void ath10k_htt_tx_info_unref(struct htt_struct *htt, struct htt_tx_info *txi,
+			      struct sk_buff *skb)
 {
 	/* FIXME: we have to carefully synchronize completion of htt
 	 *        messages because those come in asynchronously
@@ -86,21 +86,22 @@ void htt_tx_info_unref(struct htt_struct *htt, struct htt_tx_info *txi,
 		return;
 
 	dev_kfree_skb_any(skb);
-	htt_tx_info_free(htt, txi);
+	ath10k_htt_tx_info_free(htt, txi);
 }
 
-void htt_tx_attach(struct htt_struct *htt)
+void ath10k_htt_tx_attach(struct htt_struct *htt)
 {
-	htt_tx_info_pool_setup(htt);
+	ath10k_htt_tx_info_pool_setup(htt);
 	init_waitqueue_head(&htt->empty_tx_wq);
 }
 
-void htt_tx_detach(struct htt_struct *htt)
+void ath10k_htt_tx_detach(struct htt_struct *htt)
 {
 	return;
 }
 
-struct htt_tx_info *htt_tx_info_lookup(struct htt_struct *htt, u16 msdu_id)
+struct htt_tx_info *ath10k_htt_tx_info_lookup(struct htt_struct *htt,
+					      u16 msdu_id)
 {
 	if (WARN_ON(msdu_id >= ARRAY_SIZE(htt->txi_pool)))
 		return NULL;
@@ -111,12 +112,12 @@ struct htt_tx_info *htt_tx_info_lookup(struct htt_struct *htt, u16 msdu_id)
 	return &htt->txi_pool[msdu_id];
 }
 
-static void htt_conf_complete(struct sk_buff *skb)
+static void ath10k_htt_conf_complete(struct sk_buff *skb)
 {
 	dev_kfree_skb_any(skb);
 }
 
-int htt_h2t_ver_req_msg(struct htt_struct *htt)
+int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt)
 {
 	struct ath10k_skb_cb *skb_cb;
 	struct sk_buff *skb;
@@ -136,7 +137,7 @@ int htt_h2t_ver_req_msg(struct htt_struct *htt)
 	cmd->hdr.msg_type = HTT_H2T_MSG_TYPE_VERSION_REQ;
 
 	skb_cb = ATH10K_SKB_CB(skb);
-	skb_cb->htc.complete = htt_conf_complete;
+	skb_cb->htc.complete = ath10k_htt_conf_complete;
 
 	ret = ath10k_htc_send(htt->htc_target, htt->ep_id, skb);
 	if (ret) {
@@ -147,7 +148,7 @@ int htt_h2t_ver_req_msg(struct htt_struct *htt)
 	return 0;
 }
 
-int htt_send_rx_ring_cfg_ll(struct htt_struct *htt)
+int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt)
 {
 	struct ath10k_skb_cb *skb_cb;
 	struct sk_buff *skb;
@@ -221,7 +222,7 @@ int htt_send_rx_ring_cfg_ll(struct htt_struct *htt)
 #undef rx_desc_offset
 
 	skb_cb = ATH10K_SKB_CB(skb);
-	skb_cb->htc.complete = htt_conf_complete;
+	skb_cb->htc.complete = ath10k_htt_conf_complete;
 
 	ret = ath10k_htc_send(htt->htc_target, htt->ep_id, skb);
 	if (ret) {
@@ -232,7 +233,7 @@ int htt_send_rx_ring_cfg_ll(struct htt_struct *htt)
 	return 0;
 }
 
-static void htt_mgmt_tx_htc_complete(struct sk_buff *skb)
+static void ath10k_htt_mgmt_tx_htc_complete(struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 	struct htt_tx_info *txi = skb_cb->htc.priv;
@@ -259,10 +260,10 @@ static void htt_mgmt_tx_htc_complete(struct sk_buff *skb)
 		}
 	}
 
-	htt_tx_info_unref(htt, txi, skb);
+	ath10k_htt_tx_info_unref(htt, txi, skb);
 }
 
-int htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
+int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 {
 	struct device *dev = htt->ar->dev;
 	struct ath10k_skb_cb *skb_cb;
@@ -272,7 +273,7 @@ int htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	int len = 0;
 	int res;
 
-	txi = htt_tx_info_alloc(htt);
+	txi = ath10k_htt_tx_info_alloc(htt);
 	if (!txi)
 		return -ENOMEM;
 
@@ -302,7 +303,7 @@ int htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	       min((int)msdu->len, HTT_MGMT_FRM_HDR_DOWNLOAD_LEN));
 
 	skb_cb = ATH10K_SKB_CB(txi->u.mgmt.txdesc);
-	skb_cb->htc.complete = htt_mgmt_tx_htc_complete;
+	skb_cb->htc.complete = ath10k_htt_mgmt_tx_htc_complete;
 	skb_cb->htc.priv = txi;
 
 	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->u.mgmt.txdesc);
@@ -317,11 +318,11 @@ err:
 	if (txi->u.mgmt.txdesc)
 		dev_kfree_skb_any(txi->u.mgmt.txdesc);
 
-	htt_tx_info_free(htt, txi);
+	ath10k_htt_tx_info_free(htt, txi);
 	return res;
 }
 
-static void htt_tx_htc_complete(struct sk_buff *skb)
+static void ath10k_htt_tx_htc_complete(struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 	struct htt_tx_info *txi = skb_cb->htc.priv;
@@ -353,10 +354,10 @@ static void htt_tx_htc_complete(struct sk_buff *skb)
 		}
 	}
 
-	htt_tx_info_unref(htt, txi, skb);
+	ath10k_htt_tx_info_unref(htt, txi, skb);
 }
 
-int htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
+int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 {
 	struct device *dev = htt->ar->dev;
 	struct htt_cmd *cmd;
@@ -375,7 +376,7 @@ int htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	prefetch_len = min(htt->prefetch_len, msdu->len);
 	prefetch_len = roundup(prefetch_len, 4);
 
-	txi = htt_tx_info_alloc(htt);
+	txi = ath10k_htt_tx_info_alloc(htt);
 	if (!txi)
 		return -ENOMEM;
 
@@ -465,7 +466,7 @@ int htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	memcpy(cmd->data_tx.prefetch, msdu->data, prefetch_len);
 
 	skb_cb = ATH10K_SKB_CB(txi->u.data.txdesc);
-	skb_cb->htc.complete = htt_tx_htc_complete;
+	skb_cb->htc.complete = ath10k_htt_tx_htc_complete;
 	skb_cb->htc.priv = txi;
 
 	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->u.data.txdesc);
@@ -480,7 +481,7 @@ err:
 		dev_kfree_skb_any(txi->u.data.txdesc);
 	if (txi->u.data.txfrag)
 		dev_kfree_skb_any(txi->u.data.txfrag);
-	htt_tx_info_free(htt, txi);
+	ath10k_htt_tx_info_free(htt, txi);
 	ath10k_skb_unmap(dev, msdu);
 	return res;
 }

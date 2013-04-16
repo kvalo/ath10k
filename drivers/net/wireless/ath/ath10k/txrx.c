@@ -54,7 +54,7 @@ void ath10k_data_tx_completed(struct htt_struct *htt,
 		  "msdu_id %d tid %d tid_invalid %d status %d\n",
 		   ev->msdu_id, ev->tid, ev->tid_invalid, ev->status);
 
-	txi = htt_tx_info_lookup(htt, ev->msdu_id);
+	txi = ath10k_htt_tx_info_lookup(htt, ev->msdu_id);
 	if (!txi) {
 		ath10k_dbg(ATH10K_DBG_HTT, "htt txi lookup fail\n");
 		return;
@@ -93,7 +93,7 @@ void ath10k_data_tx_completed(struct htt_struct *htt,
 	}
 
 	txi->htt_tx_completed = true;
-	htt_tx_info_unref(htt, txi, txi->u.data.txdesc);
+	ath10k_htt_tx_info_unref(htt, txi, txi->u.data.txdesc);
 }
 
 static u8 rx_legacy_rate_idx[] = {
@@ -275,7 +275,7 @@ void ath10k_mgmt_tx_completed(struct htt_struct *htt,
 	ath10k_dbg(ATH10K_DBG_HTT, "%s called(), status: %d, msdu_id: %d\n",
 		   __func__, arg->status, arg->desc_id);
 
-	txi = htt_tx_info_lookup(htt, arg->desc_id);
+	txi = ath10k_htt_tx_info_lookup(htt, arg->desc_id);
 	if (WARN_ON(!txi))
 		return;
 
@@ -305,7 +305,7 @@ void ath10k_mgmt_tx_completed(struct htt_struct *htt,
 	}
 
 	txi->htt_tx_completed = true;
-	htt_tx_info_unref(htt, txi, txi->u.mgmt.txdesc);
+	ath10k_htt_tx_info_unref(htt, txi, txi->u.mgmt.txdesc);
 }
 
 struct ath10k_peer *ath10k_peer_find(struct ath10k *ar, int vdev_id,
