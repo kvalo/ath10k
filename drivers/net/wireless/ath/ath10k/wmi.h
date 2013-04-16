@@ -64,12 +64,13 @@
 
 /* Control Path */
 struct wmi_cmd_hdr {
-	__le16 cmd_id;
-	__le16 info;
+	__le32 cmd_id;
 } __packed;
 
-#define WMI_CMD_HDR_INFO_ID_MASK  0x000F
-#define WMI_CMD_HDR_INFO_ID_SHIFT 0
+#define WMI_CMD_HDR_CMD_ID_MASK   0x00FFFFFF
+#define WMI_CMD_HDR_CMD_ID_LSB    0
+#define WMI_CMD_HDR_PLT_PRIV_MASK 0xFF000000
+#define WMI_CMD_HDR_PLT_PRIV_LSB  24
 
 #define HTC_PROTOCOL_VERSION    0x0002
 #define WMI_PROTOCOL_VERSION    0x0002
@@ -182,23 +183,56 @@ struct wmi_mac_addr {
 	(c_macaddr)[5] = (((pwmi_mac_addr)->word1) >> 8) & 0xff; \
 	} while (0)
 
+/*
+ * wmi command groups.
+ */
+enum wmi_cmd_group {
+	/* 0 to 2 are reserved */
+	WMI_GRP_START=0x3,
+	WMI_GRP_SCAN=WMI_GRP_START,
+	WMI_GRP_PDEV,
+	WMI_GRP_VDEV,
+	WMI_GRP_PEER,
+	WMI_GRP_MGMT,
+	WMI_GRP_BA_NEG,
+	WMI_GRP_STA_PS,
+	WMI_GRP_DFS,
+	WMI_GRP_ROAM,
+	WMI_GRP_OFL_SCAN,
+	WMI_GRP_P2P,
+	WMI_GRP_AP_PS,
+	WMI_GRP_RATE_CTRL,
+	WMI_GRP_PROFILE,
+	WMI_GRP_SUSPEND,
+	WMI_GRP_BCN_FILTER,
+	WMI_GRP_WOW,
+	WMI_GRP_RTT,
+	WMI_GRP_SPECTRAL,
+	WMI_GRP_STATS,
+	WMI_GRP_ARP_NS_OFL,
+	WMI_GRP_NLO_OFL,
+	WMI_GRP_GTK_OFL,
+	WMI_GRP_CSA_OFL,
+	WMI_GRP_CHATTER,
+	WMI_GRP_TID_ADDBA,
+	WMI_GRP_MISC,
+};
+
+#define WMI_CMD_GRP_START_ID(grp_id) (((grp_id) << 12) | 0x1)
+#define WMI_EVT_GRP_START_ID(grp_id) (((grp_id) << 12) | 0x1)
+
 /* Command IDs and commande events. */
 enum wmi_cmd_id {
-	WMI_START_CMDID = 0x9000,
-	WMI_END_CMDID = 0x9FFF, /* WMI_RESERVED_END_CMDID = 0x9FFF */
-
-	/* Initialize the wlan sub system */
-	WMI_INIT_CMDID,
+	WMI_INIT_CMDID=0x1,
 
 	/* Scan specific commands */
-	WMI_START_SCAN_CMDID = WMI_START_CMDID,
+	WMI_START_SCAN_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_SCAN),
 	WMI_STOP_SCAN_CMDID,
 	WMI_SCAN_CHAN_LIST_CMDID,
 	WMI_SCAN_SCH_PRIO_TBL_CMDID,
-	WMI_ECHO_CMDID,
 
-	/* PDEV(physical device) specific commands */
-	WMI_PDEV_SET_REGDOMAIN_CMDID,
+	/* PDEV (physical device) specific commands */
+	WMI_PDEV_SET_REGDOMAIN_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_PDEV),
 	WMI_PDEV_SET_CHANNEL_CMDID,
 	WMI_PDEV_SET_PARAM_CMDID,
 	WMI_PDEV_PKTLOG_ENABLE_CMDID,
@@ -206,15 +240,13 @@ enum wmi_cmd_id {
 	WMI_PDEV_SET_WMM_PARAMS_CMDID,
 	WMI_PDEV_SET_HT_CAP_IE_CMDID,
 	WMI_PDEV_SET_VHT_CAP_IE_CMDID,
-
-	/* Command to send the DSCP-to-TID map to the target */
 	WMI_PDEV_SET_DSCP_TID_MAP_CMDID,
 	WMI_PDEV_SET_QUIET_MODE_CMDID,
 	WMI_PDEV_GREEN_AP_PS_ENABLE_CMDID,
 	WMI_PDEV_GET_TPC_CONFIG_CMDID,
 
-	/* VDEV(virtual device) specific commands */
-	WMI_VDEV_CREATE_CMDID,
+	/* VDEV (virtual device) specific commands */
+	WMI_VDEV_CREATE_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_VDEV),
 	WMI_VDEV_DELETE_CMDID,
 	WMI_VDEV_START_REQUEST_CMDID,
 	WMI_VDEV_RESTART_REQUEST_CMDID,
@@ -226,8 +258,8 @@ enum wmi_cmd_id {
 	WMI_VDEV_SET_PARAM_CMDID,
 	WMI_VDEV_INSTALL_KEY_CMDID,
 
-	/* Peer specific commands */
-	WMI_PEER_CREATE_CMDID,
+	/* peer specific commands */
+	WMI_PEER_CREATE_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_PEER),
 	WMI_PEER_DELETE_CMDID,
 	WMI_PEER_FLUSH_TIDS_CMDID,
 	WMI_PEER_SET_PARAM_CMDID,
@@ -236,15 +268,17 @@ enum wmi_cmd_id {
 	WMI_PEER_REMOVE_WDS_ENTRY_CMDID,
 	WMI_PEER_MCAST_GROUP_CMDID,
 
-	/* Beacon/management specific commands */
-	WMI_BCN_TX_CMDID,
+	/* beacon/management specific commands */
+	WMI_BCN_TX_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_MGMT),
+	WMI_PDEV_SEND_BCN_CMDID,
 	WMI_BCN_TMPL_CMDID,
 	WMI_BCN_FILTER_RX_CMDID,
 	WMI_PRB_REQ_FILTER_RX_CMDID,
 	WMI_MGMT_TX_CMDID,
+	WMI_PRB_TMPL_CMDID,
 
-	/* Block ACK control commands - test mode only */
-	WMI_ADDBA_CLEAR_RESP_CMDID,
+	/* commands to directly control BA negotiation directly from host. */
+	WMI_ADDBA_CLEAR_RESP_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_BA_NEG),
 	WMI_ADDBA_SEND_CMDID,
 	WMI_ADDBA_STATUS_CMDID,
 	WMI_DELBA_SEND_CMDID,
@@ -252,219 +286,161 @@ enum wmi_cmd_id {
 	WMI_SEND_SINGLEAMSDU_CMDID,
 
 	/* Station power save specific config */
-	WMI_STA_POWERSAVE_MODE_CMDID,
+	WMI_STA_POWERSAVE_MODE_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_STA_PS),
 	WMI_STA_POWERSAVE_PARAM_CMDID,
 	WMI_STA_MIMO_PS_MODE_CMDID,
 
-	/* Debug log config */
-	WMI_DBGLOG_CFG_CMDID,
-
-	/* DFS-specific commands */
-	WMI_PDEV_DFS_ENABLE_CMDID,
+	/** DFS-specific commands */
+	WMI_PDEV_DFS_ENABLE_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_DFS),
 	WMI_PDEV_DFS_DISABLE_CMDID,
 
-	/* QVIT specific command id */
-	WMI_PDEV_QVIT_CMDID,
-
-	/* Offload Scan and Roaming related  commands */
-	WMI_ROAM_SCAN_MODE,
+	/* Roaming specific  commands */
+	WMI_ROAM_SCAN_MODE = WMI_CMD_GRP_START_ID(WMI_GRP_ROAM),
 	WMI_ROAM_SCAN_RSSI_THRESHOLD,
 	WMI_ROAM_SCAN_PERIOD,
 	WMI_ROAM_SCAN_RSSI_CHANGE_THRESHOLD,
 	WMI_ROAM_AP_PROFILE,
-	WMI_OFL_SCAN_ADD_AP_PROFILE,
+
+	/* offload scan specific commands */
+	WMI_OFL_SCAN_ADD_AP_PROFILE = WMI_CMD_GRP_START_ID(WMI_GRP_OFL_SCAN),
 	WMI_OFL_SCAN_REMOVE_AP_PROFILE,
 	WMI_OFL_SCAN_PERIOD,
 
 	/* P2P specific commands */
-	WMI_P2P_DEV_SET_DEVICE_INFO,
+	WMI_P2P_DEV_SET_DEVICE_INFO = WMI_CMD_GRP_START_ID(WMI_GRP_P2P),
 	WMI_P2P_DEV_SET_DISCOVERABILITY,
 	WMI_P2P_GO_SET_BEACON_IE,
 	WMI_P2P_GO_SET_PROBE_RESP_IE,
 	WMI_P2P_SET_VENDOR_IE_DATA_CMDID,
 
 	/* AP power save specific config */
-	WMI_AP_PS_PEER_PARAM_CMDID,
+	WMI_AP_PS_PEER_PARAM_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_AP_PS),
 	WMI_AP_PS_PEER_UAPSD_COEX_CMDID,
 
 	/* Rate-control specific commands */
-	WMI_PEER_RATE_RETRY_SCHED_CMDID,
+	WMI_PEER_RATE_RETRY_SCHED_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_RATE_CTRL),
 
 	/* WLAN Profiling commands. */
-	WMI_WLAN_PROFILE_TRIGGER_CMDID,
+	WMI_WLAN_PROFILE_TRIGGER_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_PROFILE),
 	WMI_WLAN_PROFILE_SET_HIST_INTVL_CMDID,
 	WMI_WLAN_PROFILE_GET_PROFILE_DATA_CMDID,
 	WMI_WLAN_PROFILE_ENABLE_PROFILE_ID_CMDID,
 	WMI_WLAN_PROFILE_LIST_PROFILE_ID_CMDID,
 
 	/* Suspend resume command Ids */
-	WMI_PDEV_SUSPEND_CMDID,
+	WMI_PDEV_SUSPEND_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_SUSPEND),
 	WMI_PDEV_RESUME_CMDID,
 
 	/* Beacon filter commands */
-	WMI_ADD_BCN_FILTER_CMDID,
+	WMI_ADD_BCN_FILTER_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_BCN_FILTER),
 	WMI_RMV_BCN_FILTER_CMDID,
 
 	/* WOW Specific WMI commands*/
-	WMI_WOW_ADD_WAKE_PATTERN_CMDID,
+	WMI_WOW_ADD_WAKE_PATTERN_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_WOW),
 	WMI_WOW_DEL_WAKE_PATTERN_CMDID,
 	WMI_WOW_ENABLE_DISABLE_WAKE_EVENT_CMDID,
 	WMI_WOW_ENABLE_CMDID,
 	WMI_WOW_HOSTWAKEUP_FROM_SLEEP_CMDID,
 
 	/* RTT measurement related cmd */
-	/* host ask FW to make an RTT measurement 72 */
-	WMI_RTT_MEASREQ_CMDID,
+	WMI_RTT_MEASREQ_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_RTT),
 	WMI_RTT_TSF_CMDID,
 
-	/* Tx beacon from remote ring */
-	WMI_PDEV_SEND_BCN_CMDID,
-
-	/* Spectral scan */
-	WMI_VDEV_SPECTRAL_SCAN_CONFIGURE_CMDID,
+	/* spectral scan commands */
+	WMI_VDEV_SPECTRAL_SCAN_CONFIGURE_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_SPECTRAL),
 	WMI_VDEV_SPECTRAL_SCAN_ENABLE_CMDID,
 
-	/* FW stats */
-	WMI_REQUEST_STATS_CMDID,
+	/* F/W stats */
+	WMI_REQUEST_STATS_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_STATS),
 
-	/* ARP/NS OFFLOAD REQUEST*/
-	WMI_SET_ARP_NS_OFFLOAD_CMDID,
+	/* ARP OFFLOAD REQUEST*/
+	WMI_SET_ARP_NS_OFFLOAD_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_ARP_NS_OFL),
 
-	/* Factory Testing Mode request command used for integrated chipsets */
-	WMI_PDEV_FTM_INTG_CMDID,
-	WMI_NETWORK_LIST_OFFLOAD_CONFIG_CMDID,
+	/* NS offload confid*/
+	WMI_NETWORK_LIST_OFFLOAD_CONFIG_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_NLO_OFL),
 
 	/* GTK offload Specific WMI commands*/
-	WMI_GTK_OFFLOAD_CMDID,
+	WMI_GTK_OFFLOAD_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_GTK_OFL),
 
-	WMI_CSA_OFFLOAD_ENABLE_CMDID,
+	/* CSA offload Specific WMI commands*/
+	WMI_CSA_OFFLOAD_ENABLE_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_CSA_OFL),
 	WMI_CSA_OFFLOAD_CHANSWITCH_CMDID,
 
 	/* Chatter commands*/
-	/* Change chatter mode of operation */
-	WMI_CHATTER_SET_MODE_CMDID,
+	WMI_CHATTER_SET_MODE_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_CHATTER),
 
-	/* ISOC ADDBA/DELBA Params CMD to Firmware */
-	WMI_PEER_TID_ADDBA_CMDID,
+	/* addba specific commands */
+	WMI_PEER_TID_ADDBA_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_TID_ADDBA),
 	WMI_PEER_TID_DELBA_CMDID,
 
-	/*
-	 * set the probe response template. used in beacon offload mode to
-	 * setup the common probe response template with the FW to be
-	 * used by FW to generate probe responses
-	 */
-	WMI_PRB_TMPL_CMDID,
-
-	/*
-	 * UTF specific WMI commands
-	 * set fixed value for UTF WMI command so
-	 * further addition of other WMI commands
-	 * does not affect the communication between
-	 * ART2 and UTF
-	 */
-	WMI_PDEV_UTF_CMDID = WMI_END_CMDID - 1,
+	/* misc command group */
+	WMI_ECHO_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_MISC),
+	WMI_DBGLOG_CFG_CMDID,
+	WMI_PDEV_QVIT_CMDID,
+	WMI_PDEV_FTM_INTG_CMDID,
+	WMI_PDEV_UTF_CMDID,
 };
 
 enum wmi_event_id {
-	/*
-	 * WMI service is ready; after this event WMI messages
-	 * can be sent/received
-	 */
-	WMI_SERVICE_READY_EVENTID = 0x8000,
-
-	/*
-	 * WMI is ready; after this event the wlan subsystem is
-	 * initialized and can process commands.
-	 */
+	WMI_SERVICE_READY_EVENTID=0x1,
 	WMI_READY_EVENTID,
-	WMI_START_EVENTID = 0x9000,
-	WMI_END_EVENTID = 0x9FFF,
 
 	/* Scan specific events */
-	WMI_SCAN_EVENTID = WMI_START_EVENTID,
-	WMI_ECHO_EVENTID,
-	WMI_DEBUG_MESG_EVENTID,
-	WMI_UPDATE_STATS_EVENTID,
+	WMI_SCAN_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_SCAN),
+
+	/* PDEV specific events */
+	WMI_PDEV_TPC_CONFIG_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_PDEV),
+	WMI_CHAN_INFO_EVENTID,
+	WMI_PHYERR_EVENTID,
 
 	/* VDEV specific events */
-	WMI_VDEV_START_RESP_EVENTID,
+	WMI_VDEV_START_RESP_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_VDEV),
 	WMI_VDEV_STANDBY_REQ_EVENTID,
 	WMI_VDEV_RESUME_REQ_EVENTID,
 	WMI_VDEV_STOPPED_EVENTID,
+	WMI_VDEV_INSTALL_KEY_COMPLETE_EVENTID,
 
-	/* Peer specific events */
-	WMI_PEER_STA_KICKOUT_EVENTID,
+	/* peer specific events */
+	WMI_PEER_STA_KICKOUT_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_PEER),
 
-	/* Beacon/mgmt specific events */
+	/* beacon/mgmt specific events */
+	WMI_MGMT_RX_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_MGMT),
 	WMI_HOST_SWBA_EVENTID,
 	WMI_TBTTOFFSET_UPDATE_EVENTID,
-	WMI_MGMT_RX_EVENTID,
 
-	/* Channel stats event */
-	WMI_CHAN_INFO_EVENTID,
-
-	/* PHY Error specific WMI event */
-	WMI_PHYERR_EVENTID,
+	/* ADDBA Related WMI Events*/
+	WMI_TX_DELBA_COMPLETE_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_BA_NEG),
+	WMI_TX_ADDBA_COMPLETE_EVENTID,
 
 	/* Roam event to trigger roaming on host */
-	WMI_ROAM_EVENTID,
-
-	/* matching AP found from list of profiles */
+	WMI_ROAM_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_ROAM),
 	WMI_PROFILE_MATCH,
 
-	/* to send debug messages to host */
-	WMI_DEBUG_PRINT_EVENTID,
-	WMI_PDEV_QVIT_EVENTID,
-	WMI_WLAN_PROFILE_DATA_EVENTID,
+	/* WoW */
+	WMI_WOW_WAKEUP_HOST_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_WOW),
 
-	/*RTT related event ID*/
-	WMI_RTT_MEASUREMENT_REPORT_EVENTID,
+	/* RTT */
+	WMI_RTT_MEASUREMENT_REPORT_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_RTT),
 	WMI_TSF_MEASUREMENT_REPORT_EVENTID,
 	WMI_RTT_ERROR_REPORT_EVENTID,
 
-	/*
-	 * WOW wake up host event.generated in response to
-	 * WMI_WOW_HOSTWAKEUP_FROM_SLEEP_CMDID will cary wake reason
-	 */
-	WMI_WOW_WAKEUP_HOST_EVENTID,
-
-	/* DCS wlan or non-wlan interference event */
-	WMI_DCS_INTERFERENCE_EVENTID,
-
-	/* TPC config for the current operating channel */
-	WMI_PDEV_TPC_CONFIG_EVENTID,
-
-	/* Factory Testing Mode request event used for integrated chipsets */
-	WMI_PDEV_FTM_INTG_EVENTID,
-
-	/* GTK offload status event requested by host */
-	WMI_GTK_OFFLOAD_STATUS_EVENTID,
-
-	/* GTK offload failed to rekey event */
+	/* GTK offload */
+	WMI_GTK_OFFLOAD_STATUS_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_GTK_OFL),
 	WMI_GTK_REKEY_FAIL_EVENTID,
 
 	/* CSA IE received event */
-	WMI_CSA_HANDLING_EVENTID,
+	WMI_CSA_HANDLING_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_CSA_OFL),
 
-	/*ADDBA Related WMI Events*/
-	WMI_TX_DELBA_COMPLETE_EVENTID,
-	WMI_TX_ADDBA_COMPLETE_EVENTID,
-
-	/*
-	 * Indicate the set key (used for setting per
-	 * peer unicast and per vdev multicast)
-	 * operation has completed
-	 */
-	WMI_VDEV_INSTALL_KEY_COMPLETE_EVENTID,
-
-	/*
-	 * UTF specific WMI event
-	 * set fixed value for UTF WMI EVT ID so
-	 * further addition of other WMI EVT IDs
-	 * does not affect the communication between
-	 * ART2 and UTF
-	 */
-	WMI_PDEV_UTF_EVENTID = WMI_END_EVENTID - 1,
+	/* Misc events */
+	WMI_ECHO_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_MISC),
+	WMI_DEBUG_MESG_EVENTID,
+	WMI_UPDATE_STATS_EVENTID,
+	WMI_DEBUG_PRINT_EVENTID,
+	WMI_DCS_INTERFERENCE_EVENTID,
+	WMI_PDEV_QVIT_EVENTID,
+	WMI_WLAN_PROFILE_DATA_EVENTID,
+	WMI_PDEV_FTM_INTG_EVENTID,
+	WMI_PDEV_UTF_EVENTID,
 };
 
 enum wmi_phy_mode {

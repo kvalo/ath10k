@@ -91,14 +91,17 @@ static int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb,
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 	struct wmi_cmd_hdr *cmd_hdr;
 	int status;
+	u32 cmd = 0;
 
 	if (skb_push(skb, sizeof(struct wmi_cmd_hdr)) == NULL) {
 		ath10k_warn("%s: skb_push failed\n", __func__);
 		return -ENOMEM;
 	}
 
+	cmd |= SM(cmd_id, WMI_CMD_HDR_CMD_ID);
+
 	cmd_hdr = (struct wmi_cmd_hdr *)skb->data;
-	cmd_hdr->cmd_id = __cpu_to_le16(cmd_id);
+	cmd_hdr->cmd_id = __cpu_to_le32(cmd);
 
 	if (atomic_add_return(1, &ar->wmi.pending_tx_count) >
 	    WMI_MAX_PENDING_TX_COUNT) {
@@ -909,17 +912,15 @@ static int ath10k_wmi_ready_event_rx(struct ath10k *ar, struct sk_buff *skb)
 static void ath10k_wmi_event_process(struct ath10k *ar, struct sk_buff *skb)
 {
 	struct wmi_cmd_hdr *cmd_hdr;
-	u16 id;
-	u8 *event;
+	enum wmi_event_id id;
 	u16 len;
 
 	cmd_hdr = (struct wmi_cmd_hdr *)skb->data;
-	id = __le16_to_cpu(cmd_hdr->cmd_id);
+	id = MS(__le32_to_cpu(cmd_hdr->cmd_id), WMI_CMD_HDR_CMD_ID);
 
 	if (skb_pull(skb, sizeof(struct wmi_cmd_hdr)) == NULL)
 		return;
 
-	event = skb->data;
 	len = skb->len;
 
 	trace_ath10k_wmi_event(id, skb->data, skb->len);
@@ -1052,7 +1053,9 @@ static void ath10k_wmi_process_rx(void *ptr, struct sk_buff *skb)
 {
 	struct ath10k *ar = ptr;
 	struct wmi_cmd_hdr *cmd_hdr = (struct wmi_cmd_hdr *)skb->data;
-	enum wmi_event_id event_id = __le16_to_cpu(cmd_hdr->cmd_id);
+	enum wmi_event_id event_id;
+
+	event_id = MS(__le32_to_cpu(cmd_hdr->cmd_id), WMI_CMD_HDR_CMD_ID);
 
 	if (!skb) {
 		ath10k_warn("%s: missing skb\n", __func__);
