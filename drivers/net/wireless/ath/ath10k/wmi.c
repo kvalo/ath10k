@@ -389,7 +389,7 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 	 */
 	skb_trim(skb, buf_len);
 
-	ieee80211_rx_irqsafe(ar->hw, skb);
+	ieee80211_rx(ar->hw, skb);
 	return 0;
 }
 

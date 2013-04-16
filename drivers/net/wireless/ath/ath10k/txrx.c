@@ -81,7 +81,7 @@ void ath10k_data_tx_completed(struct htt_struct *htt,
 			info->flags |= IEEE80211_TX_STAT_ACK;
 		/* fall through */
 	case HTT_DATA_TX_STATUS_NO_ACK:
-		ieee80211_tx_status_irqsafe(htt->ar->hw, txi->u.data.msdu);
+		ieee80211_tx_status(htt->ar->hw, txi->u.data.msdu);
 		break;
 	case HTT_DATA_TX_STATUS_DISCARD:
 		/* fall through */
@@ -260,7 +260,7 @@ void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info)
 		   status->freq,
 		   status->band);
 
-	ieee80211_rx_irqsafe(ar->hw, info->skb);
+	ieee80211_rx(ar->hw, info->skb);
 }
 
 void ath10k_mgmt_tx_completed(struct htt_struct *htt,
@@ -295,7 +295,7 @@ void ath10k_mgmt_tx_completed(struct htt_struct *htt,
 		if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
 			info->flags |= IEEE80211_TX_STAT_ACK;
 
-		ieee80211_tx_status_irqsafe(htt->ar->hw, msdu);
+		ieee80211_tx_status(htt->ar->hw, msdu);
 		break;
 	case HTT_MGMT_TX_STATUS_RETRY:
 		/* fall through */
