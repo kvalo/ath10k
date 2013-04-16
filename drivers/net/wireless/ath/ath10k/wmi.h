@@ -2656,10 +2656,6 @@ struct wmi_peer_set_q_empty_callback_cmd {
  * This is of interest to the ratecontrol
  * module which resides in the firmware. The bit definitions are
  * consistent with that defined in if_athrate.c.
- *
- * todo:
- * Move this to a common header file later so there is no need to
- * duplicate the definitions or maintain consistency.
  */
 #define WMI_RC_DS_FLAG          0x01
 #define WMI_RC_CW40_FLAG        0x02
