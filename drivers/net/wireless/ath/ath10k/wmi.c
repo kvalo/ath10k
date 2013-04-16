@@ -268,6 +268,63 @@ static inline enum ieee80211_band phy_mode_to_band(u32 phy_mode)
 	return band;
 }
 
+static inline u8 get_rate_idx(u32 rate, enum ieee80211_band band)
+{
+	u8 rate_idx = 0;
+
+	/* rate in Kbps */
+	switch (rate) {
+	case 1000:
+		rate_idx = 0;
+		break;
+	case 2000:
+		rate_idx = 1;
+		break;
+	case 5500:
+		rate_idx = 2;
+		break;
+	case 11000:
+		rate_idx = 3;
+		break;
+	case 6000:
+		rate_idx = 4;
+		break;
+	case 9000:
+		rate_idx = 5;
+		break;
+	case 12000:
+		rate_idx = 6;
+		break;
+	case 18000:
+		rate_idx = 7;
+		break;
+	case 24000:
+		rate_idx = 8;
+		break;
+	case 36000:
+		rate_idx = 9;
+		break;
+	case 48000:
+		rate_idx = 10;
+		break;
+	case 54000:
+		rate_idx = 11;
+		break;
+	default:
+		break;
+	}
+
+	if (band == IEEE80211_BAND_5GHZ) {
+		if (rate_idx > 3)
+			/* Omit CCK rates */
+			rate_idx -= 4;
+		else
+			rate_idx = 0;
+	}
+
+	return rate_idx;
+}
+
 static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 {
 	struct wmi_mgmt_rx_event *event = (void *)skb->data;
@@ -277,6 +334,7 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 	u32 channel;
 	u32 phy_mode;
 	u32 snr;
+	u32 rate;
 	u32 buf_len;
 	u16 fc;
 
@@ -285,6 +343,7 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 	rx_status = __le32_to_cpu(event->hdr.status);
 	snr       = __le32_to_cpu(event->hdr.snr);
 	phy_mode  = __le32_to_cpu(event->hdr.phy_mode);
+	rate	  = __le32_to_cpu(event->hdr.rate);
 
 	memset(status, 0, sizeof(*status));
 
@@ -308,6 +367,7 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 	status->band = phy_mode_to_band(phy_mode);
 	status->freq = ieee80211_channel_to_frequency(channel, status->band);
 	status->signal = snr + ATH10K_DEFAULT_NOISE_FLOOR;
+	status->rate_idx = get_rate_idx(rate, status->band);
 
 	skb_pull(skb, sizeof(event->hdr));
 
@@ -320,8 +380,8 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 		   fc & IEEE80211_FCTL_FTYPE, fc & IEEE80211_FCTL_STYPE);
 
 	ath10k_dbg(ATH10K_DBG_WMI,
-		   "event mgmt rx freq %d band %d snr %d\n",
-		   status->freq, status->band, status->signal);
+		   "event mgmt rx freq %d band %d snr %d, rate_idx %d\n",
+		   status->freq, status->band, status->signal, status->rate_idx);
 
 	/*
 	 * packets from HTC come aligned to 4byte boundaries
