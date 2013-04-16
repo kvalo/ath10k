@@ -1083,6 +1083,7 @@ static void ath10k_wmi_process_rx(void *ptr, struct sk_buff *skb)
 	 * thus can't be defered to a worker thread */
 	switch (event_id) {
 	case WMI_HOST_SWBA_EVENTID:
+	case WMI_MGMT_RX_EVENTID:
 		ath10k_wmi_event_process(wmi, skb);
 		return;
 	default:
