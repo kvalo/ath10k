@@ -1301,9 +1301,9 @@ void ath10k_htt_detach(struct htt_struct *htt);
 
 void ath10k_htt_tx_attach(struct htt_struct *htt);
 void ath10k_htt_tx_detach(struct htt_struct *htt);
-int htt_rx_attach(struct htt_struct *htt);
-void htt_rx_detach(struct htt_struct *htt);
-void htt_t2h_msg_handler(void *context, struct sk_buff *skb);
+int ath10k_htt_rx_attach(struct htt_struct *htt);
+void ath10k_htt_rx_detach(struct htt_struct *htt);
+void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb);
 int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt);
 int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt);
 

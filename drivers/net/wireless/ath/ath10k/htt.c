@@ -43,7 +43,7 @@ static int ath10k_htt_htc_attach(struct htt_struct *htt)
 	memset(&response, 0, sizeof(response));
 
 	connect.ep_callbacks.context = htt;
-	connect.ep_callbacks.ep_rx_complete = htt_t2h_msg_handler;
+	connect.ep_callbacks.ep_rx_complete = ath10k_htt_t2h_msg_handler;
 	connect.ep_callbacks.stop_queue = ath10k_htt_stop_queue;
 	connect.ep_callbacks.wake_queue = ath10k_htt_wake_queue;
 
@@ -80,8 +80,8 @@ struct htt_struct *ath10k_htt_attach(struct ath10k *ar, void *htc_target)
 
 	/*
 	 * Connect to HTC service.
-	 * This has to be done before calling htt_rx_attach,
-	 * since htt_rx_attach involves sending a rx ring configure
+	 * This has to be done before calling ath10k_htt_rx_attach,
+	 * since ath10k_htt_rx_attach involves sending a rx ring configure
 	 * message to the target.
 	 */
 	if (ath10k_htt_htc_attach(htt))
@@ -89,7 +89,7 @@ struct htt_struct *ath10k_htt_attach(struct ath10k *ar, void *htc_target)
 
 	ath10k_htt_tx_attach(htt);
 
-	if (htt_rx_attach(htt))
+	if (ath10k_htt_rx_attach(htt))
 		goto fail3;
 
 	/*
@@ -163,7 +163,7 @@ int ath10k_htt_attach_target(struct htt_struct *htt)
 
 void ath10k_htt_detach(struct htt_struct *htt)
 {
-	htt_rx_detach(htt);
+	ath10k_htt_rx_detach(htt);
 	ath10k_htt_tx_detach(htt);
 	kfree(htt);
 }
