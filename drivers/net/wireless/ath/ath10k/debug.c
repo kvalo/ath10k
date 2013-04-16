@@ -164,7 +164,7 @@ static ssize_t ath10k_read_fw_stats(struct file *file, char __user *user_buf,
 	if (!buf)
 		return -ENOMEM;
 
-	if (wmi_request_stats(ar, WMI_REQUEST_PEER_STAT)) {
+	if (ath10k_wmi_request_stats(ar, WMI_REQUEST_PEER_STAT)) {
 		kfree(buf);
 		return -EIO;
 	}

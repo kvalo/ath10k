@@ -77,7 +77,7 @@ static int ath10k_send_key(struct ath10k_vif *arvif,
 		arg.key_data = NULL;
 	}
 
-	return wmi_vdev_install_key(arvif->ar, &arg);
+	return ath10k_wmi_vdev_install_key(arvif->ar, &arg);
 }
 
 static int ath10k_install_key(struct ath10k_vif *arvif,
@@ -320,7 +320,7 @@ static int ath10k_peer_create(struct ath10k *ar, u32 vdev_id, const u8 *addr)
 
 	lockdep_assert_held(&ar->conf_mutex);
 
-	ret = wmi_peer_create(ar, vdev_id, addr);
+	ret = ath10k_wmi_peer_create(ar, vdev_id, addr);
 	if (ret)
 		return ret;
 
@@ -337,7 +337,7 @@ static int ath10k_peer_delete(struct ath10k *ar, u32 vdev_id, const u8 *addr)
 
 	lockdep_assert_held(&ar->conf_mutex);
 
-	ret = wmi_peer_delete(ar, vdev_id, addr);
+	ret = ath10k_wmi_peer_delete(ar, vdev_id, addr);
 	if (ret)
 		return ret;
 
@@ -404,7 +404,7 @@ static int ath10k_vdev_start(struct ath10k_vif *arvif)
 		 */
 	}
 
-	ret = wmi_vdev_start(ar, &arg);
+	ret = ath10k_wmi_vdev_start(ar, &arg);
 	if (ret) {
 		ath10k_warn("WMI vdev start failed: ret %d\n", ret);
 		goto unlock;
@@ -430,7 +430,7 @@ static int ath10k_vdev_stop(struct ath10k_vif *arvif)
 
 	INIT_COMPLETION(ar->vdev_setup_done);
 
-	ret = wmi_vdev_stop(ar, arvif->vdev_id);
+	ret = ath10k_wmi_vdev_stop(ar, arvif->vdev_id);
 	if (ret) {
 		ath10k_warn("WMI vdev stop failed: ret %d\n", ret);
 		goto unlock;
@@ -471,7 +471,7 @@ static int ath10k_monitor_start(struct ath10k *ar, int vdev_id)
 
 	lockdep_assert_held(&ar->vdev_mtx);
 
-	ret = wmi_vdev_start(ar, &arg);
+	ret = ath10k_wmi_vdev_start(ar, &arg);
 	if (ret) {
 		ath10k_warn("Monitor vdev start failed: ret %d\n", ret);
 		return ret;
@@ -483,7 +483,7 @@ static int ath10k_monitor_start(struct ath10k *ar, int vdev_id)
 		return ret;
 	}
 
-	ret = wmi_vdev_up(ar, vdev_id, 0, ar->mac_addr);
+	ret = ath10k_wmi_vdev_up(ar, vdev_id, 0, ar->mac_addr);
 	if (ret) {
 		ath10k_warn("Monitor vdev up failed: %d\n", ret);
 		goto vdev_stop;
@@ -495,7 +495,7 @@ static int ath10k_monitor_start(struct ath10k *ar, int vdev_id)
 	return 0;
 
 vdev_stop:
-	ret = wmi_vdev_stop(ar, ar->monitor_vdev_id);
+	ret = ath10k_wmi_vdev_stop(ar, ar->monitor_vdev_id);
 	if (ret)
 		ath10k_warn("Monitor vdev stop failed: %d\n", ret);
 
@@ -508,14 +508,14 @@ static int ath10k_monitor_stop(struct ath10k *ar)
 
 	lockdep_assert_held(&ar->vdev_mtx);
 
-	/* For some reasons, wmi_vdev_down() here couse
-	 * often wmi_vdev_stop() to fail. Next we could
+	/* For some reasons, ath10k_wmi_vdev_down() here couse
+	 * often ath10k_wmi_vdev_stop() to fail. Next we could
 	 * not run monitor vdev and driver reload
 	 * required. Don't see such problems we skip
-	 * wmi_vdev_down() here.
+	 * ath10k_wmi_vdev_down() here.
 	 */
 
-	ret = wmi_vdev_stop(ar, ar->monitor_vdev_id);
+	ret = ath10k_wmi_vdev_stop(ar, ar->monitor_vdev_id);
 	if (ret)
 		ath10k_warn("Monitor vdev stop failed: %d\n", ret);
 
@@ -548,9 +548,9 @@ static int ath10k_monitor_create(struct ath10k *ar)
 	ar->monitor_vdev_id = bit - 1;
 	ar->free_vdev_map &= ~(1 << ar->monitor_vdev_id);
 
-	ret = wmi_vdev_create(ar, ar->monitor_vdev_id,
-			      WMI_VDEV_TYPE_MONITOR,
-			      0, ar->mac_addr);
+	ret = ath10k_wmi_vdev_create(ar, ar->monitor_vdev_id,
+				     WMI_VDEV_TYPE_MONITOR,
+				     0, ar->mac_addr);
 	if (ret) {
 		ath10k_warn("WMI vdev monitor create failed: ret %d\n", ret);
 		goto vdev_fail;
@@ -581,7 +581,7 @@ static int ath10k_monitor_destroy(struct ath10k *ar)
 	if (!ar->monitor_present)
 		goto unlock;
 
-	ret = wmi_vdev_delete(ar, ar->monitor_vdev_id);
+	ret = ath10k_wmi_vdev_delete(ar, ar->monitor_vdev_id);
 	if (ret) {
 		ath10k_warn("WMI vdev monitor delete failed: %d\n", ret);
 		goto unlock;
@@ -613,7 +613,7 @@ static void ath10k_control_beaconing(struct ath10k_vif *arvif,
 	if (ret)
 		return;
 
-	ret = wmi_vdev_up(arvif->ar, arvif->vdev_id, 0, info->bssid);
+	ret = ath10k_wmi_vdev_up(arvif->ar, arvif->vdev_id, 0, info->bssid);
 	if (ret) {
 		ath10k_warn("Failed to bring up VDEV: %d\n",
 			    arvif->vdev_id);
@@ -659,9 +659,9 @@ static void ath10k_control_ibss(struct ath10k_vif *arvif,
 		return;
 	}
 
-	ret = wmi_vdev_set_param(arvif->ar, arvif->vdev_id,
-				 WMI_VDEV_PARAM_ATIM_WINDOW,
-				 ATH10K_DEFAULT_ATIM);
+	ret = ath10k_wmi_vdev_set_param(arvif->ar, arvif->vdev_id,
+					WMI_VDEV_PARAM_ATIM_WINDOW,
+					ATH10K_DEFAULT_ATIM);
 	if (ret)
 		ath10k_warn("Failed to set IBSS ATIM for VDEV:%d ret:%d\n",
 			    arvif->vdev_id, ret);
@@ -682,9 +682,10 @@ static void ath10k_config_ps_iter(void *data, u8 *mac, struct ieee80211_vif *vif
 
 	if (conf->flags & IEEE80211_CONF_PS) {
 		psmode = WMI_STA_PS_MODE_ENABLED;
-		ar_iter->ret = wmi_set_sta_ps_param(ar_iter->ar, arvif->vdev_id,
-					    WMI_STA_PS_PARAM_INACTIVITY_TIME,
-					    conf->dynamic_ps_timeout);
+		ar_iter->ret = ath10k_wmi_set_sta_ps_param(ar_iter->ar,
+							   arvif->vdev_id,
+							   WMI_STA_PS_PARAM_INACTIVITY_TIME,
+							   conf->dynamic_ps_timeout);
 		if (ar_iter->ret) {
 			ath10k_warn("Failed to set inactivity time for VDEV: %d\n",
 				    arvif->vdev_id);
@@ -693,7 +694,8 @@ static void ath10k_config_ps_iter(void *data, u8 *mac, struct ieee80211_vif *vif
 	} else
 		psmode = WMI_STA_PS_MODE_DISABLED;
 
-	ar_iter->ret = wmi_set_psmode(ar_iter->ar, arvif->vdev_id, psmode);
+	ar_iter->ret = ath10k_wmi_set_psmode(ar_iter->ar, arvif->vdev_id,
+					     psmode);
 	if (ar_iter->ret)
 		ath10k_warn("Failed to set PS Mode: %d for VDEV: %d\n",
 			    psmode, arvif->vdev_id);
@@ -951,7 +953,7 @@ static int ath10k_peer_assoc(struct ath10k *ar,
 	ath10k_peer_assoc_h_qos(ar, arvif, sta, bss_conf, &arg);
 	ath10k_peer_assoc_h_phymode(ar, arvif, sta, &arg);
 
-	return wmi_peer_assoc(ar, &arg);
+	return ath10k_wmi_peer_assoc(ar, &arg);
 }
 
 /* can be called only in mac80211 callbacks due to `key_count` usage */
@@ -983,7 +985,7 @@ static void ath10k_bss_assoc(struct ieee80211_hw *hw,
 
 	rcu_read_unlock();
 
-	ret = wmi_vdev_up(ar, arvif->vdev_id, bss_conf->aid, bss_conf->bssid);
+	ret = ath10k_wmi_vdev_up(ar, arvif->vdev_id, bss_conf->aid, bss_conf->bssid);
 	if (ret)
 		ath10k_warn("VDEV: %d up failed: ret %d\n",
 			    arvif->vdev_id, ret);
@@ -1021,12 +1023,12 @@ static void ath10k_bss_disassoc(struct ieee80211_hw *hw,
 	 * interfaces as it expects there is no rx when no interface is
 	 * running.
 	 */
-	ret = wmi_vdev_down(ar, arvif->vdev_id);
+	ret = ath10k_wmi_vdev_down(ar, arvif->vdev_id);
 	if (ret)
-		ath10k_dbg(ATH10K_DBG_MAC, "VDEV: %d wmi_vdev_down failed (%d)\n",
+		ath10k_dbg(ATH10K_DBG_MAC, "VDEV: %d ath10k_wmi_vdev_down failed (%d)\n",
 			   arvif->vdev_id, ret);
 
-	wmi_flush_tx(ar);
+	ath10k_wmi_flush_tx(ar);
 
 	arvif->def_wep_key_index = 0;
 }
@@ -1138,7 +1140,7 @@ static void ath10k_update_channel_list(struct ath10k *ar)
 		}
 	}
 
-	wmi_scan_chan_list(ar, &arg);
+	ath10k_wmi_scan_chan_list(ar, &arg);
 	kfree(arg.channels);
 }
 
@@ -1230,8 +1232,9 @@ static void ath10k_tx_h_update_wep_key(struct sk_buff *skb)
 
 	ath10k_dbg(ATH10K_DBG_MAC, "new wep keyidx will be %d\n", key->keyidx);
 
-	ret = wmi_vdev_set_param(ar, arvif->vdev_id, WMI_VDEV_PARAM_DEF_KEYID,
-				 key->keyidx);
+	ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
+					WMI_VDEV_PARAM_DEF_KEYID,
+					key->keyidx);
 	if (!ret)
 		arvif->def_wep_key_index = key->keyidx;
 	else
@@ -1412,9 +1415,9 @@ static void ath10k_abort_scan(struct ath10k *ar)
 	ar->scan.aborting = true;
 	spin_unlock_bh(&ar->scan.lock);
 
-	ret = wmi_stop_scan(ar, &arg);
+	ret = ath10k_wmi_stop_scan(ar, &arg);
 	if (ret)
-		ath10k_warn("%s: wmi_stop_scan failed (%d)\n", __func__, ret);
+		ath10k_warn("%s: ath10k_wmi_stop_scan failed (%d)\n", __func__, ret);
 
 	ret = wait_for_completion_timeout(&ar->scan.completed, 3*HZ);
 	if (ret == 0)
@@ -1434,13 +1437,13 @@ static int ath10k_start_scan(struct ath10k *ar,
 {
 	int ret;
 
-	ret = wmi_start_scan(ar, arg);
+	ret = ath10k_wmi_start_scan(ar, arg);
 	if (ret)
 		goto abort;
 
 	/* make sure we submit the command so the completion
 	* timeout makes sense */
-	wmi_flush_tx(ar);
+	ath10k_wmi_flush_tx(ar);
 
 	ret = wait_for_completion_timeout(&ar->scan.started, 1*HZ);
 	if (ret == 0)
@@ -1513,7 +1516,7 @@ static int ath10k_start(struct ieee80211_hw *hw)
 	struct ath10k *ar = hw->priv;
 	int ret;
 
-	ret = wmi_pdev_set_param(ar, WMI_PDEV_PARAM_PMF_QOS, 1);
+	ret = ath10k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_PMF_QOS, 1);
 	if (ret)
 		ath10k_warn("could not enable WMI_PDEV_PARAM_PMF_QOS (%d)\n", ret);
 
@@ -1633,15 +1636,15 @@ static int ath10k_add_interface(struct ieee80211_hw *hw,
 	ath10k_dbg(ATH10K_DBG_MAC, "Add interface: id %d type %d subtype %d\n",
 		   arvif->vdev_id, arvif->vdev_type, arvif->vdev_subtype);
 
-	ret = wmi_vdev_create(ar, arvif->vdev_id, arvif->vdev_type,
-			      arvif->vdev_subtype, vif->addr);
+	ret = ath10k_wmi_vdev_create(ar, arvif->vdev_id, arvif->vdev_type,
+				     arvif->vdev_subtype, vif->addr);
 	if (ret) {
 		ath10k_warn("WMI vdev create failed: ret %d\n", ret);
 		goto exit;
 	}
 
-	ret = wmi_vdev_set_param(ar, 0, WMI_VDEV_PARAM_DEF_KEYID,
-				 arvif->def_wep_key_index);
+	ret = ath10k_wmi_vdev_set_param(ar, 0, WMI_VDEV_PARAM_DEF_KEYID,
+					arvif->def_wep_key_index);
 	if (ret)
 		ath10k_warn("Failed to set default keyid: %d\n", ret);
 
@@ -1654,21 +1657,21 @@ static int ath10k_add_interface(struct ieee80211_hw *hw,
 	}
 
 	if (arvif->vdev_type == WMI_VDEV_TYPE_STA) {
-		ret = wmi_set_sta_ps_param(ar, arvif->vdev_id,
-					   WMI_STA_PS_PARAM_RX_WAKE_POLICY,
-					   WMI_STA_PS_RX_WAKE_POLICY_WAKE);
+		ret = ath10k_wmi_set_sta_ps_param(ar, arvif->vdev_id,
+						  WMI_STA_PS_PARAM_RX_WAKE_POLICY,
+						  WMI_STA_PS_RX_WAKE_POLICY_WAKE);
 		if (ret)
 			ath10k_warn("Failed to set RX wake policy: %d\n", ret);
 
-		ret = wmi_set_sta_ps_param(ar, arvif->vdev_id,
-					   WMI_STA_PS_PARAM_TX_WAKE_THRESHOLD,
-					   WMI_STA_PS_TX_WAKE_THRESHOLD_ALWAYS);
+		ret = ath10k_wmi_set_sta_ps_param(ar, arvif->vdev_id,
+						  WMI_STA_PS_PARAM_TX_WAKE_THRESHOLD,
+						  WMI_STA_PS_TX_WAKE_THRESHOLD_ALWAYS);
 		if (ret)
 			ath10k_warn("Failed to set TX wake thresh: %d\n", ret);
 
-		ret = wmi_set_sta_ps_param(ar, arvif->vdev_id,
-					   WMI_STA_PS_PARAM_PSPOLL_COUNT,
-					   WMI_STA_PS_PSPOLL_COUNT_NO_MAX);
+		ret = ath10k_wmi_set_sta_ps_param(ar, arvif->vdev_id,
+						  WMI_STA_PS_PARAM_PSPOLL_COUNT,
+						  WMI_STA_PS_PSPOLL_COUNT_NO_MAX);
 		if (ret)
 			ath10k_warn("Failed to set PSPOLL count: %d\n", ret);
 	}
@@ -1705,7 +1708,7 @@ static void ath10k_remove_interface(struct ieee80211_hw *hw,
 		kfree(arvif->u.ap.noa_data);
 	}
 
-	ret = wmi_vdev_delete(ar, arvif->vdev_id);
+	ret = ath10k_wmi_vdev_delete(ar, arvif->vdev_id);
 	if (ret)
 		ath10k_warn("WMI vdev delete failed: %d\n", ret);
 
@@ -1783,9 +1786,9 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 
 	if (changed & BSS_CHANGED_BEACON_INT) {
 		arvif->beacon_interval = info->beacon_int;
-		ret = wmi_vdev_set_param(ar, arvif->vdev_id,
-					 WMI_VDEV_PARAM_BEACON_INTERVAL,
-					 arvif->beacon_interval);
+		ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
+						WMI_VDEV_PARAM_BEACON_INTERVAL,
+						arvif->beacon_interval);
 		if (ret)
 			ath10k_warn("Failed to set beacon interval for VDEV: %d\n",
 				    arvif->vdev_id);
@@ -1796,8 +1799,9 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 	}
 
 	if (changed & BSS_CHANGED_BEACON) {
-		ret = wmi_pdev_set_param(ar, WMI_PDEV_PARAM_BEACON_TX_MODE,
-					 WMI_BEACON_STAGGERED_MODE);
+		ret = ath10k_wmi_pdev_set_param(ar,
+						WMI_PDEV_PARAM_BEACON_TX_MODE,
+						WMI_BEACON_STAGGERED_MODE);
 		if (ret)
 			ath10k_warn("Failed to set beacon mode for VDEV: %d\n",
 				    arvif->vdev_id);
@@ -1810,9 +1814,9 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 	if (changed & BSS_CHANGED_DTIM_PERIOD) {
 		arvif->dtim_period = info->dtim_period;
 
-		ret = wmi_vdev_set_param(ar, arvif->vdev_id,
-					 WMI_VDEV_PARAM_DTIM_PERIOD,
-					 arvif->dtim_period);
+		ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
+						WMI_VDEV_PARAM_DTIM_PERIOD,
+						arvif->dtim_period);
 		if (ret)
 			ath10k_warn("Failed to set dtim period for VDEV: %d\n",
 				    arvif->vdev_id);
@@ -1875,9 +1879,9 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 		else
 			cts_prot = 0;
 
-		ret = wmi_vdev_set_param(ar, arvif->vdev_id,
-					 WMI_VDEV_PARAM_ENABLE_RTSCTS,
-					 cts_prot);
+		ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
+						WMI_VDEV_PARAM_ENABLE_RTSCTS,
+						cts_prot);
 		if (ret)
 			ath10k_warn("Failed to set CTS prot for VDEV: %d\n",
 				    arvif->vdev_id);
@@ -1895,9 +1899,9 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 		else
 			slottime = WMI_VDEV_SLOT_TIME_LONG; /* 20us */
 
-		ret = wmi_vdev_set_param(ar, arvif->vdev_id,
-					WMI_VDEV_PARAM_SLOT_TIME,
-					slottime);
+		ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
+						WMI_VDEV_PARAM_SLOT_TIME,
+						slottime);
 		if (ret)
 			ath10k_warn("Failed to set erp slot for VDEV: %d\n",
 				    arvif->vdev_id);
@@ -1914,9 +1918,9 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 		else
 			preamble = WMI_VDEV_PREAMBLE_LONG;
 
-		ret = wmi_vdev_set_param(ar, arvif->vdev_id,
-					WMI_VDEV_PARAM_PREAMBLE,
-					preamble);
+		ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
+						WMI_VDEV_PARAM_PREAMBLE,
+						preamble);
 		if (ret)
 			ath10k_warn("Failed to set preamble for VDEV: %d\n",
 				    arvif->vdev_id);
@@ -1962,7 +1966,7 @@ static int ath10k_hw_scan(struct ieee80211_hw *hw,
 	spin_unlock_bh(&ar->scan.lock);
 
 	memset(&arg, 0, sizeof(arg));
-	wmi_start_scan_init(ar, &arg);
+	ath10k_wmi_start_scan_init(ar, &arg);
 	arg.vdev_id = arvif->vdev_id;
 	arg.scan_id = ATH10K_SCAN_ID;
 
@@ -2200,7 +2204,7 @@ static int ath10k_conf_tx(struct ieee80211_hw *hw,
 	/* FIXME: can we pass the params->uapsd to the FW? */
 	/* FIXME: FW accepts wmm params per hw, not per vif */
 
-	ret = wmi_pdev_set_wmm_params(ar, &ar->wmm_params);
+	ret = ath10k_wmi_pdev_set_wmm_params(ar, &ar->wmm_params);
 	if (ret)
 		ath10k_warn("could not set wmm params (%d)\n", ret);
 
@@ -2239,7 +2243,7 @@ static int ath10k_remain_on_channel(struct ieee80211_hw *hw,
 	spin_unlock_bh(&ar->scan.lock);
 
 	memset(&arg, 0, sizeof(arg));
-	wmi_start_scan_init(ar, &arg);
+	ath10k_wmi_start_scan_init(ar, &arg);
 	arg.vdev_id = arvif->vdev_id;
 	arg.scan_id = ATH10K_SCAN_ID;
 	arg.n_channels = 1;
@@ -2287,8 +2291,9 @@ static void ath10k_set_rts_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
 	if (rts > ATH10K_RTS_MAX)
 		rts = ATH10K_RTS_MAX;
 
-	ar_iter->ret = wmi_vdev_set_param(ar_iter->ar, arvif->vdev_id,
-					  WMI_VDEV_PARAM_RTS_THRESHOLD, rts);
+	ar_iter->ret = ath10k_wmi_vdev_set_param(ar_iter->ar, arvif->vdev_id,
+						 WMI_VDEV_PARAM_RTS_THRESHOLD,
+						 rts);
 	if (ar_iter->ret)
 		ath10k_warn("Failed to set RTS threshold for VDEV: %d\n",
 			    arvif->vdev_id);
@@ -2325,8 +2330,9 @@ static void ath10k_set_frag_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
 	else if (frag < ATH10K_FRAGMT_THRESHOLD_MIN)
 		frag = ATH10K_FRAGMT_THRESHOLD_MIN;
 
-	ar_iter->ret = wmi_vdev_set_param(ar_iter->ar, arvif->vdev_id,
-				  WMI_VDEV_PARAM_FRAGMENTATION_THRESHOLD, frag);
+	ar_iter->ret = ath10k_wmi_vdev_set_param(ar_iter->ar, arvif->vdev_id,
+						 WMI_VDEV_PARAM_FRAGMENTATION_THRESHOLD,
+						 frag);
 	if (ar_iter->ret)
 		ath10k_warn("Failed to set frag threshold for VDEV: %d\n",
 			    arvif->vdev_id);

@@ -113,7 +113,7 @@ static int ath10k_init_connect_htc(struct ath10k *ar)
 	connect.ep_callbacks.context = ar;
 	connect.ep_callbacks.ep_rx_complete = NULL;
 
-	status = wmi_connect_htc_service(ar);
+	status = ath10k_wmi_connect_htc_service(ar);
 	if (status)
 		goto conn_fail;
 
@@ -123,7 +123,7 @@ static int ath10k_init_connect_htc(struct ath10k *ar)
 		goto conn_fail;
 
 	/* Wait for WMI event to be ready */
-	status = wmi_wait_for_service_ready(ar);
+	status = ath10k_wmi_wait_for_service_ready(ar);
 	if (status <= 0) {
 		ath10k_warn("wmi service ready event not received");
 		status = -ETIMEDOUT;
@@ -579,7 +579,7 @@ int ath10k_core_register(struct ath10k *ar)
 	if (status)
 		goto err_htc_destroy;
 
-	status = wmi_attach(ar);
+	status = ath10k_wmi_attach(ar);
 	if (status) {
 		ath10k_err("WMI attach failed: %d\n", status);
 		goto err_htc_destroy;
@@ -603,9 +603,9 @@ int ath10k_core_register(struct ath10k *ar)
 	if (status)
 		goto err_disconnect_htc;
 
-	wmi_cmd_init(ar);
+	ath10k_wmi_cmd_init(ar);
 
-	status = wmi_wait_for_unified_ready(ar);
+	status = ath10k_wmi_wait_for_unified_ready(ar);
 	if (status <= 0) {
 		ath10k_warn("wmi unified ready event not received\n");
 		status = -ETIMEDOUT;
@@ -638,7 +638,7 @@ err_disconnect_htc:
 err_htt_detach:
 	ath10k_htt_detach(ar->htt);
 err_wmi_detach:
-	wmi_detach(ar);
+	ath10k_wmi_detach(ar);
 err_htc_destroy:
 	ath10k_htc_destroy(ar->htc_handle);
 err:
@@ -661,7 +661,7 @@ void ath10k_core_unregister(struct ath10k *ar)
 	/* FIXME: we may need to free up htt tx desc here too */
 	ath10k_htt_detach(ar->htt);
 
-	wmi_detach(ar);
+	ath10k_wmi_detach(ar);
 
 	ath10k_htc_destroy(ar->htc_handle);
 }
