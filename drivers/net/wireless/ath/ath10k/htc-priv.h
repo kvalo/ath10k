@@ -213,9 +213,6 @@ struct htc_frame {
 /* HTC operational parameters */
 #define NUM_CONTROL_TX_BUFFERS 2
 
-/* TODO, this is just a temporary max packet size */
-#define MAX_MESSAGE_SIZE 1536
-
 #define HTC_WAIT_TIMEOUT_HZ (1*HZ)
 #define HTC_CONTROL_BUFFER_SIZE (HTC_MAX_CTRL_MSG_LEN + sizeof(struct htc_hdr))
 #define HTC_CONN_SVC_TIMEOUT_HZ (1*HZ)
