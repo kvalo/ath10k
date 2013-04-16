@@ -101,14 +101,14 @@ static struct sk_buff *ath10k_htc_build_tx_ctrl_skb(void *ar)
 }
 
 static inline void ath10k_htc_restore_tx_skb(struct htc_target *target,
-				       struct sk_buff *skb)
+					     struct sk_buff *skb)
 {
 	ath10k_skb_unmap(target->ar->dev, skb);
 	skb_pull(skb, sizeof(struct htc_hdr));
 }
 
 static void ath10k_htc_notify_tx_completion(struct htc_endpoint *ep,
-				     struct sk_buff *skb)
+					    struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 
@@ -134,8 +134,7 @@ static bool ath10k_htc_ep_need_credit_update(struct htc_endpoint *ep)
 	if (ep->tx_credits >= ep->tx_credits_per_max_message)
 		return false;
 
-	ath10k_dbg(ATH10K_DBG_HTC, "HTC: endpoint %d needs credit update\n",
-		   ep->ep_id);
+	ath10k_dbg(ATH10K_DBG_HTC, "HTC: endpoint %d needs credit update\n", ep->ep_id);
 	return true;
 }
 
