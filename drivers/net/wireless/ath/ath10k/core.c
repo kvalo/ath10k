@@ -562,7 +562,6 @@ int ath10k_core_register(struct ath10k *ar)
 
 	if (ath10k_init_download_firmware(ar)) {
 		status = -EIO;
-		/* TODO: check if there's really nothing to clean */
 		goto err;
 	}
 
@@ -627,10 +626,7 @@ int ath10k_core_register(struct ath10k *ar)
 	}
 
 	return 0;
-/*
- * TODO: Revisit this once more when decided on exact
- * start sequece and callbacks
- */
+
 err_unregister_mac:
 	ath10k_mac_unregister(ar);
 err_disconnect_htc:
