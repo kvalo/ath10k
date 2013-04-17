@@ -292,8 +292,11 @@ static int ath10k_ce_completed_recv_next_nolock(struct ce_state *ce_state,
 	*bufferp = __le32_to_cpu(sdesc.addr);
 	*nbytesp = nbytes;
 	*transfer_idp = MS(__le16_to_cpu(sdesc.flags), CE_DESC_FLAGS_META_DATA);
-	*flagsp = __le16_to_cpu(sdesc.flags) & CE_DESC_FLAGS_BYTE_SWAP
-		? CE_RECV_FLAG_SWAPPED : 0;
+
+	if (__le16_to_cpu(sdesc.flags) & CE_DESC_FLAGS_BYTE_SWAP)
+		*flagsp = CE_RECV_FLAG_SWAPPED;
+	else
+		*flagsp = 0;
 
 	if (per_transfer_contextp)
 		*per_transfer_contextp =
