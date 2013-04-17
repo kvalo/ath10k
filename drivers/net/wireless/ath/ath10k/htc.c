@@ -193,7 +193,7 @@ err:
 	ep->tx_credits += skb_cb->htc.credits_used;
 	spin_unlock_bh(&target->htc_tx_lock);
 
-	skb_cb->htc.cancelled = true;
+	skb_cb->is_aborted = true;
 	ath10k_htc_notify_tx_completion(ep, skb);
 
 	return ret;
@@ -340,7 +340,6 @@ static int ath10k_htc_tx_completion_handler(struct ath10k *ar,
 	struct htc_endpoint *ep = &target->endpoint[eid];
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 
-	skb_cb->htc.cancelled = false;
 	ath10k_htc_notify_tx_completion(ep, skb);
 	/* the skb now belongs to the completion handler */
 
@@ -370,7 +369,7 @@ static void ath10k_htc_flush_endpoint_tx(struct htc_target *target,
 			break;
 
 		skb_cb = ATH10K_SKB_CB(skb);
-		skb_cb->htc.cancelled = true;
+		skb_cb->is_aborted = true;
 		ath10k_htc_notify_tx_completion(ep, skb);
 	}
 	spin_unlock_bh(&target->htc_tx_lock);

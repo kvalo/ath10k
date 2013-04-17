@@ -51,6 +51,7 @@ enum ath10k_bus {
 struct ath10k_skb_cb {
 	dma_addr_t paddr;
 	bool is_mapped;
+	bool is_aborted;
 
 	struct {
 		u8 vdev_id;
@@ -59,7 +60,6 @@ struct ath10k_skb_cb {
 
 	struct {
 		u8 credits_used;
-		bool cancelled;
 		void (*complete)(struct sk_buff *);
 		void *priv;
 	} __packed htc;

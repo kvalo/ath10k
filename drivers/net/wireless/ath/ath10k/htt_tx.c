@@ -243,7 +243,7 @@ static void ath10k_htt_mgmt_tx_htc_complete(struct sk_buff *skb)
 
 	txi->htc_tx_completed = true;
 
-	if (skb_cb->htc.cancelled) {
+	if (skb_cb->is_aborted) {
 		/*
 		 * if a packet gets cancelled we need to make sure
 		 * to free skbs since htt mgmt tx completion indication
@@ -332,7 +332,7 @@ static void ath10k_htt_tx_htc_complete(struct sk_buff *skb)
 
 	txi->htc_tx_completed = true;
 
-	if (skb_cb->htc.cancelled) {
+	if (skb_cb->is_aborted) {
 		/*
 		 * if a packet gets cancelled we need to make sure
 		 * to free skbs since htt mgmt tx completion indication
