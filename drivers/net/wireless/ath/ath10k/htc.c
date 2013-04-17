@@ -339,11 +339,16 @@ static int ath10k_htc_tx_completion_handler(struct ath10k *ar,
 	struct htc_target *target = ar->htc_handle;
 	struct htc_endpoint *ep = &target->endpoint[eid];
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
+	bool stopping;
 
 	ath10k_htc_notify_tx_completion(ep, skb);
 	/* the skb now belongs to the completion handler */
 
-	if (!ep->tx_credit_flow_enabled)
+	spin_lock_bh(&target->htc_tx_lock);
+	stopping = target->stopping;
+	spin_unlock_bh(&target->htc_tx_lock);
+
+	if (!ep->tx_credit_flow_enabled && !stopping)
 		/*
 		 * note: when using TX credit flow, the re-checking of
 		 * queues happens when credits flow back from the target.
@@ -373,6 +378,8 @@ static void ath10k_htc_flush_endpoint_tx(struct htc_target *target,
 		ath10k_htc_notify_tx_completion(ep, skb);
 	}
 	spin_unlock_bh(&target->htc_tx_lock);
+
+	cancel_work_sync(&ep->send_work);
 }
 
 /***********/
@@ -642,6 +649,8 @@ static void ath10k_htc_reset_endpoint_states(struct htc_target *target)
 		ep->tx_queue_len = 0;
 		ep->target = target;
 		ep->tx_credit_flow_enabled = true;
+		INIT_WORK(&ep->send_work, ath10k_htc_send_work);
+
 	}
 }
 
@@ -870,8 +879,6 @@ int ath10k_htc_connect_service(struct htc_target *target,
 	if (ep->service_id != HTC_SVC_UNUSED)
 		return -EPROTO;
 
-	INIT_WORK(&ep->send_work, ath10k_htc_send_work);
-
 	/* return assigned endpoint to caller */
 	connect_resp->ep_id = assigned_ep;
 	connect_resp->max_msg_len = __le16_to_cpu(resp_msg->max_msg_size);
@@ -968,24 +975,16 @@ void ath10k_htc_stop(struct htc_target *target)
 	int i;
 	struct htc_endpoint *ep;
 
-	/* cleanup endpoints */
+	spin_lock_bh(&target->htc_tx_lock);
+	target->stopping = true;
+	spin_unlock_bh(&target->htc_tx_lock);
+
 	for (i = HTC_EP_0; i < HTC_EP_COUNT; i++) {
 		ep = &target->endpoint[i];
 		ath10k_htc_flush_endpoint_tx(target, ep);
 	}
 
 	ath10k_hif_stop(target->ar);
-
-	/* ath10k_pci_buffer_cleanup may schedule ath10k_htc_send */
-	for (i = HTC_EP_0; i < HTC_EP_COUNT; i++) {
-		ep = &target->endpoint[i];
-
-		if (ep->service_id == HTC_SVC_UNUSED)
-			continue;
-
-		cancel_work_sync(&ep->send_work);
-	}
-
 	ath10k_htc_reset_endpoint_states(target);
 }
 

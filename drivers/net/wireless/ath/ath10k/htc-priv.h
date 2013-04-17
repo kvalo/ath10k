@@ -264,6 +264,8 @@ struct htc_target {
 	int total_transmit_credits;
 	struct htc_service_tx_creadit_alloc service_tx_alloc[HTC_EP_COUNT];
 	int target_credit_size;
+
+	bool stopping;
 };
 
 #endif	/* _HTC_PRIV_H_ */
