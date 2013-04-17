@@ -233,7 +233,7 @@ int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt)
 	return 0;
 }
 
-static void ath10k_htt_mgmt_tx_htc_complete(struct sk_buff *skb)
+static void ath10k_htt_tx_htc_complete(struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 	struct htt_tx_info *txi = skb_cb->htc.priv;
@@ -252,9 +252,17 @@ static void ath10k_htt_mgmt_tx_htc_complete(struct sk_buff *skb)
 		if (!txi->htt_tx_completed) {
 			txi->htt_tx_completed = true;
 
+			if (txi->txfrag) {
+				ret = ath10k_skb_unmap(dev, txi->txfrag);
+				if (ret)
+					ath10k_warn("txfrag unmap failed (%d)\n", ret);
+
+				dev_kfree_skb_any(txi->txfrag);
+			}
+
 			ret = ath10k_skb_unmap(dev, txi->msdu);
 			if (ret)
-				ath10k_warn("mgmt skb unmap failed (%d)\n", ret);
+				ath10k_warn("data skb unmap failed (%d)\n", ret);
 
 			ieee80211_free_txskb(htt->ar->hw, txi->msdu);
 		}
@@ -303,7 +311,7 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	       min((int)msdu->len, HTT_MGMT_FRM_HDR_DOWNLOAD_LEN));
 
 	skb_cb = ATH10K_SKB_CB(txi->txdesc);
-	skb_cb->htc.complete = ath10k_htt_mgmt_tx_htc_complete;
+	skb_cb->htc.complete = ath10k_htt_tx_htc_complete;
 	skb_cb->htc.priv = txi;
 
 	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->txdesc);
@@ -320,41 +328,6 @@ err:
 
 	ath10k_htt_tx_info_free(htt, txi);
 	return res;
-}
-
-static void ath10k_htt_tx_htc_complete(struct sk_buff *skb)
-{
-	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
-	struct htt_tx_info *txi = skb_cb->htc.priv;
-	struct htt_struct *htt = txi->htt;
-	struct device *dev = htt->ar->dev;
-	int ret;
-
-	txi->htc_tx_completed = true;
-
-	if (skb_cb->is_aborted) {
-		/*
-		 * if a packet gets cancelled we need to make sure
-		 * to free skbs since htt mgmt tx completion indication
-		 * may have not came in yet
-		 */
-		if (!txi->htt_tx_completed) {
-			txi->htt_tx_completed = true;
-
-			ret = ath10k_skb_unmap(dev, txi->txfrag);
-			if (ret)
-				ath10k_warn("txfrag unmap failed (%d)\n", ret);
-
-			ret = ath10k_skb_unmap(dev, txi->msdu);
-			if (ret)
-				ath10k_warn("data skb unmap failed (%d)\n", ret);
-
-			dev_kfree_skb_any(txi->txfrag);
-			ieee80211_free_txskb(htt->ar->hw, txi->msdu);
-		}
-	}
-
-	ath10k_htt_tx_info_unref(htt, txi, skb);
 }
 
 int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
