@@ -112,19 +112,22 @@ struct htt_tx_info *ath10k_htt_tx_info_lookup(struct htt_struct *htt,
 	return &htt->txi_pool[msdu_id];
 }
 
-static void ath10k_htt_conf_complete(struct sk_buff *skb)
-{
-	dev_kfree_skb_any(skb);
-}
-
-static void ath10k_htt_tx_htc_complete(struct sk_buff *skb)
+static void ath10k_htt_htc_tx_complete(struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
-	struct htt_tx_info *txi = skb_cb->htc.priv;
-	struct htt_struct *htt = txi->htt;
-	struct device *dev = htt->ar->dev;
+	struct htt_tx_info *txi;
+	struct htt_struct *htt;
+	struct device *dev;
 	int ret;
 
+	if (skb_cb->htt.is_conf) {
+		dev_kfree_skb_any(skb);
+		return;
+	}
+
+	txi = skb_cb->htc.priv;
+	htt = txi->htt;
+	dev = htt->ar->dev;
 	txi->htc_tx_completed = true;
 
 	if (skb_cb->is_aborted) {
@@ -175,7 +178,8 @@ int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt)
 	cmd->hdr.msg_type = HTT_H2T_MSG_TYPE_VERSION_REQ;
 
 	skb_cb = ATH10K_SKB_CB(skb);
-	skb_cb->htc.complete = ath10k_htt_conf_complete;
+	skb_cb->htc.complete = ath10k_htt_htc_tx_complete;
+	skb_cb->htt.is_conf = true;
 
 	ret = ath10k_htc_send(htt->htc_target, htt->ep_id, skb);
 	if (ret) {
@@ -260,7 +264,8 @@ int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt)
 #undef rx_desc_offset
 
 	skb_cb = ATH10K_SKB_CB(skb);
-	skb_cb->htc.complete = ath10k_htt_conf_complete;
+	skb_cb->htc.complete = ath10k_htt_htc_tx_complete;
+	skb_cb->htt.is_conf = true;
 
 	ret = ath10k_htc_send(htt->htc_target, htt->ep_id, skb);
 	if (ret) {
@@ -311,7 +316,7 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	       min((int)msdu->len, HTT_MGMT_FRM_HDR_DOWNLOAD_LEN));
 
 	skb_cb = ATH10K_SKB_CB(txi->txdesc);
-	skb_cb->htc.complete = ath10k_htt_tx_htc_complete;
+	skb_cb->htc.complete = ath10k_htt_htc_tx_complete;
 	skb_cb->htc.priv = txi;
 
 	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->txdesc);
@@ -439,7 +444,7 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	memcpy(cmd->data_tx.prefetch, msdu->data, prefetch_len);
 
 	skb_cb = ATH10K_SKB_CB(txi->txdesc);
-	skb_cb->htc.complete = ath10k_htt_tx_htc_complete;
+	skb_cb->htc.complete = ath10k_htt_htc_tx_complete;
 	skb_cb->htc.priv = txi;
 
 	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->txdesc);
