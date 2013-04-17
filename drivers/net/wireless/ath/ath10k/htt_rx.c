@@ -950,14 +950,7 @@ end:
 void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb)
 {
 	struct htt_struct *htt = (struct htt_struct *)context;
-	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 	struct htt_resp *resp = (struct htt_resp *)skb->data;
-
-	/* check for successful message reception */
-	if (skb_cb->htc.cancelled) {
-		dev_kfree_skb_any(skb);
-		return;
-	}
 
 	/* confirm alignment */
 	WARN_ON_ONCE((((unsigned long)skb->data) & 0x3) != 0);

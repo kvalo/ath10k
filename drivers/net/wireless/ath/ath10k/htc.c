@@ -495,7 +495,6 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 	struct htc_target *target = ar->htc_handle;
 	struct htc_hdr *hdr;
 	struct htc_endpoint *ep;
-	struct ath10k_skb_cb *skb_cb;
 	u16 payload_len;
 	u32 trailer_len = 0;
 	u8 htc_ep_id;
@@ -606,15 +605,6 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 		}
 		goto out;
 	}
-
-	/*
-	 * the current message based HIF architecture allocates net
-	 * bufs for recv packets since this layer bridges that HIF to
-	 * upper layers , which expects HTC packets, we form the
-	 * packets here TODO_FIXME
-	 */
-	skb_cb = ATH10K_SKB_CB(skb);
-	skb_cb->htc.cancelled = false;
 
 	ath10k_dbg(ATH10K_DBG_HTC, "htc rx completion ep %d skb %p\n", htc_ep_id, skb);
 	ep->ep_callbacks.ep_rx_complete(ep->ep_callbacks.context, skb);
