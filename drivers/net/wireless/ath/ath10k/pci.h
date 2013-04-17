@@ -291,16 +291,16 @@ static inline void pci_write32_v1_workaround(struct ath10k *ar,
  *   for use with these interfaces.
  *
  *   Use TARGET_READ and TARGET_WRITE to access Target space.
- *   These calls must be bracketed by TARGET_ACCESS_BEGIN and
- *   TARGET_ACCESS_END.  A single BEGIN/END pair is adequate for
+ *   These calls must be bracketed by ath10k_pci_wake and
+ *   ath10k_pci_sleep.  A single BEGIN/END pair is adequate for
  *   multiple READ/WRITE operations.
  *
- *   Use TARGET_ACCESS_BEGIN to put the Target in a state in
+ *   Use ath10k_pci_wake to put the Target in a state in
  *   which it is legal for the Host to directly access it. This
  *   may involve waking the Target from a low power state, which
  *   may take up to 2Ms!
  *
- *   Use TARGET_ACCESS_END to tell the Target that as far as
+ *   Use ath10k_pci_sleep to tell the Target that as far as
  *   this code path is concerned, it no longer needs to remain
  *   directly accessible.  BEGIN/END is under a reference counter;
  *   multiple code paths may issue BEGIN/END on a single targid.
@@ -351,13 +351,13 @@ void ath10k_pci_target_ps_control(struct ath10k *ar,
 				  bool sleep_ok,
 				  bool wait_for_it);
 
-static inline void TARGET_ACCESS_BEGIN(struct ath10k *ar)
+static inline void ath10k_pci_wake(struct ath10k *ar)
 {
 	if (ath10k_target_ps)
 		ath10k_pci_target_ps_control(ar, false, true);
 }
 
-static inline void TARGET_ACCESS_END(struct ath10k *ar)
+static inline void ath10k_pci_sleep(struct ath10k *ar)
 {
 	if (ath10k_target_ps)
 		ath10k_pci_target_ps_control(ar, true, false);

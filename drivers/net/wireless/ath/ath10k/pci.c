@@ -173,10 +173,10 @@ static int ath10k_pci_diag_read_mem(struct ath10k *ar, u32 address, u8 *data,
 		 * convert it from Target CPU virtual address space
 		 * to CE address space
 		 */
-		TARGET_ACCESS_BEGIN(ar);
+		ath10k_pci_wake(ar);
 		address = TARG_CPU_SPACE_TO_CE_SPACE(ar, ar_pci->mem,
 						     address);
-		TARGET_ACCESS_END(ar);
+		ath10k_pci_sleep(ar);
 
 		ret = ath10k_ce_send(ce_diag, NULL, (u32)address, nbytes, 0,
 				 0);
@@ -259,9 +259,9 @@ static int ath10k_pci_diag_read_access(struct ath10k *ar, u32 address, u32 *data
 
 		targid = ar_pci->mem;
 
-		TARGET_ACCESS_BEGIN(ar);
+		ath10k_pci_wake(ar);
 		*data = TARGET_READ(targid, address);
-		TARGET_ACCESS_END(ar);
+		ath10k_pci_sleep(ar);
 		return 0;
 	}
 }
@@ -315,9 +315,9 @@ static int ath10k_pci_diag_write_mem(struct ath10k *ar, u32 address, u8 *data,
 	 * to
 	 *    CE address space
 	 */
-	TARGET_ACCESS_BEGIN(ar);
+	ath10k_pci_wake(ar);
 	address = TARG_CPU_SPACE_TO_CE_SPACE(ar, ar_pci->mem, address);
-	TARGET_ACCESS_END(ar);
+	ath10k_pci_sleep(ar);
 
 	remaining_bytes = orig_nbytes;
 	ce_data = ce_data_base;
@@ -414,9 +414,9 @@ static int ath10k_pci_diag_write_access(struct ath10k *ar, u32 address,
 
 		targid = ar_pci->mem;
 
-		TARGET_ACCESS_BEGIN(ar);
+		ath10k_pci_wake(ar);
 		TARGET_WRITE(ar, targid, address, data);
-		TARGET_ACCESS_END(ar);
+		ath10k_pci_sleep(ar);
 
 		return 0;
 	}
@@ -1720,7 +1720,7 @@ static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 	void __iomem *targid = ar_pci->mem;
 	u32 fw_indicator_address, fw_indicator;
 
-	TARGET_ACCESS_BEGIN(ar);
+	ath10k_pci_wake(ar);
 
 	fw_indicator_address = ar_pci->fw_indicator_address;
 	fw_indicator = TARGET_READ(targid, fw_indicator_address);
@@ -1729,7 +1729,7 @@ static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 		/* ACK: clear Target-side pending event */
 		TARGET_WRITE(ar, targid, fw_indicator_address,
 			     fw_indicator & ~FW_IND_EVENT_PENDING_T(ar));
-		TARGET_ACCESS_END(ar);
+		ath10k_pci_sleep(ar);
 
 		if (ar_pci->started) {
 			ath10k_pci_hif_dump_area(ar);
@@ -1742,7 +1742,7 @@ static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 			ath10k_warn("early firmware event indicated\n");
 		}
 	} else {
-		TARGET_ACCESS_END(ar);
+		ath10k_pci_sleep(ar);
 	}
 }
 
