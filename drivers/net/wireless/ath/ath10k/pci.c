@@ -775,10 +775,9 @@ static void ath10k_pci_start_ce(struct ath10k *ar)
 static void ath10k_pci_stop_ce(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	struct hif_ce_completion_state *compl, *tmp;
-	struct hif_ce_pipe_info *pipe_info;
-	struct sk_buff *netbuf;
-	int i, pipe_num;
+	struct hif_ce_completion_state *compl;
+	struct sk_buff *skb;
+	int i;
 
 	ath10k_ce_disable_interrupts(ar);
 
@@ -788,10 +787,29 @@ static void ath10k_pci_stop_ce(struct ath10k *ar)
 	for (i = 0; i < CE_COUNT_T(ar); i++)
 		tasklet_kill(&ar_pci->pipe_info[i].intr);
 
-	/*
-	 * Free pending completions.
-	 */
+	/* Mark pending completions as aborted, so that upper layers free up
+	 * their associated resources */
 	spin_lock_bh(&ar_pci->compl_lock);
+	list_for_each_entry(compl, &ar_pci->compl_process, list) {
+		skb = (struct sk_buff *)compl->transfer_context;
+		ATH10K_SKB_CB(skb)->is_aborted = true;
+	}
+	spin_unlock_bh(&ar_pci->compl_lock);
+}
+
+static void ath10k_pci_cleanup_ce(struct ath10k *ar)
+{
+	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+	struct hif_ce_completion_state *compl, *tmp;
+	struct hif_ce_pipe_info *pipe_info;
+	struct sk_buff *netbuf;
+	int pipe_num;
+
+	/* Free pending completions. */
+	spin_lock_bh(&ar_pci->compl_lock);
+	if (!list_empty(&ar_pci->compl_process))
+		ath10k_warn("pending completions still present! possible memory leaks.\n");
+
 	list_for_each_entry_safe(compl, tmp, &ar_pci->compl_process, list) {
 		list_del(&compl->list);
 		netbuf = (struct sk_buff *)compl->transfer_context;
@@ -800,9 +818,7 @@ static void ath10k_pci_stop_ce(struct ath10k *ar)
 	}
 	spin_unlock_bh(&ar_pci->compl_lock);
 
-	/*
-	 * Free unused completions for each pipe.
-	 */
+	/* Free unused completions for each pipe. */
 	for (pipe_num = 0; pipe_num < ar_pci->ce_count; pipe_num++) {
 		pipe_info = &ar_pci->pipe_info[pipe_num];
 
@@ -1155,19 +1171,15 @@ static void ath10k_pci_hif_stop(struct ath10k *ar)
 {
 	ath10k_dbg(ATH10K_DBG_PCI, "%s\n", __func__);
 
-	/* sync shutdown */
 	ath10k_pci_stop_ce(ar);
+
+	/* At this point, asynchronous threads are stopped, the target should
+	 * not DMA nor interrupt. We process the leftovers and then free
+	 * everything else up. */
+
 	ath10k_pci_process_ce(ar);
-
-	/*
-	 * At this point, asynchronous threads are stopped,
-	 * The Target should not DMA nor interrupt, Host code may
-	 * not initiate anything more.  So we just need to clean
-	 * up Host-side state.
-	 */
-
+	ath10k_pci_cleanup_ce(ar);
 	ath10k_pci_buffer_cleanup(ar);
-
 	ath10k_pci_ce_deinit(ar);
 }
 
