@@ -1164,43 +1164,49 @@ static void ath10k_tx_h_qos_workaround(struct ieee80211_hw *hw,
 {
 	struct ieee80211_hdr *hdr = (void *)skb->data;
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+	struct ath10k_vif *arvif;
 	u8 *qos_ctl;
 
-	/*
-	 * FIXME: we don't know the AP mode behaviour yet
-	 *        this has been tested with STA mode so far
-	 *        for AP mode control->sta->wme should be used probably
-	 */
+	/* This is FW issue. It injects QoS Control to frames when WMM is
+	 * active (as far as FW is concerned). We either strip out _our_ QoS
+	 * Control so FW can append it on its own or we upgrade a Data frame to
+	 * a QoS Data frame */
 
-	if (!control->sta)
+	if (!ieee80211_is_data(hdr->frame_control))
 		return;
 
 	if (!info->control.vif)
 		return;
 
-	if (info->control.vif->type != NL80211_IFTYPE_STATION &&
-	    info->control.vif->type != NL80211_IFTYPE_ADHOC)
-		return;
+	arvif = ath10k_vif_to_arvif(info->control.vif);
 
-	if (!info->control.vif->bss_conf.qos)
-		return;
+	switch (arvif->vdev_type) {
+	case WMI_VDEV_TYPE_STA:
+	case WMI_VDEV_TYPE_IBSS:
+		if (!info->control.vif->bss_conf.qos)
+			return;
+		break;
+	case WMI_VDEV_TYPE_AP:
+		if (!control->sta)
+			return;
 
-	/* FW adds QoS Control even to data frames.. */
-	if (WARN_ON_ONCE(ieee80211_is_data(hdr->frame_control) &&
-			!ieee80211_is_data_qos(hdr->frame_control)))
+		if (!control->sta->wme)
+			return;
+		break;
+	default:
 		return;
+	}
 
-	if (!ieee80211_is_data_qos(hdr->frame_control))
-		return;
-
-	/*
-	 * FW append QoS Control on its own,
-	 * so we need to get rid of the one mac80211 is * generating
-	 */
-	qos_ctl = ieee80211_get_qos_ctl(hdr);
-	memmove(qos_ctl, qos_ctl + IEEE80211_QOS_CTL_LEN,
-		skb->len - (qos_ctl + IEEE80211_QOS_CTL_LEN - skb->data));
-	skb_trim(skb, skb->len - IEEE80211_QOS_CTL_LEN);
+	if (!ieee80211_is_data_qos(hdr->frame_control)) {
+		hdr->frame_control = __cpu_to_le16(
+				__le16_to_cpu(hdr->frame_control) |
+				IEEE80211_STYPE_QOS_DATA);
+	} else {
+		qos_ctl = ieee80211_get_qos_ctl(hdr);
+		memmove(qos_ctl, qos_ctl + IEEE80211_QOS_CTL_LEN,
+			skb->len - (qos_ctl + IEEE80211_QOS_CTL_LEN - skb->data));
+		skb_trim(skb, skb->len - IEEE80211_QOS_CTL_LEN);
+	}
 }
 
 static void ath10k_tx_h_update_wep_key(struct sk_buff *skb)
