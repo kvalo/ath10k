@@ -1123,6 +1123,7 @@ static void ath10k_pci_send_buffer_cleanup_on_pipe(struct hif_ce_pipe_info *pipe
 			 * Indicate the completion to higer layer to free
 			 * the buffer
 			 */
+			ATH10K_SKB_CB(netbuf)->is_aborted = true;
 			ar_pci->msg_callbacks_current.tx_completion_handler(
 							ar, netbuf, id);
 	}
