@@ -60,19 +60,19 @@ void ath10k_data_tx_completed(struct htt_struct *htt,
 		return;
 	}
 
-	ret = ath10k_skb_unmap(dev, txi->u.data.txfrag);
+	ret = ath10k_skb_unmap(dev, txi->txfrag);
 	if (ret)
 		ath10k_warn("txfrag unmap failed (%d)\n", ret);
 
-	ret = ath10k_skb_unmap(dev, txi->u.data.msdu);
+	ret = ath10k_skb_unmap(dev, txi->msdu);
 	if (ret)
 		ath10k_warn("data skb unmap failed (%d)\n", ret);
 
-	dev_kfree_skb_any(txi->u.data.txfrag);
+	dev_kfree_skb_any(txi->txfrag);
 
-	ath10k_report_offchan_tx(htt->ar, txi->u.data.msdu);
+	ath10k_report_offchan_tx(htt->ar, txi->msdu);
 
-	info = IEEE80211_SKB_CB(txi->u.data.msdu);
+	info = IEEE80211_SKB_CB(txi->msdu);
 	memset(&info->status, 0, sizeof(info->status));
 
 	switch (ev->status) {
@@ -81,19 +81,19 @@ void ath10k_data_tx_completed(struct htt_struct *htt,
 			info->flags |= IEEE80211_TX_STAT_ACK;
 		/* fall through */
 	case HTT_DATA_TX_STATUS_NO_ACK:
-		ieee80211_tx_status(htt->ar->hw, txi->u.data.msdu);
+		ieee80211_tx_status(htt->ar->hw, txi->msdu);
 		break;
 	case HTT_DATA_TX_STATUS_DISCARD:
 		/* fall through */
 	case HTT_DATA_TX_STATUS_POSTPONE:
 		/* fall through */
 	case HTT_DATA_TX_STATUS_DOWNLOAD_FAIL:
-		ieee80211_free_txskb(htt->ar->hw, txi->u.data.msdu);
+		ieee80211_free_txskb(htt->ar->hw, txi->msdu);
 		break;
 	}
 
 	txi->htt_tx_completed = true;
-	ath10k_htt_tx_info_unref(htt, txi, txi->u.data.txdesc);
+	ath10k_htt_tx_info_unref(htt, txi, txi->txdesc);
 }
 
 static u8 rx_legacy_rate_idx[] = {
@@ -279,7 +279,7 @@ void ath10k_mgmt_tx_completed(struct htt_struct *htt,
 	if (WARN_ON(!txi))
 		return;
 
-	msdu = txi->u.mgmt.msdu;
+	msdu = txi->msdu;
 
 	ret = ath10k_skb_unmap(dev, msdu);
 	if (ret)
@@ -305,7 +305,7 @@ void ath10k_mgmt_tx_completed(struct htt_struct *htt,
 	}
 
 	txi->htt_tx_completed = true;
-	ath10k_htt_tx_info_unref(htt, txi, txi->u.mgmt.txdesc);
+	ath10k_htt_tx_info_unref(htt, txi, txi->txdesc);
 }
 
 struct ath10k_peer *ath10k_peer_find(struct ath10k *ar, int vdev_id,

@@ -252,11 +252,11 @@ static void ath10k_htt_mgmt_tx_htc_complete(struct sk_buff *skb)
 		if (!txi->htt_tx_completed) {
 			txi->htt_tx_completed = true;
 
-			ret = ath10k_skb_unmap(dev, txi->u.mgmt.msdu);
+			ret = ath10k_skb_unmap(dev, txi->msdu);
 			if (ret)
 				ath10k_warn("mgmt skb unmap failed (%d)\n", ret);
 
-			ieee80211_free_txskb(htt->ar->hw, txi->u.mgmt.msdu);
+			ieee80211_free_txskb(htt->ar->hw, txi->msdu);
 		}
 	}
 
@@ -280,10 +280,10 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	len += sizeof(cmd->hdr);
 	len += sizeof(cmd->mgmt_tx);
 
-	txi->u.mgmt.txdesc = ath10k_htc_alloc_skb(len);
-	txi->u.mgmt.msdu = msdu;
+	txi->txdesc = ath10k_htc_alloc_skb(len);
+	txi->msdu = msdu;
 
-	if (!txi->u.mgmt.txdesc) {
+	if (!txi->txdesc) {
 		res = -ENOMEM;
 		goto err;
 	}
@@ -292,8 +292,8 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	if (res)
 		goto err;
 
-	skb_put(txi->u.mgmt.txdesc, len);
-	cmd = (struct htt_cmd *)txi->u.mgmt.txdesc->data;
+	skb_put(txi->txdesc, len);
+	cmd = (struct htt_cmd *)txi->txdesc->data;
 	cmd->hdr.msg_type         = HTT_H2T_MSG_TYPE_MGMT_TX;
 	cmd->mgmt_tx.msdu_paddr = __cpu_to_le32(ATH10K_SKB_CB(msdu)->paddr);
 	cmd->mgmt_tx.len        = __cpu_to_le32(msdu->len);
@@ -302,11 +302,11 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	memcpy(cmd->mgmt_tx.hdr, msdu->data,
 	       min((int)msdu->len, HTT_MGMT_FRM_HDR_DOWNLOAD_LEN));
 
-	skb_cb = ATH10K_SKB_CB(txi->u.mgmt.txdesc);
+	skb_cb = ATH10K_SKB_CB(txi->txdesc);
 	skb_cb->htc.complete = ath10k_htt_mgmt_tx_htc_complete;
 	skb_cb->htc.priv = txi;
 
-	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->u.mgmt.txdesc);
+	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->txdesc);
 	if (res)
 		goto err;
 
@@ -315,8 +315,8 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 err:
 	ath10k_skb_unmap(dev, msdu);
 
-	if (txi->u.mgmt.txdesc)
-		dev_kfree_skb_any(txi->u.mgmt.txdesc);
+	if (txi->txdesc)
+		dev_kfree_skb_any(txi->txdesc);
 
 	ath10k_htt_tx_info_free(htt, txi);
 	return res;
@@ -341,16 +341,16 @@ static void ath10k_htt_tx_htc_complete(struct sk_buff *skb)
 		if (!txi->htt_tx_completed) {
 			txi->htt_tx_completed = true;
 
-			ret = ath10k_skb_unmap(dev, txi->u.data.txfrag);
+			ret = ath10k_skb_unmap(dev, txi->txfrag);
 			if (ret)
 				ath10k_warn("txfrag unmap failed (%d)\n", ret);
 
-			ret = ath10k_skb_unmap(dev, txi->u.data.msdu);
+			ret = ath10k_skb_unmap(dev, txi->msdu);
 			if (ret)
 				ath10k_warn("data skb unmap failed (%d)\n", ret);
 
-			dev_kfree_skb_any(txi->u.data.txfrag);
-			ieee80211_free_txskb(htt->ar->hw, txi->u.data.msdu);
+			dev_kfree_skb_any(txi->txfrag);
+			ieee80211_free_txskb(htt->ar->hw, txi->msdu);
 		}
 	}
 
@@ -383,21 +383,21 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	desc_len = sizeof(cmd->hdr) + sizeof(cmd->data_tx) + prefetch_len;
 	frag_len = sizeof(*tx_frags) * 2;
 
-	txi->u.data.txdesc = ath10k_htc_alloc_skb(desc_len);
-	if (!txi->u.data.txdesc) {
+	txi->txdesc = ath10k_htc_alloc_skb(desc_len);
+	if (!txi->txdesc) {
 		res = -ENOMEM;
 		goto err;
 	}
 
-	txi->u.data.txfrag = dev_alloc_skb(frag_len);
-	if (!txi->u.data.txfrag) {
+	txi->txfrag = dev_alloc_skb(frag_len);
+	if (!txi->txfrag) {
 		res = -ENOMEM;
 		goto err;
 	}
 
-	txi->u.data.msdu = msdu;
+	txi->msdu = msdu;
 
-	if ((unsigned long)txi->u.data.txdesc->data & 0x3) {
+	if ((unsigned long)txi->txdesc->data & 0x3) {
 		ath10k_warn("htt alignment check failed. dropping packet.\n");
 		res = -EIO;
 		goto err;
@@ -408,29 +408,29 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 		goto err;
 
 	/* tx fragment list must be terminated with zero-entry */
-	skb_put(txi->u.data.txfrag, frag_len);
-	tx_frags = (struct htt_data_tx_desc_frag *)txi->u.data.txfrag->data;
+	skb_put(txi->txfrag, frag_len);
+	tx_frags = (struct htt_data_tx_desc_frag *)txi->txfrag->data;
 	tx_frags[0].paddr = __cpu_to_le32(ATH10K_SKB_CB(msdu)->paddr);
 	tx_frags[0].len   = __cpu_to_le32(msdu->len);
 	tx_frags[1].paddr = __cpu_to_le32(0);
 	tx_frags[1].len   = __cpu_to_le32(0);
 
-	res = ath10k_skb_map(dev, txi->u.data.txfrag);
+	res = ath10k_skb_map(dev, txi->txfrag);
 	if (res)
 		goto err;
 
 	ath10k_dbg(ATH10K_DBG_HTT, "txfrag 0x%llx msdu 0x%llx\n",
-		   (unsigned long long) ATH10K_SKB_CB(txi->u.data.txfrag)->paddr,
-		   (unsigned long long) ATH10K_SKB_CB(txi->u.data.msdu)->paddr);
+		   (unsigned long long) ATH10K_SKB_CB(txi->txfrag)->paddr,
+		   (unsigned long long) ATH10K_SKB_CB(txi->msdu)->paddr);
 	ath10k_dbg_dump(ATH10K_DBG_HTT, NULL, "txfrag: ",
-			txi->u.data.txfrag->data,
+			txi->txfrag->data,
 			frag_len);
 	ath10k_dbg_dump(ATH10K_DBG_HTT, NULL, "msdu: ",
-			txi->u.data.msdu->data,
-			txi->u.data.msdu->len);
+			txi->msdu->data,
+			txi->msdu->len);
 
-	skb_put(txi->u.data.txdesc, desc_len);
-	cmd = (struct htt_cmd *)txi->u.data.txdesc->data;
+	skb_put(txi->txdesc, desc_len);
+	cmd = (struct htt_cmd *)txi->txdesc->data;
 	memset(cmd, 0, desc_len);
 
 	tid = HTT_DATA_TX_EXT_TID_NON_QOS_MCAST_BCAST;
@@ -453,7 +453,7 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	flags1 |= SM((u16)vdev_id, HTT_DATA_TX_DESC_FLAGS1_VDEV_ID);
 	flags1 |= SM((u16)tid, HTT_DATA_TX_DESC_FLAGS1_EXT_TID);
 
-	frags_paddr = ATH10K_SKB_CB(txi->u.data.txfrag)->paddr;
+	frags_paddr = ATH10K_SKB_CB(txi->txfrag)->paddr;
 
 	cmd->hdr.msg_type        = HTT_H2T_MSG_TYPE_TX_FRM;
 	cmd->data_tx.flags0      = flags0;
@@ -465,22 +465,22 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 
 	memcpy(cmd->data_tx.prefetch, msdu->data, prefetch_len);
 
-	skb_cb = ATH10K_SKB_CB(txi->u.data.txdesc);
+	skb_cb = ATH10K_SKB_CB(txi->txdesc);
 	skb_cb->htc.complete = ath10k_htt_tx_htc_complete;
 	skb_cb->htc.priv = txi;
 
-	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->u.data.txdesc);
+	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->txdesc);
 	if (res)
 		goto err;
 
 	return 0;
 err:
-	if (txi->u.data.txfrag)
-		ath10k_skb_unmap(dev, txi->u.data.txfrag);
-	if (txi->u.data.txdesc)
-		dev_kfree_skb_any(txi->u.data.txdesc);
-	if (txi->u.data.txfrag)
-		dev_kfree_skb_any(txi->u.data.txfrag);
+	if (txi->txfrag)
+		ath10k_skb_unmap(dev, txi->txfrag);
+	if (txi->txdesc)
+		dev_kfree_skb_any(txi->txdesc);
+	if (txi->txfrag)
+		dev_kfree_skb_any(txi->txfrag);
 	ath10k_htt_tx_info_free(htt, txi);
 	ath10k_skb_unmap(dev, msdu);
 	return res;

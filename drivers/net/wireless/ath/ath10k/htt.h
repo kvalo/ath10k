@@ -1124,17 +1124,9 @@ struct htt_tx_info {
 	bool htc_tx_completed;
 	bool htt_tx_completed;
 
-	union {
-		struct {
-			struct sk_buff *txdesc;
-			struct sk_buff *txfrag;
-			struct sk_buff *msdu;
-		} data;
-		struct {
-			struct sk_buff *txdesc;
-			struct sk_buff *msdu;
-		} mgmt;
-	} u;
+	struct sk_buff *txdesc;
+	struct sk_buff *txfrag; /* not used for mgmt tx */
+	struct sk_buff *msdu;
 };
 
 struct htt_struct {
