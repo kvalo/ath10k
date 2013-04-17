@@ -264,7 +264,6 @@ static int ath10k_ce_completed_recv_next_nolock(struct ce_state *ce_state,
 	struct ce_ring_state *dest_ring = ce_state->dest_ring;
 	unsigned int nentries_mask = dest_ring->nentries_mask;
 	unsigned int sw_index = dest_ring->sw_index;
-	int ret;
 
 	struct ce_desc *base = dest_ring->base_addr_owner_space;
 	struct ce_desc *desc = CE_DEST_RING_TO_DESC(base, sw_index);
@@ -282,8 +281,7 @@ static int ath10k_ce_completed_recv_next_nolock(struct ce_state *ce_state,
 		 * corresponding descriptor has completed. We treat this
 		 * as a descriptor that is not yet done.
 		 */
-		ret = -EIO;
-		goto done;
+		return -EIO;
 	}
 
 	desc->nbytes = 0;
@@ -308,10 +306,8 @@ static int ath10k_ce_completed_recv_next_nolock(struct ce_state *ce_state,
 	/* Update sw_index */
 	sw_index = CE_RING_IDX_INCR(nentries_mask, sw_index);
 	dest_ring->sw_index = sw_index;
-	ret = 0;
 
-done:
-	return ret;
+	return 0;
 }
 
 int ath10k_ce_completed_recv_next(struct ce_state *ce_state,
