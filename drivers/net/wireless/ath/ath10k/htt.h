@@ -1310,9 +1310,8 @@ int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt);
 struct htt_tx_info *ath10k_htt_tx_info_alloc(struct htt_struct *htt);
 void ath10k_htt_tx_info_free(struct htt_struct *htt, struct htt_tx_info *pkt);
 void ath10k_htt_tx_info_unref(struct htt_struct *htt, struct htt_tx_info *pkt,
-		       struct sk_buff *skb);
+			      struct sk_buff *skb);
 struct htt_tx_info *ath10k_htt_tx_info_lookup(struct htt_struct *htt, u16 msdu_id);
-void htt_t2h_stats_handler(struct htt_struct *htt, u8 *stats_msg_buf);
 int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *);
 int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *);
 #endif
