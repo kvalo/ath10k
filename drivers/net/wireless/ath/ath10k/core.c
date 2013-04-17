@@ -68,11 +68,6 @@ static const struct ath10k_hw_params ath10k_hw_params_list[] = {
 	},
 };
 
-static void ath10k_target_failure(struct ath10k *ar, int status)
-{
-	ath10k_dbg(ATH10K_DBG_CORE, "%s\n", __func__);
-}
-
 static void ath10k_send_suspend_complete(struct ath10k *ar)
 {
 	ath10k_dbg(ATH10K_DBG_CORE, "%s\n", __func__);
@@ -565,7 +560,6 @@ int ath10k_core_register(struct ath10k *ar)
 		goto err;
 	}
 
-	htc_cb.target_failure = ath10k_target_failure;
 	htc_cb.target_send_suspend_complete = ath10k_send_suspend_complete;
 
 	ar->htc_handle = ath10k_htc_create(ar, &htc_cb);

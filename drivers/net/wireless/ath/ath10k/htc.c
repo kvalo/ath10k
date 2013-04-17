@@ -386,14 +386,6 @@ static void ath10k_htc_flush_endpoint_tx(struct htc_target *target,
 /* Receive */
 /***********/
 
-static void ath10k_htc_fw_event_handler(struct ath10k *ar)
-{
-	struct htc_target *target = ar->htc_handle;
-	struct htc_target_cb *htc_cb = &target->htc_cb;
-
-	htc_cb->target_failure(ar, -EINVAL);
-}
-
 static void ath10k_htc_process_credit_report(struct htc_target *target,
 					     const struct htc_credit_report *report,
 					     int len,
@@ -1012,7 +1004,6 @@ struct htc_target *ath10k_htc_create(struct ath10k *ar,
 	/* setup HIF layer callbacks */
 	htc_callbacks.rx_completion_handler = ath10k_htc_rx_completion_handler;
 	htc_callbacks.tx_completion_handler = ath10k_htc_tx_completion_handler;
-	htc_callbacks.fw_event_handler      = ath10k_htc_fw_event_handler;
 	target->ar = ar;
 
 	/* Get HIF default pipe for HTC message exchange */

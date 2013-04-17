@@ -73,7 +73,6 @@ enum htc_endpoint_id {
 };
 
 struct htc_target_cb {
-	void (*target_failure)(struct ath10k *ar, int status);
 	void (*target_send_suspend_complete)(struct ath10k *ar);
 };
 

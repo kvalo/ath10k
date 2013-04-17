@@ -1716,7 +1716,6 @@ void ath10k_pci_target_ps_control(struct ath10k *ar, bool sleep_ok,
 static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	struct ath10k_hif_cb *msg_callbacks = &ar_pci->msg_callbacks_current;
 	void __iomem *targid = ar_pci->mem;
 	u32 fw_indicator_address, fw_indicator;
 
@@ -1731,10 +1730,9 @@ static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 			     fw_indicator & ~FW_IND_EVENT_PENDING_T(ar));
 		ath10k_pci_sleep(ar);
 
-		if (ar_pci->started) {
+		if (ar_pci->started)
 			ath10k_pci_hif_dump_area(ar);
-			msg_callbacks->fw_event_handler(ar);
-		} else {
+		else {
 			/*
 			 * Probable Target failure before we're prepared
 			 * to handle it.  Generally unexpected.

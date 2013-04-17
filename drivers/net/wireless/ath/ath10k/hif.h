@@ -44,7 +44,6 @@ struct ath10k_hif_cb {
 	int (*rx_completion_handler)(struct ath10k *ar,
 				     struct sk_buff *wbuf,
 				     u8 pipe_id);
-	void (*fw_event_handler)(struct ath10k *ar);
 };
 
 struct ath10k_hif_ops {
