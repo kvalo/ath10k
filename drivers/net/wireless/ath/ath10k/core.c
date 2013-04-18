@@ -130,26 +130,19 @@ conn_fail:
 
 static int ath10k_init_configure_target(struct ath10k *ar)
 {
-	__le32 param_target;
 	u32 param_host;
 	int ret;
-	u32 host_addr;
 
 	/* tell target which HTC version it is used*/
-	param_target = __cpu_to_le32(HTC_PROTOCOL_VERSION);
-	host_addr = host_interest_item_address(ar->target_type,
-					       HI_ITEM(hi_app_host_interest));
-	ret = ath10k_bmi_write_memory(ar, host_addr, (u8 *)&param_target, 4);
+	param_host = HTC_PROTOCOL_VERSION;
+	ret = ath10k_bmi_write32(ar, hi_app_host_interest, param_host);
 	if (ret) {
 		ath10k_err("settings HTC version failed\n");
 		return ret;
 	}
 
 	/* set the firmware mode to STA/IBSS/AP */
-	host_addr = host_interest_item_address(ar->target_type,
-					       HI_ITEM(hi_option_flag));
-	ret = ath10k_bmi_read_memory(ar, host_addr, (u8 *)&param_target, 4);
-	param_host = __le32_to_cpu(param_target);
+	ret = ath10k_bmi_read32(ar, hi_option_flag, &param_host);
 	if (ret) {
 		ath10k_err("setting firmware mode (1/2) failed\n");
 		return ret;
@@ -168,30 +161,23 @@ static int ath10k_init_configure_target(struct ath10k *ar)
 	/* fwsubmode */
 	param_host |= (0 << HI_OPTION_FW_SUBMODE_SHIFT);
 
-	param_target = __cpu_to_le32(param_host);
-	host_addr = host_interest_item_address(ar->target_type,
-					       HI_ITEM(hi_option_flag));
-	ret = ath10k_bmi_write_memory(ar, host_addr, (u8 *)&param_target, 4);
+	ret = ath10k_bmi_write32(ar, hi_option_flag, param_host);
 	if (ret) {
 		ath10k_err("setting firmware mode (2/2) failed\n");
 		return ret;
 	}
 
-	param_target = __cpu_to_le32(0);
+	param_host = 0;
 	/* We do all byte-swapping on the host */
-	host_addr = host_interest_item_address(ar->target_type,
-					       HI_ITEM(hi_be));
-	ret = ath10k_bmi_write_memory(ar, host_addr, (u8 *)&param_target, 4);
+	ret = ath10k_bmi_write32(ar, hi_be, param_host);
 	if (ret) {
 		ath10k_err("setting host CPU BE mode failed\n");
 		return ret;
 	}
 
 	/* FW descriptor/Data swap flags */
-	param_target = __cpu_to_le32(0);
-	host_addr = host_interest_item_address(ar->target_type,
-					       HI_ITEM(hi_fw_swap));
-	ret = ath10k_bmi_write_memory(ar, host_addr, (u8 *)&param_target, 4);
+	param_host = 0;
+	ret = ath10k_bmi_write32(ar, hi_fw_swap, param_host);
 
 	if (ret) {
 		ath10k_err("setting FW data/desc swap flags failed\n");
@@ -211,6 +197,7 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 	u32 fw_entry_size;
 	u8 *temp_eeprom = NULL, *fw_buf = NULL;
 	u32 board_data_size;
+	u32 param_host;
 
 	switch (file) {
 	default:
@@ -258,10 +245,8 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 	fw_buf = (u8 *)fw_entry->data;
 
 	if (file == ATH10K_FILE_BOARD_DATA && fw_entry->data) {
-		__le32 param_target;
 		u32 board_ext_address;
 		int32_t board_ext_data_size;
-		u32 host_addr;
 
 		temp_eeprom = kmalloc(fw_entry_size, GFP_ATOMIC);
 		if (!temp_eeprom) {
@@ -283,10 +268,7 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 		}
 
 		/* Determine where in Target RAM to write Board Data */
-		host_addr = host_interest_item_address(ar->target_type,
-						       HI_ITEM(hi_board_ext_data));
-		ath10k_bmi_read_memory(ar, host_addr, (u8 *)&param_target, 4);
-		board_ext_address = __le32_to_cpu(param_target);
+		ath10k_bmi_read32(ar, hi_board_ext_data, &board_ext_address);
 
 		ath10k_dbg(ATH10K_DBG_BOOT,
 			   "ath10k: Board extended Data download addr: 0x%x\n",
@@ -298,8 +280,6 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 		 */
 		if (board_ext_address && (fw_entry_size == (board_data_size +
 						board_ext_data_size))) {
-			__le32 param_target;
-
 			status = ath10k_bmi_write_memory(ar, board_ext_address,
 							 (u8 *)(((unsigned long)temp_eeprom) +
 							 board_data_size),
@@ -313,10 +293,8 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 			/*
 			 * Record the fact that extended board Data IS initialized
 			 */
-			param_target = __cpu_to_le32((board_ext_data_size << 16) | 1);
-			host_addr = host_interest_item_address(ar->target_type,
-							       HI_ITEM(hi_board_ext_data_config));
-			ath10k_bmi_write_memory(ar, host_addr, (u8 *)&param_target, 4);
+			param_host = (board_ext_data_size << 16) | 1;
+			ath10k_bmi_write32(ar, hi_board_ext_data_config, param_host);
 
 			fw_entry_size = board_data_size;
 		}
@@ -348,17 +326,12 @@ exit_fw:
 
 static int ath10k_init_download_firmware(struct ath10k *ar)
 {
-	__le32 param_target;
 	u32 param_host, address = 0;
 	int status;
-	u32 host_addr;
 
 	/* Transfer Board Data from Target EEPROM to Target RAM */
 	/* Determine where in Target RAM to write Board Data */
-	host_addr = host_interest_item_address(ar->target_type,
-					       HI_ITEM(hi_board_data));
-	ath10k_bmi_read_memory(ar, host_addr, (u8 *)&param_target, 4);
-	address = __le32_to_cpu(param_target);
+	ath10k_bmi_read32(ar, hi_board_data, &address);
 
 	if (!address) {
 		ath10k_err("Target address not known!\n");
@@ -374,10 +347,8 @@ static int ath10k_init_download_firmware(struct ath10k *ar)
 	}
 
 	/* Record the fact that Board Data is initialized */
-	param_target = __cpu_to_le32(1);
-	host_addr = host_interest_item_address(ar->target_type,
-					       HI_ITEM(hi_board_data_initialized));
-	ath10k_bmi_write_memory(ar, host_addr, (u8 *)&param_target, 4);
+	param_host = 1;
+	ath10k_bmi_write32(ar, hi_board_data_initialized, param_host);
 
 	/* Transfer One Time Programmable data */
 	address = ar->hw_params.patch_load_addr;
@@ -405,24 +376,18 @@ static int ath10k_init_download_firmware(struct ath10k *ar)
 
 	if (uart_print) {
 		/* Configure GPIO AR9888 UART */
-		param_target = __cpu_to_le32(7);
-		host_addr = host_interest_item_address(ar->target_type,
-						       HI_ITEM(hi_dbg_uart_txpin));
-		ath10k_bmi_write_memory(ar, host_addr, (u8 *)&param_target, 4);
+		param_host = 7;
+		ath10k_bmi_write32(ar, hi_dbg_uart_txpin, param_host);
 
-		param_target = __cpu_to_le32(1);
-		host_addr = host_interest_item_address(ar->target_type,
-						       HI_ITEM(hi_serial_enable));
-		ath10k_bmi_write_memory(ar, host_addr, (u8 *)&param_target, 4);
+		param_host = 1;
+		ath10k_bmi_write32(ar, hi_serial_enable, param_host);
 	} else {
 		/*
 		 * Explicitly setting UART prints to zero as target turns it on
 		 * based on scratch registers.
 		 */
-		param_target = __cpu_to_le32(0);
-		host_addr = host_interest_item_address(ar->target_type,
-						       HI_ITEM(hi_serial_enable));
-		ath10k_bmi_write_memory(ar, host_addr, (u8 *)&param_target, 4);
+		param_host = 0;
+		ath10k_bmi_write32(ar, hi_serial_enable, param_host);
 	}
 
 	ath10k_dbg(ATH10K_DBG_CORE, "Firmware downloaded\n");
