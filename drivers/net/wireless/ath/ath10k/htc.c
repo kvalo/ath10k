@@ -281,7 +281,7 @@ static struct sk_buff *ath10k_htc_get_skb(struct htc_target *target,
 
 static void ath10k_htc_send_work(struct work_struct *work)
 {
-	struct htc_endpoint *ep = container_of((void *)work,
+	struct htc_endpoint *ep = container_of(work,
 					struct htc_endpoint, send_work);
 	struct htc_target *target = ep->target;
 	struct sk_buff *skb;
