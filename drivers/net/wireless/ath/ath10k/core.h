@@ -34,7 +34,6 @@
 #define SM(_v, _f) (((_v) << _f##_LSB) & _f##_MASK)
 #define WO(_f)      ((_f##_OFFSET) >> 2)
 
-#define MAX_SSID_LEN 32
 #define ATH10K_SCAN_ID 0
 #define WMI_READY_TIMEOUT (5 * HZ)
 #define ATH10K_FLUSH_TIMEOUT_HZ (5*HZ)
@@ -216,7 +215,7 @@ struct ath10k_vif {
 			u8 tim_bitmap[16];
 			u8 tim_len;
 			u32 ssid_len;
-			u8 ssid[MAX_SSID_LEN];
+			u8 ssid[IEEE80211_MAX_SSID_LEN];
 			bool hidden_ssid;
 			/* P2P_IE with NoA attribute for P2P_GO case */
 			u32 noa_len;
