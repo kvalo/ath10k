@@ -16,7 +16,7 @@
  */
 
 #include "core.h"
-#include "htc-priv.h"
+#include "hif.h"
 #include "debug.h"
 
 /********/
