@@ -339,7 +339,6 @@ static int ath10k_htc_tx_completion_handler(struct ath10k *ar,
 {
 	struct htc_target *target = ar->htc_handle;
 	struct htc_endpoint *ep = &target->endpoint[eid];
-	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 	bool stopping;
 
 	ath10k_htc_notify_tx_completion(ep, skb);
