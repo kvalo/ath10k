@@ -1232,10 +1232,12 @@ static void ath10k_tx_h_update_wep_key(struct sk_buff *skb)
 	ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
 					WMI_VDEV_PARAM_DEF_KEYID,
 					key->keyidx);
-	if (!ret)
-		arvif->def_wep_key_index = key->keyidx;
-	else
+	if (ret) {
 		ath10k_warn("could not update wep keyidx (%d)\n", ret);
+		return;
+	}
+
+	arvif->def_wep_key_index = key->keyidx;
 }
 
 static void ath10k_tx_h_add_p2p_noa_ie(struct ath10k *ar, struct sk_buff *skb)

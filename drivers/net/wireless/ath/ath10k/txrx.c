@@ -31,14 +31,16 @@ static void ath10k_report_offchan_tx(struct ath10k *ar, struct sk_buff *skb)
 	 * offchan_tx_completed for a different skb. Prevent this by using
 	 * offchan_tx_skb. */
 	spin_lock_bh(&ar->data_lock);
-	if (ar->offchan_tx_skb == skb) {
-		complete(&ar->offchan_tx_completed);
-		ar->offchan_tx_skb = NULL; /* just for sanity */
-
-		ath10k_dbg(ATH10K_DBG_HTT, "completed offchannel skb %p\n", skb);
+	if (ar->offchan_tx_skb != skb) {
+		ath10k_warn("completed old offchannel frame\n");
+		goto out;
 	}
-	else
-		ath10k_warn("completed late offchannel skb %p\n", skb);
+
+	complete(&ar->offchan_tx_completed);
+	ar->offchan_tx_skb = NULL; /* just for sanity */
+
+	ath10k_dbg(ATH10K_DBG_HTT, "completed offchannel skb %p\n", skb);
+out:
 	spin_unlock_bh(&ar->data_lock);
 }
 
