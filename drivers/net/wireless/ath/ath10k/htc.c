@@ -124,7 +124,7 @@ static void ath10k_htc_notify_tx_completion(struct ath10k_htc_ep *ep,
 	ep->ep_ops.ep_tx_complete(ep->ep_ops.context, skb);
 }
 
-/* assumes htc_tx_lock is held */
+/* assumes tx_lock is held */
 static bool ath10k_htc_ep_need_credit_update(struct ath10k_htc_ep *ep)
 {
 	if (!ep->tx_credit_flow_enabled)
@@ -147,13 +147,13 @@ static int ath10k_htc_prepare_tx_skb(struct ath10k_htc_ep *ep,
 	hdr->eid = ep->eid;
 	hdr->len = __cpu_to_le16(skb->len - sizeof(*hdr));
 
-	spin_lock_bh(&ep->htc->htc_tx_lock);
+	spin_lock_bh(&ep->htc->tx_lock);
 	hdr->seq_no = ep->seq_no++;
 
 	if (ath10k_htc_ep_need_credit_update(ep))
 		hdr->flags |= ATH10K_HTC_FLAG_NEED_CREDIT_UPDATE;
 
-	spin_unlock_bh(&ep->htc->htc_tx_lock);
+	spin_unlock_bh(&ep->htc->tx_lock);
 
 	return 0;
 }
@@ -188,9 +188,9 @@ static int ath10k_htc_issue_skb(struct ath10k_htc *htc,
 err:
 	ath10k_warn("HTC issue failed: %d\n", ret);
 
-	spin_lock_bh(&htc->htc_tx_lock);
+	spin_lock_bh(&htc->tx_lock);
 	ep->tx_credits += skb_cb->htc.credits_used;
-	spin_unlock_bh(&htc->htc_tx_lock);
+	spin_unlock_bh(&htc->tx_lock);
 
 	skb_cb->is_aborted = true;
 	ath10k_htc_notify_tx_completion(ep, skb);
@@ -198,7 +198,7 @@ err:
 	return ret;
 }
 
-/* assumes htc_tx_lock is held */
+/* assumes tx_lock is held */
 static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 						       struct ath10k_htc_ep *ep)
 {
@@ -255,7 +255,7 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 	return skb;
 }
 
-/* assumes htc_tx_lock is held */
+/* assumes tx_lock is held */
 static struct sk_buff *ath10k_htc_get_skb(struct ath10k_htc *htc,
 					  struct ath10k_htc_ep *ep,
 					  int resources)
@@ -293,14 +293,14 @@ static void ath10k_htc_send_work(struct work_struct *work)
 		if (ep->ul_is_polled)
 			ath10k_htc_send_complete_check(ep, 0);
 
-		spin_lock_bh(&htc->htc_tx_lock);
+		spin_lock_bh(&htc->tx_lock);
 
 		if (ep->tx_credit_flow_enabled)
 			skb = ath10k_htc_get_skb_credit_based(htc, ep);
 		else
 			skb = ath10k_htc_get_skb(htc, ep, tx_resources);
 
-		spin_unlock_bh(&htc->htc_tx_lock);
+		spin_unlock_bh(&htc->tx_lock);
 
 		if (!skb)
 			break; /* tx_queue empty or out of resources */
@@ -322,10 +322,10 @@ int ath10k_htc_send(struct ath10k_htc *htc,
 
 	skb_push(skb, sizeof(struct ath10k_htc_hdr));
 
-	spin_lock_bh(&htc->htc_tx_lock);
+	spin_lock_bh(&htc->tx_lock);
 	skb_queue_tail(&ep->tx_queue, skb);
 	ath10k_htc_recalc_queue(ep, 1);
-	spin_unlock_bh(&htc->htc_tx_lock);
+	spin_unlock_bh(&htc->tx_lock);
 
 	queue_work(htc->ar->workqueue, &ep->send_work);
 	return 0;
@@ -342,9 +342,9 @@ static int ath10k_htc_tx_completion_handler(struct ath10k *ar,
 	ath10k_htc_notify_tx_completion(ep, skb);
 	/* the skb now belongs to the completion handler */
 
-	spin_lock_bh(&htc->htc_tx_lock);
+	spin_lock_bh(&htc->tx_lock);
 	stopping = htc->stopping;
-	spin_unlock_bh(&htc->htc_tx_lock);
+	spin_unlock_bh(&htc->tx_lock);
 
 	if (!ep->tx_credit_flow_enabled && !stopping)
 		/*
@@ -365,7 +365,7 @@ static void ath10k_htc_flush_endpoint_tx(struct ath10k_htc *htc,
 	struct sk_buff *skb;
 	struct ath10k_skb_cb *skb_cb;
 
-	spin_lock_bh(&htc->htc_tx_lock);
+	spin_lock_bh(&htc->tx_lock);
 	for (;;) {
 		skb = skb_dequeue(&ep->tx_queue);
 		if (!skb)
@@ -375,7 +375,7 @@ static void ath10k_htc_flush_endpoint_tx(struct ath10k_htc *htc,
 		skb_cb->is_aborted = true;
 		ath10k_htc_notify_tx_completion(ep, skb);
 	}
-	spin_unlock_bh(&htc->htc_tx_lock);
+	spin_unlock_bh(&htc->tx_lock);
 
 	cancel_work_sync(&ep->send_work);
 }
@@ -399,7 +399,7 @@ static void ath10k_htc_process_credit_report(struct ath10k_htc *htc,
 
 	n_reports = len / sizeof(*report);
 
-	spin_lock_bh(&htc->htc_tx_lock);
+	spin_lock_bh(&htc->tx_lock);
 	for (i = 0; i < n_reports; i++, report++) {
 		if (report->eid >= ATH10K_HTC_EP_COUNT)
 			break;
@@ -415,7 +415,7 @@ static void ath10k_htc_process_credit_report(struct ath10k_htc *htc,
 
 		total_credits += report->credits;
 	}
-	spin_unlock_bh(&htc->htc_tx_lock);
+	spin_unlock_bh(&htc->tx_lock);
 
 	ath10k_dbg(ATH10K_DBG_HTC, "report indicated %d credits total\n",
 		   total_credits);
@@ -956,9 +956,9 @@ void ath10k_htc_stop(struct ath10k_htc *htc)
 	int i;
 	struct ath10k_htc_ep *ep;
 
-	spin_lock_bh(&htc->htc_tx_lock);
+	spin_lock_bh(&htc->tx_lock);
 	htc->stopping = true;
-	spin_unlock_bh(&htc->htc_tx_lock);
+	spin_unlock_bh(&htc->tx_lock);
 
 	for (i = ATH10K_HTC_EP_0; i < ATH10K_HTC_EP_COUNT; i++) {
 		ep = &htc->endpoint[i];
@@ -984,7 +984,7 @@ struct ath10k_htc *ath10k_htc_create(struct ath10k *ar,
 		return NULL;
 	}
 
-	spin_lock_init(&htc->htc_tx_lock);
+	spin_lock_init(&htc->tx_lock);
 
 	memcpy(&htc->htc_ops, htc_ops, sizeof(struct ath10k_htc_ops));
 
