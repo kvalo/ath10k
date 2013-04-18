@@ -411,13 +411,7 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	cmd = (struct htt_cmd *)txi->txdesc->data;
 	memset(cmd, 0, desc_len);
 
-	tid = HTT_DATA_TX_EXT_TID_NON_QOS_MCAST_BCAST;
-
-	if (ieee80211_is_data_qos(hdr->frame_control) &&
-	    is_unicast_ether_addr(ieee80211_get_DA(hdr))) {
-		u8 *qc = ieee80211_get_qos_ctl(hdr);
-		tid = qc[0] & IEEE80211_QOS_CTL_TID_MASK;
-	}
+	tid = ATH10K_SKB_CB(msdu)->htt.tid;
 
 	ath10k_dbg(ATH10K_DBG_HTT, "htt data tx using tid %hhu\n", tid);
 

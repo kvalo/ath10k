@@ -55,6 +55,7 @@ struct ath10k_skb_cb {
 
 	struct {
 		u8 vdev_id;
+		u8 tid;
 		bool is_offchan;
 		bool is_conf;
 	} __packed htt;
@@ -65,7 +66,7 @@ struct ath10k_skb_cb {
 		void *priv;
 	} __packed htc;
 
-	/* 10 bytes left on 64bit arch */
+	/* 9 bytes left on 64bit arch */
 } __packed;
 
 static inline struct ath10k_skb_cb *ATH10K_SKB_CB(struct sk_buff *skb)

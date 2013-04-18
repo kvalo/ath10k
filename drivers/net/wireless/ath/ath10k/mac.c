@@ -1472,9 +1472,11 @@ static void ath10k_tx(struct ieee80211_hw *hw,
 		      struct sk_buff *skb)
 {
 	struct ieee80211_tx_info *info = IEEE80211_SKB_CB(skb);
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)skb->data;
 	struct ath10k *ar = hw->priv;
 	struct ath10k_vif *arvif = NULL;
 	u32 vdev_id = 0;
+	u8 tid;
 
 	if (info->control.vif) {
 		arvif = ath10k_vif_to_arvif(info->control.vif);
@@ -1486,6 +1488,15 @@ static void ath10k_tx(struct ieee80211_hw *hw,
 	if (info->flags & IEEE80211_TX_CTL_NO_CCK_RATE)
 		ath10k_dbg(ATH10K_DBG_MAC, "IEEE80211_TX_CTL_NO_CCK_RATE\n");
 
+	/* we must calculate tid before we apply qos workaround
+	 * as we'd lose the qos control field */
+	tid = HTT_DATA_TX_EXT_TID_NON_QOS_MCAST_BCAST;
+	if (ieee80211_is_data_qos(hdr->frame_control) &&
+	    is_unicast_ether_addr(ieee80211_get_DA(hdr))) {
+		u8 *qc = ieee80211_get_qos_ctl(hdr);
+		tid = qc[0] & IEEE80211_QOS_CTL_TID_MASK;
+	}
+
 	ath10k_tx_h_qos_workaround(hw, control, skb);
 	ath10k_tx_h_update_wep_key(skb);
 	ath10k_tx_h_add_p2p_noa_ie(ar, skb);
@@ -1493,6 +1504,7 @@ static void ath10k_tx(struct ieee80211_hw *hw,
 
 	memset(ATH10K_SKB_CB(skb), 0, sizeof(*ATH10K_SKB_CB(skb)));
 	ATH10K_SKB_CB(skb)->htt.vdev_id = vdev_id;
+	ATH10K_SKB_CB(skb)->htt.tid = tid;
 
 	if (info->flags & IEEE80211_TX_CTL_TX_OFFCHAN) {
 		spin_lock_bh(&ar->scan.lock);
