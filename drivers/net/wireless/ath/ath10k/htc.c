@@ -610,8 +610,7 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 	/* skb is now owned by the rx completion handler */
 	skb = NULL;
 out:
-	if (skb != NULL)
-		kfree_skb(skb);
+	kfree_skb(skb);
 
 	return status;
 }
