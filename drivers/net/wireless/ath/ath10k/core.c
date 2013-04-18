@@ -656,6 +656,31 @@ void ath10k_core_unregister(struct ath10k *ar)
 }
 EXPORT_SYMBOL(ath10k_core_unregister);
 
+#if defined(CONFIG_PM_SLEEP)
+int ath10k_core_target_suspend(struct ath10k *ar) {
+	int ret;
+
+	ath10k_dbg(ATH10K_DBG_CORE, "%s: called", __func__);
+
+	ret = ath10k_wmi_pdev_suspend_target(ar);
+
+	return ret;
+}
+EXPORT_SYMBOL(ath10k_core_target_suspend);
+
+int ath10k_core_target_resume(struct ath10k *ar) {
+
+	int ret;
+
+	ath10k_dbg(ATH10K_DBG_CORE, "%s: called", __func__);
+
+	ret = ath10k_wmi_pdev_resume_target(ar);
+
+	return ret;
+}
+EXPORT_SYMBOL(ath10k_core_target_resume);
+#endif
+
 MODULE_AUTHOR("Qualcomm Atheros");
 MODULE_DESCRIPTION("Core module for AR9888 PCIe devices.");
 MODULE_LICENSE("Dual BSD/GPL");

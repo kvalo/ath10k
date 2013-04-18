@@ -1198,18 +1198,12 @@ int ath10k_wmi_pdev_suspend_target(struct ath10k *ar)
 	cmd = (void *)skb->data;
 	cmd->suspend_opt = WMI_PDEV_SUSPEND;
 
-	ath10k_dbg(ATH10K_DBG_WMI, "%s: called", __func__);
-
 	return ath10k_wmi_cmd_send(ar, skb, WMI_PDEV_SUSPEND_CMDID);
 }
-EXPORT_SYMBOL(ath10k_wmi_pdev_suspend_target);
-
 
 int ath10k_wmi_pdev_resume_target(struct ath10k *ar)
 {
 	struct sk_buff *skb;
-
-	ath10k_dbg(ATH10K_DBG_WMI, "%s: called", __func__);
 
 	skb = ath10k_wmi_alloc_skb(0);
 	if (skb == NULL) {
@@ -1219,7 +1213,6 @@ int ath10k_wmi_pdev_resume_target(struct ath10k *ar)
 
 	return ath10k_wmi_cmd_send(ar, skb, WMI_PDEV_RESUME_CMDID);
 }
-EXPORT_SYMBOL(ath10k_wmi_pdev_resume_target);
 #endif /* CONFIG_PM_SLEEP */
 
 int ath10k_wmi_pdev_set_param(struct ath10k *ar, enum wmi_pdev_param id,

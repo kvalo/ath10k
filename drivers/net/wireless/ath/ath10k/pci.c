@@ -2431,7 +2431,7 @@ static int ath10k_pci_suspend(struct device *device)
 	if (!ar_pci)
 		return -ENODEV;
 
-	if (!ath10k_wmi_pdev_suspend_target(ar)) {
+	if (!ath10k_core_target_suspend(ar)) {
 		left = wait_event_interruptible_timeout(ar->event_queue,
 					ar->is_target_paused == true,
 					1 * HZ);
@@ -2501,9 +2501,9 @@ static int ath10k_pci_resume(struct device *device)
 			pci_write_config_dword(pdev, 0x40, val & 0xffff00ff);
 	}
 
-	ret = ath10k_wmi_pdev_resume_target(ar);
+	ret = ath10k_core_target_resume(ar);
 	if (ret)
-		ath10k_warn("ath10k_wmi_pdev_resume_target: %d\n", ret);
+		ath10k_warn("target resume failed: %d\n", ret);
 
 	return ret;
 }

@@ -380,4 +380,7 @@ void ath10k_core_destroy(struct ath10k *ar);
 int ath10k_core_register(struct ath10k *ar);
 void ath10k_core_unregister(struct ath10k *ar);
 
+int ath10k_core_target_suspend(struct ath10k *ar);
+int ath10k_core_target_resume(struct ath10k *ar);
+
 #endif /* _CORE_H_ */
