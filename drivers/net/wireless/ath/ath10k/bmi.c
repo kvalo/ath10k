@@ -261,26 +261,25 @@ int ath10k_bmi_lz_stream_start(struct ath10k *ar, u32 address)
 int ath10k_bmi_fast_download(struct ath10k *ar,
 			     u32 address, const void *buffer, u32 length)
 {
+	u8 trailer[4] = {};
+	u32 head_len = rounddown(length, 4);
+	u32 trailer_len = length - head_len;
 	int ret;
-	u32 last_work = 0;
-	u32 last_work_offset = length & ~0x3;
-	u32 unaligned_bytes = length & 0x3;
 
 	ret = ath10k_bmi_lz_stream_start(ar, address);
 	if (ret)
 		return ret;
 
 	/* copy the last word into a zero padded buffer */
-	if (unaligned_bytes)
-		memcpy(&last_work, buffer + last_work_offset, unaligned_bytes);
+	if (trailer_len > 0)
+		memcpy(trailer, buffer + head_len, trailer_len);
 
-	ret = ath10k_bmi_lz_data(ar, buffer, last_work_offset);
-
+	ret = ath10k_bmi_lz_data(ar, buffer, head_len);
 	if (ret)
 		return ret;
 
-	if (unaligned_bytes)
-		ret = ath10k_bmi_lz_data(ar, &last_work, 4);
+	if (trailer_len > 0)
+		ret = ath10k_bmi_lz_data(ar, trailer, 4);
 
 	if (ret != 0)
 		return ret;
