@@ -50,7 +50,8 @@ void ath10k_wmi_flush_tx(struct ath10k *ar)
 	if (ret == 0)
 		ret = -ETIMEDOUT;
 
-	WARN(ret < 0, "%s failed %d\n", __func__, ret);
+	if (ret < 0)
+		ath10k_warn("wmi flush failed (%d)\n", ret);
 }
 
 int ath10k_wmi_wait_for_service_ready(struct ath10k *ar)
