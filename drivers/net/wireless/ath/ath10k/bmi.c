@@ -282,14 +282,14 @@ int ath10k_bmi_fast_download(struct ath10k *ar,
 	if (unaligned_bytes)
 		ret = ath10k_bmi_lz_data(ar, &last_work, 4);
 
-	if (ret == 0) {
-		/*
-		 * Close compressed stream and open a new (fake) one.
-		 * This serves mainly to flush Target caches.
-		 */
-		ret = ath10k_bmi_lz_stream_start(ar, 0x00);
-		if (ret)
-			return ret;
-	}
+	if (ret != 0)
+		return ret;
+
+	/*
+	 * Close compressed stream and open a new (fake) one.
+	 * This serves mainly to flush Target caches.
+	 */
+	ret = ath10k_bmi_lz_stream_start(ar, 0x00);
+
 	return ret;
 }
