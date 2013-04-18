@@ -2294,8 +2294,7 @@ static void ath10k_set_rts_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
 	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
 	u32 rts = ar_iter->ar->hw->wiphy->rts_threshold;
 
-	if (rts > ATH10K_RTS_MAX)
-		rts = ATH10K_RTS_MAX;
+	rts = min_t(u32, rts, ATH10K_RTS_MAX);
 
 	ar_iter->ret = ath10k_wmi_vdev_set_param(ar_iter->ar, arvif->vdev_id,
 						 WMI_VDEV_PARAM_RTS_THRESHOLD,
@@ -2331,10 +2330,9 @@ static void ath10k_set_frag_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
 	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
 	u32 frag = ar_iter->ar->hw->wiphy->frag_threshold;
 
-	if (frag > ATH10K_FRAGMT_THRESHOLD_MAX)
-		frag = ATH10K_FRAGMT_THRESHOLD_MAX;
-	else if (frag < ATH10K_FRAGMT_THRESHOLD_MIN)
-		frag = ATH10K_FRAGMT_THRESHOLD_MIN;
+	frag = clamp_t(u32, frag,
+		       ATH10K_FRAGMT_THRESHOLD_MIN,
+		       ATH10K_FRAGMT_THRESHOLD_MAX);
 
 	ar_iter->ret = ath10k_wmi_vdev_set_param(ar_iter->ar, arvif->vdev_id,
 						 WMI_VDEV_PARAM_FRAGMENTATION_THRESHOLD,
