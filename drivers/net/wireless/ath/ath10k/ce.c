@@ -82,7 +82,9 @@ static int ath10k_ce_send_nolock(struct ce_state *ce_state,
 	u32 desc_flags = 0;
 	int ret = 0;
 
-	WARN_ON(nbytes > ce_state->src_sz_max);
+	if (nbytes > ce_state->src_sz_max)
+		ath10k_warn("%s: send more we can (nbytes: %d, max: %d)\n",
+			    __func__, nbytes, ce_state->src_sz_max);
 
 	ath10k_pci_wake(ar);
 
