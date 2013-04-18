@@ -23,28 +23,14 @@
 #include "wmi.h"
 #include "mac.h"
 
-struct wmi_struct {
-	struct ath10k *ar;
-
-	enum htc_endpoint_id eid;
-	struct completion service_ready;
-	struct completion unified_ready;
-	atomic_t pending_tx_count;
-	wait_queue_head_t wq;
-
-	struct sk_buff_head wmi_event_list;
-	struct work_struct wmi_event_work;
-};
-
 void ath10k_wmi_flush_tx(struct ath10k *ar)
 {
-	struct wmi_struct *wmi = ar->modules.wmi;
 	int ret;
 
-	ret = wait_event_timeout(wmi->wq,
-				 atomic_read(&wmi->pending_tx_count) == 0,
+	ret = wait_event_timeout(ar->wmi.wq,
+				 atomic_read(&ar->wmi.pending_tx_count) == 0,
 				 5*HZ);
-	if (atomic_read(&wmi->pending_tx_count) == 0)
+	if (atomic_read(&ar->wmi.pending_tx_count) == 0)
 		return;
 
 	if (ret == 0)
@@ -56,18 +42,16 @@ void ath10k_wmi_flush_tx(struct ath10k *ar)
 
 int ath10k_wmi_wait_for_service_ready(struct ath10k *ar)
 {
-	struct wmi_struct *wmi = ar->modules.wmi;
 	int ret;
-	ret = wait_for_completion_timeout(&wmi->service_ready,
+	ret = wait_for_completion_timeout(&ar->wmi.service_ready,
 					  WMI_SERVICE_READY_TIMEOUT_HZ);
 	return ret;
 }
 
 int ath10k_wmi_wait_for_unified_ready(struct ath10k *ar)
 {
-	struct wmi_struct *wmi = ar->modules.wmi;
 	int ret;
-	ret = wait_for_completion_timeout(&wmi->unified_ready,
+	ret = wait_for_completion_timeout(&ar->wmi.unified_ready,
 					  WMI_UNIFIED_READY_TIMEOUT_HZ);
 	return ret;
 }
@@ -93,12 +77,12 @@ static struct sk_buff *ath10k_wmi_alloc_skb(u32 len)
 static void ath10k_wmi_htc_tx_complete(struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
-	struct wmi_struct *wmi = skb_cb->htc.priv;
+	struct ath10k *ar = skb_cb->htc.priv;
 
 	dev_kfree_skb(skb);
 
-	if (atomic_sub_return(1, &wmi->pending_tx_count) == 0)
-		wake_up(&wmi->wq);
+	if (atomic_sub_return(1, &ar->wmi.pending_tx_count) == 0)
+		wake_up(&ar->wmi.wq);
 }
 
 /* WMI command API */
@@ -106,7 +90,6 @@ static int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb,
 			       enum wmi_cmd_id cmd_id)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
-	struct wmi_struct *wmi = ar->modules.wmi;
 	struct wmi_cmd_hdr *cmd_hdr;
 	int status;
 
@@ -118,25 +101,25 @@ static int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb,
 	cmd_hdr = (struct wmi_cmd_hdr *)skb->data;
 	cmd_hdr->cmd_id = __cpu_to_le16(cmd_id);
 
-	if (atomic_add_return(1, &wmi->pending_tx_count) >
+	if (atomic_add_return(1, &ar->wmi.pending_tx_count) >
 	    WMI_MAX_PENDING_TX_COUNT) {
 		/* avoid using up memory when FW hangs */
-		atomic_dec(&wmi->pending_tx_count);
+		atomic_dec(&ar->wmi.pending_tx_count);
 		ath10k_warn("%s: too many tx packets pending\n", __func__);
 		return -EBUSY;
 	}
 
 	memset(skb_cb, 0, sizeof(*skb_cb));
 	skb_cb->htc.complete = ath10k_wmi_htc_tx_complete;
-	skb_cb->htc.priv = wmi;
+	skb_cb->htc.priv = ar;
 
 	trace_ath10k_wmi_cmd(cmd_id, skb->data, skb->len);
 
-	status = ath10k_htc_send(ar->htc_handle, wmi->eid, skb);
+	status = ath10k_htc_send(ar->htc_handle, ar->wmi.eid, skb);
 	if (status) {
 		dev_kfree_skb_any(skb);
-		atomic_dec(&wmi->pending_tx_count);
-		ath10k_warn("%s(): htc send failed (%d)\n", __func__, status);
+		atomic_dec(&ar->wmi.pending_tx_count);
+		ath10k_warn("%s(): htc_send failed (%d)\n", __func__, status);
 	}
 
 	return status;
@@ -842,7 +825,6 @@ static void ath10k_wmi_event_vdev_install_key_complete(struct ath10k *ar,
 static void ath10k_wmi_service_ready_event_rx(struct ath10k *ar, struct sk_buff *skb)
 {
 	struct ath_common *common = ath10k_common(ar);
-	struct wmi_struct *wmi = ar->modules.wmi;
 	struct wmi_service_ready_event *ev = (void *)skb->data;
 
 	if (skb->len < sizeof(*ev)) {
@@ -894,13 +876,12 @@ static void ath10k_wmi_service_ready_event_rx(struct ath10k *ar, struct sk_buff 
 		   __le32_to_cpu(ev->sys_cap_info),
 		   __le32_to_cpu(ev->num_mem_reqs));
 
-	complete(&wmi->service_ready);
+	complete(&ar->wmi.service_ready);
 }
 
 static int ath10k_wmi_ready_event_rx(struct ath10k *ar, struct sk_buff *skb)
 {
 	struct wmi_ready_event *ev = (void *)skb->data;
-	struct wmi_struct *wmi = ar->modules.wmi;
 
 	if (WARN_ON(skb->len < sizeof(*ev)))
 		return -EINVAL;
@@ -922,13 +903,12 @@ static int ath10k_wmi_ready_event_rx(struct ath10k *ar, struct sk_buff *skb)
 		   ev->mac_addr.addr,
 		   __le32_to_cpu(ev->status));
 
-	complete(&wmi->unified_ready);
+	complete(&ar->wmi.unified_ready);
 	return 0;
 }
 
-static void ath10k_wmi_event_process(struct wmi_struct *wmi, struct sk_buff *skb)
+static void ath10k_wmi_event_process(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct ath10k *ar = wmi->ar;
 	struct wmi_cmd_hdr *cmd_hdr;
 	u16 id;
 	u8 *event;
@@ -1056,22 +1036,22 @@ static void ath10k_wmi_event_process(struct wmi_struct *wmi, struct sk_buff *skb
 
 static void ath10k_wmi_event_work(struct work_struct *work)
 {
-	struct wmi_struct *wmi = container_of(work, struct wmi_struct,
-					      wmi_event_work);
+	struct ath10k *ar = container_of(work, struct ath10k,
+					 wmi.wmi_event_work);
 	struct sk_buff *skb;
 
 	for (;;) {
-		skb = skb_dequeue(&wmi->wmi_event_list);
+		skb = skb_dequeue(&ar->wmi.wmi_event_list);
 		if (!skb)
 			break;
 
-		ath10k_wmi_event_process(wmi, skb);
+		ath10k_wmi_event_process(ar, skb);
 	}
 }
 
 static void ath10k_wmi_process_rx(void *ptr, struct sk_buff *skb)
 {
-	struct wmi_struct *wmi = ptr;
+	struct ath10k *ar = ptr;
 	struct wmi_cmd_hdr *cmd_hdr = (struct wmi_cmd_hdr *)skb->data;
 	enum wmi_event_id event_id = __le16_to_cpu(cmd_hdr->cmd_id);
 
@@ -1084,58 +1064,47 @@ static void ath10k_wmi_process_rx(void *ptr, struct sk_buff *skb)
 	 * thus can't be defered to a worker thread */
 	switch (event_id) {
 	case WMI_HOST_SWBA_EVENTID:
-	case WMI_MGMT_RX_EVENTID:
-		ath10k_wmi_event_process(wmi, skb);
+		ath10k_wmi_event_process(ar, skb);
 		return;
 	default:
 		break;
 	}
 
-	skb_queue_tail(&wmi->wmi_event_list, skb);
-	queue_work(wmi->ar->workqueue, &wmi->wmi_event_work);
+	skb_queue_tail(&ar->wmi.wmi_event_list, skb);
+	queue_work(ar->workqueue, &ar->wmi.wmi_event_work);
 }
 
 /* WMI Initialization functions */
 int ath10k_wmi_attach(struct ath10k *ar)
 {
-	struct wmi_struct *wmi;
+	ar->wmi.ar = ar;
+	init_completion(&ar->wmi.service_ready);
+	init_completion(&ar->wmi.unified_ready);
+	init_waitqueue_head(&ar->wmi.wq);
 
-	wmi = kzalloc(sizeof(*wmi), GFP_KERNEL);
-	if (!wmi)
-		return -ENOMEM;
+	skb_queue_head_init(&ar->wmi.wmi_event_list);
+	INIT_WORK(&ar->wmi.wmi_event_work, ath10k_wmi_event_work);
 
-	wmi->ar = ar;
-	init_completion(&wmi->service_ready);
-	init_completion(&wmi->unified_ready);
-	init_waitqueue_head(&wmi->wq);
-
-	skb_queue_head_init(&wmi->wmi_event_list);
-	INIT_WORK(&wmi->wmi_event_work, ath10k_wmi_event_work);
-
-	ar->modules.wmi = wmi;
 	return 0;
 }
 
 void ath10k_wmi_detach(struct ath10k *ar)
 {
-	struct wmi_struct *wmi = ar->modules.wmi;
 	struct sk_buff *skb;
 
 	/* HTC should've drained the packets already */
-	if (WARN_ON(atomic_read(&wmi->pending_tx_count) > 0))
+	if (WARN_ON(atomic_read(&ar->wmi.pending_tx_count) > 0))
 		ath10k_warn("there are still pending packets\n");
 
-	cancel_work_sync(&wmi->wmi_event_work);
+	cancel_work_sync(&ar->wmi.wmi_event_work);
 
 	for (;;) {
-		skb = skb_dequeue(&wmi->wmi_event_list);
+		skb = skb_dequeue(&ar->wmi.wmi_event_list);
 		if (!skb)
 			break;
 
 		dev_kfree_skb_any(skb);
 	}
-
-	kfree(ar->modules.wmi);
 }
 
 int ath10k_wmi_connect_htc_service(struct ath10k *ar)
@@ -1143,13 +1112,12 @@ int ath10k_wmi_connect_htc_service(struct ath10k *ar)
 	int status;
 	struct htc_service_connect_req connect;
 	struct htc_service_connect_resp response;
-	struct wmi_struct *wmi = ar->modules.wmi;
 
 	memset(&connect, 0, sizeof(connect));
 	memset(&response, 0, sizeof(response));
 
 	/* these fields are the same for all service endpoints */
-	connect.ep_callbacks.context = wmi;
+	connect.ep_callbacks.context = ar;
 	connect.ep_callbacks.ep_rx_complete = ath10k_wmi_process_rx;
 
 	/* connect to control service */
@@ -1162,8 +1130,7 @@ int ath10k_wmi_connect_htc_service(struct ath10k *ar)
 		return status;
 	}
 
-	wmi->eid = response.ep_id;
-
+	ar->wmi.eid = response.ep_id;
 	return 0;
 }
 

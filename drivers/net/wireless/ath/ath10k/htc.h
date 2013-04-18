@@ -21,8 +21,9 @@
 #include <linux/kernel.h>
 #include <linux/list.h>
 #include <linux/bug.h>
-#include "core.h"
+#include <linux/skbuff.h>
 
+struct ath10k;
 
 #define MAKE_SERVICE_ID(group, index) \
 	(int)(((int)(group) << 8) | (int)(index))

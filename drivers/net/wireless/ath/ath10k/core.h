@@ -23,6 +23,7 @@
 #include <linux/types.h>
 #include <linux/pci.h>
 
+#include "htc.h"
 #include "hw.h"
 #include "targaddrs.h"
 #include "regtable.h"
@@ -112,6 +113,19 @@ static inline u32 host_interest_item_address(u32 target_type, u32 item_offset)
 
 struct ath10k_bmi {
 	bool done_sent;
+};
+
+struct ath10k_wmi {
+	struct ath10k *ar;
+
+	enum htc_endpoint_id eid;
+	struct completion service_ready;
+	struct completion unified_ready;
+	atomic_t pending_tx_count;
+	wait_queue_head_t wq;
+
+	struct sk_buff_head wmi_event_list;
+	struct work_struct wmi_event_work;
 };
 
 struct ath10k_peer_stat {
@@ -271,9 +285,7 @@ struct ath10k {
 		const struct ath10k_hif_ops *ops;
 	} hif;
 
-	struct {
-		void *wmi;
-	} modules;
+	struct ath10k_wmi wmi;
 
 #if defined(CONFIG_PM_SLEEP)
 	wait_queue_head_t event_queue;
