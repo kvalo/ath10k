@@ -442,6 +442,63 @@ static void ath10k_pci_wait_for_target_to_awake(struct ath10k *ar)
 		ath10k_warn("Unable to wakeup target\n");
 }
 
+void ath10k_pci_wake(struct ath10k *ar)
+{
+	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+	void __iomem *pci_addr = ar_pci->mem;
+	static int max_delay;
+	int tot_delay = 0;
+	int curr_delay = 5;
+
+	if (!ath10k_target_ps)
+		return;
+
+	if (atomic_read(&ar_pci->keep_awake_count) == 0) {
+		/* Force AWAKE */
+		iowrite32(PCIE_SOC_WAKE_V_MASK_T(ar),
+			  pci_addr + PCIE_LOCAL_BASE_ADDRESS_T(ar) + PCIE_SOC_WAKE_ADDRESS_T(ar));
+	}
+	atomic_inc(&ar_pci->keep_awake_count);
+
+	if (ar_pci->verified_awake)
+		return;
+
+	for (;;) {
+		if (ath10k_pci_target_is_awake(ar)) {
+			ar_pci->verified_awake = true;
+			break;
+		}
+
+		if (tot_delay > PCIE_WAKE_TIMEOUT)
+			ath10k_warn("keep_awake_count %d\n", atomic_read(&ar_pci->keep_awake_count));
+
+		udelay(curr_delay);
+		tot_delay += curr_delay;
+
+		if (curr_delay < 50)
+			curr_delay += 5;
+	}
+
+	if (tot_delay > max_delay)
+		max_delay = tot_delay;
+}
+
+void ath10k_pci_sleep(struct ath10k *ar)
+{
+	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+	void __iomem *pci_addr = ar_pci->mem;
+
+	if (!ath10k_target_ps)
+		return;
+
+	if (atomic_dec_and_test(&ar_pci->keep_awake_count)) {
+		/* Allow sleep */
+		ar_pci->verified_awake = false;
+		iowrite32(PCIE_SOC_WAKE_RESET_T(ar),
+			  pci_addr + PCIE_LOCAL_BASE_ADDRESS_T(ar) + PCIE_SOC_WAKE_ADDRESS_T(ar));
+	}
+}
+
 /*
  * FIXME: Handle OOM properly.
  */
@@ -1631,7 +1688,7 @@ static int ath10k_pci_probe_device(struct ath10k *ar)
 	else {
 		/* Force AWAKE forever */
 		ath10k_dbg(ATH10K_DBG_PCI, "on-chip power save disabled\n");
-		ath10k_pci_target_ps_control(ar, false, true);
+		ath10k_pci_wake(ar);
 	}
 
 	ath10k_pci_ce_init(ar);
@@ -1653,64 +1710,6 @@ static int ath10k_pci_probe_device(struct ath10k *ar)
 ce_deinit:
 	ath10k_pci_ce_deinit(ar);
 	return ret;
-}
-
-void ath10k_pci_target_ps_control(struct ath10k *ar, bool sleep_ok,
-				  bool wait_for_it)
-{
-	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	void __iomem *pci_addr = ar_pci->mem;
-	static int max_delay;
-
-	if (sleep_ok) {
-		if (atomic_dec_and_test(&ar_pci->keep_awake_count)) {
-			/* Allow sleep */
-			ar_pci->verified_awake = false;
-			iowrite32(PCIE_SOC_WAKE_RESET_T(ar),
-				  pci_addr + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-				  PCIE_SOC_WAKE_ADDRESS_T(ar));
-		}
-	} else {
-		if (atomic_read(&ar_pci->keep_awake_count) == 0) {
-			/* Force AWAKE */
-			iowrite32(PCIE_SOC_WAKE_V_MASK_T(ar),
-				  pci_addr + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-				  PCIE_SOC_WAKE_ADDRESS_T(ar));
-		}
-		atomic_inc(&ar_pci->keep_awake_count);
-
-		if (wait_for_it && !ar_pci->verified_awake) {
-			int tot_delay = 0;
-			int curr_delay = 5;
-
-			for (;;) {
-				if (ath10k_pci_target_is_awake(ar)) {
-					ar_pci->verified_awake = true;
-					break;
-				}
-
-				if (tot_delay > PCIE_WAKE_TIMEOUT) {
-					ath10k_warn
-					    ("keep_awake_count %d "
-					     "PCIE_SOC_WAKE_ADDRESS = %x\n",
-					     atomic_read(&ar_pci->
-							keep_awake_count),
-					     ioread32(pci_addr +
-					       PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-					       PCIE_SOC_WAKE_ADDRESS_T(ar)));
-				}
-
-				udelay(curr_delay);
-				tot_delay += curr_delay;
-
-				if (curr_delay < 50)
-					curr_delay += 5;
-			}
-
-			if (tot_delay > max_delay)
-				max_delay = tot_delay;
-		}
-	}
 }
 
 static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
