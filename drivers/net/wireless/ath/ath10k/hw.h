@@ -29,17 +29,17 @@
 /* AR9888 1.0 definitions */
 #define AR9888_HW_1_0_VERSION		0x4000002c
 #define AR9888_HW_1_0_FW_DIR		"ath10k/AR9888/hw1.0"
-#define AR9888_HW_1_0_FW_FILE		"athwlan_AR9888v1.bin"
+#define AR9888_HW_1_0_FW_FILE		"firmware.bin"
 #define AR9888_HW_1_0_OTP_FILE		"otp.bin"
-#define AR9888_HW_1_0_BOARD_DATA_FILE	"fakeBoardData_AR6004.bin"
+#define AR9888_HW_1_0_BOARD_DATA_FILE	"board.bin"
 #define AR9888_HW_1_0_PATCH_LOAD_ADDR	0x1234
 
 /* AR9888 2.0 definitions */
 #define AR9888_HW_2_0_VERSION		0x4100016c
 #define AR9888_HW_2_0_FW_DIR		"ath10k/AR9888/hw2.0"
-#define AR9888_HW_2_0_FW_FILE		"athwlan_AR9888v2.bin"
+#define AR9888_HW_2_0_FW_FILE		"firmware.bin"
 #define AR9888_HW_2_0_OTP_FILE		"otp.bin"
-#define AR9888_HW_2_0_BOARD_DATA_FILE	"fakeBoardData_AR9888v2.bin"
+#define AR9888_HW_2_0_BOARD_DATA_FILE	"board.bin"
 #define AR9888_HW_2_0_PATCH_LOAD_ADDR	0x1234
 
 #define TARGET_NUM_VDEV				16
