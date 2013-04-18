@@ -351,6 +351,10 @@ void ath10k_pci_target_ps_control(struct ath10k *ar,
 				  bool sleep_ok,
 				  bool wait_for_it);
 
+
+extern unsigned int ath10k_target_ps;
+
+
 static inline void ath10k_pci_wake(struct ath10k *ar)
 {
 	if (ath10k_target_ps)

@@ -21,8 +21,6 @@
 #include <linux/kernel.h>
 #include "core.h"
 
-extern unsigned int ath10k_target_ps;
-
 #define HIF_TYPE_AR9888  1
 
 /* FW dump area */
