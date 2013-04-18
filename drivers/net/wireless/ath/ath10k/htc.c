@@ -151,9 +151,10 @@ static int ath10k_htc_prepare_tx_skb(struct htc_endpoint *ep,
 
 	spin_lock_bh(&ep->target->htc_tx_lock);
 	hdr->seq_no = ep->seq_no++;
-	hdr->flags |= ath10k_htc_ep_need_credit_update(ep)
-			? HTC_FLAG_NEED_CREDIT_UPDATE
-			: 0;
+
+	if (ath10k_htc_ep_need_credit_update(ep))
+		hdr->flags |= HTC_FLAG_NEED_CREDIT_UPDATE;
+
 	spin_unlock_bh(&ep->target->htc_tx_lock);
 
 	return 0;
