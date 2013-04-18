@@ -325,7 +325,6 @@ struct ath10k {
 	struct wmi_pdev_set_wmm_params_arg wmm_params;
 	struct completion install_key_done;
 
-	struct mutex vdev_mtx;
 	struct completion vdev_setup_done;
 
 	bool hw_v1_workaround;

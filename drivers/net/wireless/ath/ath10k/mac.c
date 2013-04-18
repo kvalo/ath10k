@@ -390,7 +390,7 @@ static int ath10k_vdev_start(struct ath10k_vif *arvif)
 	};
 	int ret = 0;
 
-	mutex_lock(&ar->vdev_mtx);
+	lockdep_assert_held(&ar->conf_mutex);
 
 	INIT_COMPLETION(ar->vdev_setup_done);
 
@@ -407,17 +407,15 @@ static int ath10k_vdev_start(struct ath10k_vif *arvif)
 	ret = ath10k_wmi_vdev_start(ar, &arg);
 	if (ret) {
 		ath10k_warn("WMI vdev start failed: ret %d\n", ret);
-		goto unlock;
+		return ret;
 	}
 
 	ret = ath10k_vdev_setup_sync(ar);
 	if (ret) {
 		ath10k_warn("vdev setup failed %d\n", ret);
-		goto unlock;
+		return ret;
 	}
 
-unlock:
-	mutex_unlock(&ar->vdev_mtx);
 	return ret;
 }
 
@@ -426,24 +424,22 @@ static int ath10k_vdev_stop(struct ath10k_vif *arvif)
 	struct ath10k *ar = arvif->ar;
 	int ret;
 
-	mutex_lock(&ar->vdev_mtx);
+	lockdep_assert_held(&ar->conf_mutex);
 
 	INIT_COMPLETION(ar->vdev_setup_done);
 
 	ret = ath10k_wmi_vdev_stop(ar, arvif->vdev_id);
 	if (ret) {
 		ath10k_warn("WMI vdev stop failed: ret %d\n", ret);
-		goto unlock;
+		return ret;
 	}
 
 	ret = ath10k_vdev_setup_sync(ar);
 	if (ret) {
 		ath10k_warn("vdev setup failed %d\n", ret);
-		goto unlock;
+		return ret;
 	}
 
-unlock:
-	mutex_unlock(&ar->vdev_mtx);
 	return ret;
 }
 
@@ -469,7 +465,7 @@ static int ath10k_monitor_start(struct ath10k *ar, int vdev_id)
 	};
 	int ret = 0;
 
-	lockdep_assert_held(&ar->vdev_mtx);
+	lockdep_assert_held(&ar->conf_mutex);
 
 	ret = ath10k_wmi_vdev_start(ar, &arg);
 	if (ret) {
@@ -506,7 +502,7 @@ static int ath10k_monitor_stop(struct ath10k *ar)
 {
 	int ret = 0;
 
-	lockdep_assert_held(&ar->vdev_mtx);
+	lockdep_assert_held(&ar->conf_mutex);
 
 	/* For some reasons, ath10k_wmi_vdev_down() here couse
 	 * often ath10k_wmi_vdev_stop() to fail. Next we could
@@ -531,18 +527,17 @@ static int ath10k_monitor_create(struct ath10k *ar)
 {
 	int bit, ret = 0;
 
-	mutex_lock(&ar->vdev_mtx);
+	lockdep_assert_held(&ar->conf_mutex);
 
 	if (ar->monitor_present) {
 		ath10k_warn("Monitor mode already enabled\n");
-		goto unlock;
+		return 0;
 	}
 
 	bit = ffs(ar->free_vdev_map);
 	if (bit == 0) {
 		ath10k_warn("No free VDEV slots\n");
-		ret = -ENOMEM;
-		goto unlock;
+		return -ENOMEM;
 	}
 
 	ar->monitor_vdev_id = bit - 1;
@@ -560,15 +555,13 @@ static int ath10k_monitor_create(struct ath10k *ar)
 		   ar->monitor_vdev_id);
 
 	ar->monitor_present = true;
-	goto unlock;
+	return 0;
 
 vdev_fail:
 	/*
 	 * Restore the ID to the global map.
 	 */
 	ar->free_vdev_map |= 1 << (ar->monitor_vdev_id);
-unlock:
-	mutex_unlock(&ar->vdev_mtx);
 	return ret;
 }
 
@@ -576,15 +569,15 @@ static int ath10k_monitor_destroy(struct ath10k *ar)
 {
 	int ret = 0;
 
-	mutex_lock(&ar->vdev_mtx);
+	lockdep_assert_held(&ar->conf_mutex);
 
 	if (!ar->monitor_present)
-		goto unlock;
+		return 0;
 
 	ret = ath10k_wmi_vdev_delete(ar, ar->monitor_vdev_id);
 	if (ret) {
 		ath10k_warn("WMI vdev monitor delete failed: %d\n", ret);
-		goto unlock;
+		return ret;
 	}
 
 	ar->free_vdev_map |= 1 << (ar->monitor_vdev_id);
@@ -592,8 +585,6 @@ static int ath10k_monitor_destroy(struct ath10k *ar)
 
 	ath10k_dbg(ATH10K_DBG_MAC, "Monitor interface destroyed, vdev id: %d\n",
 		   ar->monitor_vdev_id);
-unlock:
-	mutex_unlock(&ar->vdev_mtx);
 	return ret;
 }
 
@@ -1593,14 +1584,11 @@ static int ath10k_add_interface(struct ieee80211_hw *hw,
 	arvif->ar = ar;
 	arvif->vif = vif;
 
-	mutex_lock(&ar->vdev_mtx);
 	if ((vif->type == NL80211_IFTYPE_MONITOR) && ar->monitor_present) {
 		ath10k_warn("Only one monitor interface allowed\n");
-		mutex_unlock(&ar->vdev_mtx);
 		ret = -EBUSY;
 		goto exit;
 	}
-	mutex_unlock(&ar->vdev_mtx);
 
 	bit = ffs(ar->free_vdev_map);
 	if (bit == 0) {
@@ -1682,11 +1670,8 @@ static int ath10k_add_interface(struct ieee80211_hw *hw,
 			ath10k_warn("Failed to set PSPOLL count: %d\n", ret);
 	}
 
-	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR) {
-		mutex_lock(&ar->vdev_mtx);
+	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR)
 		ar->monitor_present = true;
-		mutex_unlock(&ar->vdev_mtx);
-	}
 
 exit:
 	mutex_unlock(&ar->conf_mutex);
@@ -1718,11 +1703,8 @@ static void ath10k_remove_interface(struct ieee80211_hw *hw,
 	if (ret)
 		ath10k_warn("WMI vdev delete failed: %d\n", ret);
 
-	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR) {
-		mutex_lock(&ar->vdev_mtx);
+	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR)
 		ar->monitor_present = false;
-		mutex_unlock(&ar->vdev_mtx);
-	}
 
 	mutex_unlock(&ar->conf_mutex);
 }
@@ -1754,8 +1736,6 @@ static void ath10k_configure_filter(struct ieee80211_hw *hw,
 	*total_flags &= SUPPORTED_FILTERS;
 	ar->filter_flags = *total_flags;
 
-	mutex_lock(&ar->vdev_mtx);
-
 	if ((ar->filter_flags & FIF_PROMISC_IN_BSS) &&
 	    !ar->monitor_enabled) {
 		ret = ath10k_monitor_start(ar, ar->monitor_vdev_id);
@@ -1772,7 +1752,6 @@ static void ath10k_configure_filter(struct ieee80211_hw *hw,
 			ath10k_dbg(ATH10K_DBG_MAC, "Monitor mode stopped\n");
 	}
 
-	mutex_unlock(&ar->vdev_mtx);
 	mutex_unlock(&ar->conf_mutex);
 }
 
