@@ -240,7 +240,6 @@ struct ath10k_debug {
 	u32 wmi_service_bitmap[WMI_SERVICE_BM_SIZE];
 
 	struct completion event_stats_compl;
-	struct mutex debug_mtx;
 };
 
 struct ath10k {

@@ -61,7 +61,7 @@ static inline void ath10k_debug_read_target_stats(struct ath10k *ar,
 	int num_pdev_stats, num_vdev_stats, num_peer_stats;
 	int i;
 
-	mutex_lock(&ar->debug.debug_mtx);
+	mutex_lock(&ar->conf_mutex);
 
 	fw_stats = &ar->debug.target_stats;
 
@@ -149,7 +149,7 @@ static inline void ath10k_debug_read_target_stats(struct ath10k *ar,
 		}
 	}
 
-	mutex_unlock(&ar->debug.debug_mtx);
+	mutex_unlock(&ar->conf_mutex);
 	complete(&ar->debug.event_stats_compl);
 
 }

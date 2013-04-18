@@ -113,7 +113,7 @@ static ssize_t ath10k_read_wmi_services(struct file *file,
 	if (!buf)
 		return -ENOMEM;
 
-	mutex_lock(&ar->debug.debug_mtx);
+	mutex_lock(&ar->conf_mutex);
 
 	if (len > buf_len)
 		len = buf_len;
@@ -134,7 +134,7 @@ static ssize_t ath10k_read_wmi_services(struct file *file,
 
 	ret_cnt = simple_read_from_buffer(user_buf, count, ppos, buf, len);
 
-	mutex_unlock(&ar->debug.debug_mtx);
+	mutex_unlock(&ar->conf_mutex);
 
 	kfree(buf);
 	return ret_cnt;
@@ -176,7 +176,7 @@ static ssize_t ath10k_read_fw_stats(struct file *file, char __user *user_buf,
 		return -ETIMEDOUT;
 	}
 
-	mutex_lock(&ar->debug.debug_mtx);
+	mutex_lock(&ar->conf_mutex);
 
 	len += scnprintf(buf + len, buf_len - len, "\n");
 	len += scnprintf(buf + len, buf_len - len, "%30s\n",
@@ -306,7 +306,7 @@ static ssize_t ath10k_read_fw_stats(struct file *file, char __user *user_buf,
 
 	ret_cnt = simple_read_from_buffer(user_buf, count, ppos, buf, len);
 
-	mutex_unlock(&ar->debug.debug_mtx);
+	mutex_unlock(&ar->conf_mutex);
 
 	kfree(buf);
 	return ret_cnt;
@@ -328,7 +328,6 @@ int ath10k_debug_create(struct ath10k *ar)
 		return -ENOMEM;
 
 	init_completion(&ar->debug.event_stats_compl);
-	mutex_init(&ar->debug.debug_mtx);
 
 	debugfs_create_file("fw_stats", S_IRUSR, ar->debug.debugfs_phy, ar,
 			    &fops_fw_stats);
