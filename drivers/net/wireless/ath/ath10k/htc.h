@@ -111,6 +111,6 @@ int ath10k_htc_send(struct htc_target *target, enum htc_endpoint_id eid,
 		    struct sk_buff *packet);
 void ath10k_htc_stop(struct htc_target *target);
 void ath10k_htc_destroy(struct htc_target *target);
-struct sk_buff *ath10k_htc_alloc_skb(int extra_headroom);
+struct sk_buff *ath10k_htc_alloc_skb(int size);
 
 #endif
