@@ -666,26 +666,35 @@ void ath10k_ce_disable_interrupts(struct ath10k *ar)
 }
 
 void ath10k_ce_send_cb_register(struct ce_state *ce_state,
-				CE_SEND_CB fn_ptr,
+				void (*send_cb) (struct ce_state *ce_state,
+						 void *per_transfer_send_context,
+						 u32 buffer,
+						 unsigned int nbytes,
+						 unsigned int transfer_id),
 				int disable_interrupts)
 {
 	struct ath10k *ar = ce_state->ar;
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 
 	spin_lock_bh(&ar_pci->ce_lock);
-	ce_state->send_cb = fn_ptr;
+	ce_state->send_cb = send_cb;
 	ath10k_ce_per_engine_handler_adjust(ce_state, disable_interrupts);
 	spin_unlock_bh(&ar_pci->ce_lock);
 }
 
 void ath10k_ce_recv_cb_register(struct ce_state *ce_state,
-				CE_RECV_CB fn_ptr)
+				void (*recv_cb) (struct ce_state *ce_state,
+						 void *per_transfer_recv_context,
+						 u32 buffer,
+						 unsigned int nbytes,
+						 unsigned int transfer_id,
+						 unsigned int flags))
 {
 	struct ath10k *ar = ce_state->ar;
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 
 	spin_lock_bh(&ar_pci->ce_lock);
-	ce_state->recv_cb = fn_ptr;
+	ce_state->recv_cb = recv_cb;
 	ath10k_ce_per_engine_handler_adjust(ce_state, 0);
 	spin_unlock_bh(&ar_pci->ce_lock);
 }

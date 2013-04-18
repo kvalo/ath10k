@@ -38,23 +38,6 @@
 
 struct ce_state;
 
-/*
- * Pops 1 completed send buffer from Source ring.
- */
-typedef void (*CE_SEND_CB) (struct ce_state *ce_state,
-			    void *per_transfer_send_context,
-			    u32 buffer,
-			    unsigned int nbytes,
-			    unsigned int transfer_id);
-/*
- * Pops 1 completed send buffer from Destination ring.
- */
-typedef void (*CE_RECV_CB) (struct ce_state *ce_state,
-			    void *per_transfer_recv_context,
-			    u32 buffer,
-			    unsigned int nbytes,
-			    unsigned int transfer_id,
-			    unsigned int flags);
 
 /* Copy Engine operational state */
 enum ce_op_state {
@@ -144,8 +127,17 @@ struct ce_state {
 	u32 ctrl_addr;
 	enum ce_op_state state;
 
-	CE_SEND_CB send_cb;
-	CE_RECV_CB recv_cb;
+	void (*send_cb) (struct ce_state *ce_state,
+			 void *per_transfer_send_context,
+			 u32 buffer,
+			 unsigned int nbytes,
+			 unsigned int transfer_id);
+	void (*recv_cb) (struct ce_state *ce_state,
+			 void *per_transfer_recv_context,
+			 u32 buffer,
+			 unsigned int nbytes,
+			 unsigned int transfer_id,
+			 unsigned int flags);
 
 	unsigned int src_sz_max;
 	struct ce_ring_state *src_ring;
@@ -200,7 +192,11 @@ int ath10k_ce_send(struct ce_state *ce_state,
 		   unsigned int flags);
 
 void ath10k_ce_send_cb_register(struct ce_state *ce_state,
-				CE_SEND_CB fn_ptr,
+				void (*send_cb) (struct ce_state *ce_state,
+						 void *per_transfer_send_context,
+						 u32 buffer,
+						 unsigned int nbytes,
+						 unsigned int transfer_id),
 				int disable_interrupts);
 
 /* Append a simple buffer (address/length) to a sendlist. */
@@ -243,7 +239,12 @@ int ath10k_ce_recv_buf_enqueue(struct ce_state *ce_state,
 			       u32 buffer);
 
 void ath10k_ce_recv_cb_register(struct ce_state *ce_state,
-				CE_RECV_CB fn_ptr);
+				void (*recv_cb) (struct ce_state *ce_state,
+						 void *per_transfer_recv_context,
+						 u32 buffer,
+						 unsigned int nbytes,
+						 unsigned int transfer_id,
+						 unsigned int flags));
 
 /* recv flags */
 /* Data is byte-swapped */
