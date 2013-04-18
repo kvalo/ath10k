@@ -219,7 +219,7 @@ static inline struct sk_buff *ath10k_htt_rx_netbuf_pop(struct htt_struct *htt)
 	spin_lock_bh(&htt->rx_ring.lock);
 
 	if (ath10k_htt_rx_ring_elems(htt) == 0)
-		WARN_ON(1);
+		ath10k_warn("htt rx ring is empty!\n");
 
 	idx = htt->rx_ring.sw_rd_idx.msdu_payld;
 	msdu = htt->rx_ring.buf.netbufs_ring[idx];
@@ -243,7 +243,7 @@ static int ath10k_htt_rx_amsdu_pop(struct htt_struct *htt,
 	struct htt_rx_desc *rx_desc;
 
 	if (ath10k_htt_rx_ring_elems(htt) == 0)
-		WARN_ON(1);
+		ath10k_warn("htt rx ring is empty!\n");
 
 	if (htt->rx_confused) {
 		ath10k_warn("%s: htt failure: cannot rx\n", __func__);
@@ -277,11 +277,12 @@ static int ath10k_htt_rx_amsdu_pop(struct htt_struct *htt,
 		 * To prevent the case that we handle a stale Rx descriptor,
 		 * just assert for now until we have a way to recover.
 		 */
-		if (WARN_ON(!(__le32_to_cpu(rx_desc->attention.flags)
-				& RX_ATTENTION_FLAGS_MSDU_DONE))) {
+		if (!(__le32_to_cpu(rx_desc->attention.flags)
+				& RX_ATTENTION_FLAGS_MSDU_DONE)) {
 			if (*head_msdu == msdu)
 				*head_msdu = NULL;
 			dev_kfree_skb_any(msdu);
+			ath10k_err("htt rx stopped. cannot recover\n");
 			htt->rx_confused = true;
 			break;
 		}
@@ -405,7 +406,11 @@ int ath10k_htt_rx_attach(struct htt_struct *htt)
 	struct timer_list *timer = &htt->rx_ring.refill_retry_timer;
 
 	htt->rx_ring.size = ath10k_htt_rx_ring_size(htt);
-	WARN_ON(!is_power_of_2(htt->rx_ring.size));
+	if (!is_power_of_2(htt->rx_ring.size)) {
+		ath10k_warn("htt rx ring size is not power of 2\n");
+		return -EINVAL;
+	}
+
 	htt->rx_ring.size_mask = htt->rx_ring.size - 1;
 
 	/*
@@ -928,7 +933,8 @@ more:
 	/* remove crypto trailer; we use rx desc for mic failure */
 	trim += ath10k_htt_rx_crypto_tail_len(info.encrypt_type);
 
-	if (WARN_ON(trim > info.skb->len)) {
+	if (trim > info.skb->len) {
+		ath10k_warn("htt rx fragment: trailer longer than the frame itself? drop\n");
 		dev_kfree_skb_any(info.skb);
 		goto end;
 	}
@@ -953,7 +959,8 @@ void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb)
 	struct htt_resp *resp = (struct htt_resp *)skb->data;
 
 	/* confirm alignment */
-	WARN_ON_ONCE((((unsigned long)skb->data) & 0x3) != 0);
+	if ((((unsigned long)skb->data) & 0x3) != 0)
+		ath10k_warn("unaligned htt message, expect trouble\n");
 
 	ath10k_dbg(ATH10K_DBG_HTT, "HTT RX, msg_type: 0x%0X\n", resp->hdr.msg_type);
 	switch (resp->hdr.msg_type) {
