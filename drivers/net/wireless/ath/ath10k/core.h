@@ -287,10 +287,8 @@ struct ath10k {
 
 	struct ath10k_wmi wmi;
 
-#if defined(CONFIG_PM_SLEEP)
 	wait_queue_head_t event_queue;
 	bool is_target_paused;
-#endif
 
 	struct ath10k_bmi bmi;
 

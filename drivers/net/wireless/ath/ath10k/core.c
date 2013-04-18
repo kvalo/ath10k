@@ -656,7 +656,6 @@ void ath10k_core_unregister(struct ath10k *ar)
 }
 EXPORT_SYMBOL(ath10k_core_unregister);
 
-#if defined(CONFIG_PM_SLEEP)
 int ath10k_core_target_suspend(struct ath10k *ar) {
 	int ret;
 
@@ -679,7 +678,6 @@ int ath10k_core_target_resume(struct ath10k *ar) {
 	return ret;
 }
 EXPORT_SYMBOL(ath10k_core_target_resume);
-#endif
 
 MODULE_AUTHOR("Qualcomm Atheros");
 MODULE_DESCRIPTION("Core module for AR9888 PCIe devices.");

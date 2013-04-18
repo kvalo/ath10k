@@ -1185,7 +1185,6 @@ int ath10k_wmi_pdev_set_channel(struct ath10k *ar, const struct wmi_channel_arg 
 	return ath10k_wmi_cmd_send(ar, skb, WMI_PDEV_SET_CHANNEL_CMDID);
 }
 
-#if defined(CONFIG_PM_SLEEP)
 int ath10k_wmi_pdev_suspend_target(struct ath10k *ar)
 {
 	struct wmi_pdev_suspend_cmd *cmd;
@@ -1213,7 +1212,6 @@ int ath10k_wmi_pdev_resume_target(struct ath10k *ar)
 
 	return ath10k_wmi_cmd_send(ar, skb, WMI_PDEV_RESUME_CMDID);
 }
-#endif /* CONFIG_PM_SLEEP */
 
 int ath10k_wmi_pdev_set_param(struct ath10k *ar, enum wmi_pdev_param id,
 			      u32 value)
