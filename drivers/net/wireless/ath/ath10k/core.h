@@ -118,7 +118,7 @@ struct ath10k_bmi {
 struct ath10k_wmi {
 	struct ath10k *ar;
 
-	enum htc_endpoint_id eid;
+	enum ath10k_htc_ep_id eid;
 	struct completion service_ready;
 	struct completion unified_ready;
 	atomic_t pending_tx_count;
@@ -292,7 +292,7 @@ struct ath10k {
 
 	struct ath10k_bmi bmi;
 
-	struct htc_target *htc_handle;
+	struct ath10k_htc *htc;
 	struct htt_struct *htt;
 
 	struct ath10k_hw_params {

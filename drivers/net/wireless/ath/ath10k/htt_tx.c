@@ -182,7 +182,7 @@ int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt)
 
 	ATH10K_SKB_CB(skb)->htt.is_conf = true;
 
-	ret = ath10k_htc_send(htt->htc_target, htt->ep_id, skb);
+	ret = ath10k_htc_send(htt->htc, htt->eid, skb);
 	if (ret) {
 		dev_kfree_skb_any(skb);
 		return ret;
@@ -265,7 +265,7 @@ int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt)
 
 	ATH10K_SKB_CB(skb)->htt.is_conf = true;
 
-	ret = ath10k_htc_send(htt->htc_target, htt->ep_id, skb);
+	ret = ath10k_htc_send(htt->htc, htt->eid, skb);
 	if (ret) {
 		dev_kfree_skb_any(skb);
 		return ret;
@@ -316,7 +316,7 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	skb_cb = ATH10K_SKB_CB(txi->txdesc);
 	skb_cb->htt.msdu_id = txi->msdu_id;
 
-	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->txdesc);
+	res = ath10k_htc_send(htt->htc, htt->eid, txi->txdesc);
 	if (res)
 		goto err;
 
@@ -437,7 +437,7 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	skb_cb = ATH10K_SKB_CB(txi->txdesc);
 	skb_cb->htt.msdu_id = txi->msdu_id;
 
-	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->txdesc);
+	res = ath10k_htc_send(htt->htc, htt->eid, txi->txdesc);
 	if (res)
 		goto err;
 

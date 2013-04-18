@@ -1125,10 +1125,9 @@ struct htt_tx_info {
 
 struct htt_struct {
 	struct ath10k *ar;
+	struct ath10k_htc *htc;
 
-	void *htc_target;
-
-	enum htc_endpoint_id ep_id;
+	enum ath10k_htc_ep_id eid;
 
 	struct {
 		int max_throughput_mbps;
@@ -1281,7 +1280,7 @@ struct htt_rx_desc {
 
 /* FIXME: add htt_tx_desc_init() */
 
-struct htt_struct *ath10k_htt_attach(struct ath10k *ar, void *htc);
+struct htt_struct *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc);
 int ath10k_htt_attach_target(struct htt_struct *htt);
 void ath10k_htt_detach(struct htt_struct *htt);
 

@@ -25,59 +25,61 @@
 
 struct ath10k;
 
-#define MAKE_SERVICE_ID(group, index) \
-	(int)(((int)(group) << 8) | (int)(index))
+enum ath10k_htc_svc_gid {
+	ATH10K_HTC_SVC_GRP_RSVD = 0,
+	ATH10K_HTC_SVC_GRP_WMI = 1,
+	ATH10K_HTC_SVC_GRP_NMI = 2,
+	ATH10K_HTC_SVC_GRP_HTT = 3,
 
-enum htc_service_group_id {
-	HTC_SVC_GROUP_RSVD = 0,
-	HTC_SVC_GROUP_WMI = 1,
-	HTC_SVC_GROUP_NMI = 2,
-	HTC_SVC_GROUP_HTT = 3,
-
-	HTC_SVC_GROUP_TEST = 254,
-	HTC_SVC_GROUP_LAST = 255,
+	ATH10K_HTC_SVC_GRP_TEST = 254,
+	ATH10K_HTC_SVC_GRP_LAST = 255,
 };
 
-enum htc_service_id {
+#define SVC(group, idx) \
+	(int)(((int)(group) << 8) | (int)(idx))
+
+enum ath10k_htc_svc_id {
 	/* NOTE: service ID of 0x0000 is reserved and should never be used */
-	HTC_SVC_RESERVED	= 0x0000,
-	HTC_SVC_UNUSED		= HTC_SVC_RESERVED,
+	ATH10K_HTC_SVC_ID_RESERVED		= 0x0000,
+	ATH10K_HTC_SVC_ID_UNUSED		= ATH10K_HTC_SVC_ID_RESERVED,
 
-	HTC_SVC_RSVD_CTRL	= MAKE_SERVICE_ID(HTC_SVC_GROUP_RSVD, 1),
-	HTC_SVC_WMI_CONTROL	= MAKE_SERVICE_ID(HTC_SVC_GROUP_WMI, 0),
-	HTC_SVC_WMI_DATA_BE	= MAKE_SERVICE_ID(HTC_SVC_GROUP_WMI, 1),
-	HTC_SVC_WMI_DATA_BK	= MAKE_SERVICE_ID(HTC_SVC_GROUP_WMI, 2),
-	HTC_SVC_WMI_DATA_VI	= MAKE_SERVICE_ID(HTC_SVC_GROUP_WMI, 3),
-	HTC_SVC_WMI_DATA_VO	= MAKE_SERVICE_ID(HTC_SVC_GROUP_WMI, 4),
+	ATH10K_HTC_SVC_ID_RSVD_CTRL		= SVC(ATH10K_HTC_SVC_GRP_RSVD, 1),
+	ATH10K_HTC_SVC_ID_WMI_CONTROL		= SVC(ATH10K_HTC_SVC_GRP_WMI, 0),
+	ATH10K_HTC_SVC_ID_WMI_DATA_BE		= SVC(ATH10K_HTC_SVC_GRP_WMI, 1),
+	ATH10K_HTC_SVC_ID_WMI_DATA_BK		= SVC(ATH10K_HTC_SVC_GRP_WMI, 2),
+	ATH10K_HTC_SVC_ID_WMI_DATA_VI		= SVC(ATH10K_HTC_SVC_GRP_WMI, 3),
+	ATH10K_HTC_SVC_ID_WMI_DATA_VO		= SVC(ATH10K_HTC_SVC_GRP_WMI, 4),
 
-	HTC_SVC_NMI_CONTROL	= MAKE_SERVICE_ID(HTC_SVC_GROUP_NMI, 0),
-	HTC_SVC_NMI_DATA	= MAKE_SERVICE_ID(HTC_SVC_GROUP_NMI, 1),
+	ATH10K_HTC_SVC_ID_NMI_CONTROL		= SVC(ATH10K_HTC_SVC_GRP_NMI, 0),
+	ATH10K_HTC_SVC_ID_NMI_DATA		= SVC(ATH10K_HTC_SVC_GRP_NMI, 1),
 
-	HTC_SVC_HTT_DATA_MSG	= MAKE_SERVICE_ID(HTC_SVC_GROUP_HTT, 0),
+	ATH10K_HTC_SVC_ID_HTT_DATA_MSG		= SVC(ATH10K_HTC_SVC_GRP_HTT, 0),
 
 	/* raw stream service (i.e. flash, tcmd, calibration apps) */
-	HTC_SVC_TEST_RAW_STREAMS = MAKE_SERVICE_ID(HTC_SVC_GROUP_TEST, 0),
+	ATH10K_HTC_SVC_ID_TEST_RAW_STREAMS	= SVC(ATH10K_HTC_SVC_GRP_TEST, 0),
 };
 
-enum htc_endpoint_id {
-	HTC_EP_UNUSED = -1,
-	HTC_EP_0 = 0,
-	HTC_EP_1 = 1,
-	HTC_EP_2,
-	HTC_EP_3,
-	HTC_EP_4,
-	HTC_EP_5,
-	HTC_EP_6,
-	HTC_EP_7,
-	HTC_EP_8,
-	HTC_EP_COUNT,
+#undef SVC
+
+enum ath10k_htc_ep_id {
+	ATH10K_HTC_EP_UNUSED = -1,
+	ATH10K_HTC_EP_0 = 0,
+	ATH10K_HTC_EP_1 = 1,
+	ATH10K_HTC_EP_2,
+	ATH10K_HTC_EP_3,
+	ATH10K_HTC_EP_4,
+	ATH10K_HTC_EP_5,
+	ATH10K_HTC_EP_6,
+	ATH10K_HTC_EP_7,
+	ATH10K_HTC_EP_8,
+	ATH10K_HTC_EP_COUNT,
 };
 
-struct htc_target_cb {
+struct ath10k_htc_ops {
 	void (*target_send_suspend_complete)(struct ath10k *ar);
 };
 
-struct htc_ep_callbacks {
+struct ath10k_htc_ep_ops {
 	void *context;
 	void (*ep_tx_complete)(void *context, struct sk_buff *);
 	void (*ep_rx_complete)(void *context, struct sk_buff *);
@@ -86,32 +88,32 @@ struct htc_ep_callbacks {
 };
 
 /* service connection information */
-struct htc_service_connect_req {
+struct ath10k_htc_svc_conn_req {
 	u16 service_id;
-	struct htc_ep_callbacks ep_callbacks;
+	struct ath10k_htc_ep_ops ep_ops;
 	int max_send_queue_depth;
 };
 
 /* service connection response information */
-struct htc_service_connect_resp {
+struct ath10k_htc_svc_conn_resp {
 	u8 buffer_len;
 	u8 actual_len;
-	enum htc_endpoint_id ep_id;
+	enum ath10k_htc_ep_id eid;
 	unsigned int max_msg_len;
 	u8 connect_resp_code;
 };
 
-struct htc_target *ath10k_htc_create(struct ath10k *ar,
-				     struct htc_target_cb *htc_cb);
-int ath10k_htc_wait_target(struct htc_target *target);
-int ath10k_htc_start(struct htc_target *target);
-int ath10k_htc_connect_service(struct htc_target *target,
-			       struct htc_service_connect_req  *connect_req,
-			       struct htc_service_connect_resp *connect_resp);
-int ath10k_htc_send(struct htc_target *target, enum htc_endpoint_id eid,
+struct ath10k_htc *ath10k_htc_create(struct ath10k *ar,
+				     struct ath10k_htc_ops *htc_ops);
+int ath10k_htc_wait_target(struct ath10k_htc *htc);
+int ath10k_htc_start(struct ath10k_htc *htc);
+int ath10k_htc_connect_service(struct ath10k_htc *htc,
+			       struct ath10k_htc_svc_conn_req  *conn_req,
+			       struct ath10k_htc_svc_conn_resp *conn_resp);
+int ath10k_htc_send(struct ath10k_htc *htc, enum ath10k_htc_ep_id eid,
 		    struct sk_buff *packet);
-void ath10k_htc_stop(struct htc_target *target);
-void ath10k_htc_destroy(struct htc_target *target);
+void ath10k_htc_stop(struct ath10k_htc *htc);
+void ath10k_htc_destroy(struct ath10k_htc *htc);
 struct sk_buff *ath10k_htc_alloc_skb(int size);
 
 #endif

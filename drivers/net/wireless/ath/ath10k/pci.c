@@ -973,7 +973,7 @@ static int ath10k_pci_hif_map_service_to_pipe(struct ath10k *ar,
 	*dl_is_polled = 0;
 
 	switch (service_id) {
-	case HTC_SVC_HTT_DATA_MSG:
+	case ATH10K_HTC_SVC_ID_HTT_DATA_MSG:
 		/*
 		 * Host->target HTT gets its own pipe, so it can be polled
 		 * while other pipes are interrupt driven.
@@ -986,8 +986,8 @@ static int ath10k_pci_hif_map_service_to_pipe(struct ath10k *ar,
 		*dl_pipe = 1;
 		break;
 
-	case HTC_SVC_RSVD_CTRL:
-	case HTC_SVC_TEST_RAW_STREAMS:
+	case ATH10K_HTC_SVC_ID_RSVD_CTRL:
+	case ATH10K_HTC_SVC_ID_TEST_RAW_STREAMS:
 		/*
 		 * Note: HTC_RAW_STREAMS_SVC is currently unused, and
 		 * HTC_CTRL_RSVD_SVC could share the same pipe as the
@@ -999,12 +999,12 @@ static int ath10k_pci_hif_map_service_to_pipe(struct ath10k *ar,
 		*dl_pipe = 1;
 		break;
 
-	case HTC_SVC_WMI_DATA_BK:
-	case HTC_SVC_WMI_DATA_BE:
-	case HTC_SVC_WMI_DATA_VI:
-	case HTC_SVC_WMI_DATA_VO:
+	case ATH10K_HTC_SVC_ID_WMI_DATA_BK:
+	case ATH10K_HTC_SVC_ID_WMI_DATA_BE:
+	case ATH10K_HTC_SVC_ID_WMI_DATA_VI:
+	case ATH10K_HTC_SVC_ID_WMI_DATA_VO:
 
-	case HTC_SVC_WMI_CONTROL:
+	case ATH10K_HTC_SVC_ID_WMI_CONTROL:
 		*ul_pipe = 3;
 		*dl_pipe = 2;
 		break;
@@ -1028,7 +1028,7 @@ static void ath10k_pci_hif_get_default_pipe(struct ath10k *ar,
 {
 	int ul_is_polled, dl_is_polled;
 
-	(void)ath10k_pci_hif_map_service_to_pipe(ar, HTC_SVC_RSVD_CTRL,
+	(void)ath10k_pci_hif_map_service_to_pipe(ar, ATH10K_HTC_SVC_ID_RSVD_CTRL,
 			ul_pipe, dl_pipe, &ul_is_polled, &dl_is_polled);
 }
 
@@ -1367,82 +1367,82 @@ static void ath10k_pci_bmi_recv_data(struct ce_state *ce_state,
  */
 static struct service_to_pipe target_service_to_ce_map_wlan[] = {
 	{
-		 HTC_SVC_WMI_DATA_VO,
+		 ATH10K_HTC_SVC_ID_WMI_DATA_VO,
 		 PIPEDIR_OUT,		/* out = UL = host -> target */
 		 3,
 	},
 	{
-		 HTC_SVC_WMI_DATA_VO,
+		 ATH10K_HTC_SVC_ID_WMI_DATA_VO,
 		 PIPEDIR_IN,		/* in = DL = target -> host */
 		 2,
 	},
 	{
-		 HTC_SVC_WMI_DATA_BK,
+		 ATH10K_HTC_SVC_ID_WMI_DATA_BK,
 		 PIPEDIR_OUT,		/* out = UL = host -> target */
 		 3,
 	},
 	{
-		 HTC_SVC_WMI_DATA_BK,
+		 ATH10K_HTC_SVC_ID_WMI_DATA_BK,
 		 PIPEDIR_IN,		/* in = DL = target -> host */
 		 2,
 	},
 	{
-		 HTC_SVC_WMI_DATA_BE,
+		 ATH10K_HTC_SVC_ID_WMI_DATA_BE,
 		 PIPEDIR_OUT,		/* out = UL = host -> target */
 		 3,
 	},
 	{
-		 HTC_SVC_WMI_DATA_BE,
+		 ATH10K_HTC_SVC_ID_WMI_DATA_BE,
 		 PIPEDIR_IN,		/* in = DL = target -> host */
 		 2,
 	},
 	{
-		 HTC_SVC_WMI_DATA_VI,
+		 ATH10K_HTC_SVC_ID_WMI_DATA_VI,
 		 PIPEDIR_OUT,		/* out = UL = host -> target */
 		 3,
 	},
 	{
-		 HTC_SVC_WMI_DATA_VI,
+		 ATH10K_HTC_SVC_ID_WMI_DATA_VI,
 		 PIPEDIR_IN,		/* in = DL = target -> host */
 		 2,
 	},
 	{
-		 HTC_SVC_WMI_CONTROL,
+		 ATH10K_HTC_SVC_ID_WMI_CONTROL,
 		 PIPEDIR_OUT,		/* out = UL = host -> target */
 		 3,
 	},
 	{
-		 HTC_SVC_WMI_CONTROL,
+		 ATH10K_HTC_SVC_ID_WMI_CONTROL,
 		 PIPEDIR_IN,		/* in = DL = target -> host */
 		 2,
 	},
 	{
-		 HTC_SVC_RSVD_CTRL,
+		 ATH10K_HTC_SVC_ID_RSVD_CTRL,
 		 PIPEDIR_OUT,		/* out = UL = host -> target */
 		 0,		/* could be moved to 3 (share with WMI) */
 	},
 	{
-		 HTC_SVC_RSVD_CTRL,
+		 ATH10K_HTC_SVC_ID_RSVD_CTRL,
 		 PIPEDIR_IN,		/* in = DL = target -> host */
 		 1,
 	},
 	{
-		 HTC_SVC_TEST_RAW_STREAMS,	/* not currently used */
+		 ATH10K_HTC_SVC_ID_TEST_RAW_STREAMS,	/* not currently used */
 		 PIPEDIR_OUT,		/* out = UL = host -> target */
 		 0,
 	},
 	{
-		 HTC_SVC_TEST_RAW_STREAMS,	/* not currently used */
+		 ATH10K_HTC_SVC_ID_TEST_RAW_STREAMS,	/* not currently used */
 		 PIPEDIR_IN,		/* in = DL = target -> host */
 		 1,
 	},
 	{
-		 HTC_SVC_HTT_DATA_MSG,
+		 ATH10K_HTC_SVC_ID_HTT_DATA_MSG,
 		 PIPEDIR_OUT,		/* out = UL = host -> target */
 		 4,
 	},
 	{
-		 HTC_SVC_HTT_DATA_MSG,
+		 ATH10K_HTC_SVC_ID_HTT_DATA_MSG,
 		 PIPEDIR_IN,		/* in = DL = target -> host */
 		 1,
 	},

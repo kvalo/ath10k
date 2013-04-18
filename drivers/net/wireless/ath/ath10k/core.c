@@ -101,20 +101,13 @@ static int ath10k_check_fw_version(struct ath10k *ar)
 static int ath10k_init_connect_htc(struct ath10k *ar)
 {
 	int status;
-	struct htc_service_connect_req connect;
-
-	memset(&connect, 0, sizeof(connect));
-
-	connect.ep_callbacks.context = ar;
-	connect.ep_callbacks.ep_tx_complete = NULL;
-	connect.ep_callbacks.ep_rx_complete = NULL;
 
 	status = ath10k_wmi_connect_htc_service(ar);
 	if (status)
 		goto conn_fail;
 
 	/* Start HTC */
-	status = ath10k_htc_start(ar->htc_handle);
+	status = ath10k_htc_start(ar->htc);
 	if (status)
 		goto conn_fail;
 
@@ -130,7 +123,7 @@ static int ath10k_init_connect_htc(struct ath10k *ar)
 	return 0;
 
 timeout:
-	ath10k_htc_stop(ar->htc_handle);
+	ath10k_htc_stop(ar->htc);
 conn_fail:
 	return status;
 }
@@ -533,7 +526,7 @@ EXPORT_SYMBOL(ath10k_core_destroy);
 
 int ath10k_core_register(struct ath10k *ar)
 {
-	struct htc_target_cb htc_cb;
+	struct ath10k_htc_ops htc_ops;
 	struct bmi_target_info target_info;
 	int status;
 
@@ -560,10 +553,10 @@ int ath10k_core_register(struct ath10k *ar)
 		goto err;
 	}
 
-	htc_cb.target_send_suspend_complete = ath10k_send_suspend_complete;
+	htc_ops.target_send_suspend_complete = ath10k_send_suspend_complete;
 
-	ar->htc_handle = ath10k_htc_create(ar, &htc_cb);
-	if (ar->htc_handle == NULL) {
+	ar->htc = ath10k_htc_create(ar, &htc_ops);
+	if (ar->htc == NULL) {
 		status = -ENOMEM;
 		goto err;
 	}
@@ -578,11 +571,11 @@ int ath10k_core_register(struct ath10k *ar)
 		goto err_htc_destroy;
 	}
 
-	status = ath10k_htc_wait_target(ar->htc_handle);
+	status = ath10k_htc_wait_target(ar->htc);
 	if (status)
 		goto err_wmi_detach;
 
-	ar->htt = ath10k_htt_attach(ar, ar->htc_handle);
+	ar->htt = ath10k_htt_attach(ar, ar->htc);
 	if (!ar->htt) {
 		status = -ENOMEM;
 		goto err_wmi_detach;
@@ -624,13 +617,13 @@ int ath10k_core_register(struct ath10k *ar)
 err_unregister_mac:
 	ath10k_mac_unregister(ar);
 err_disconnect_htc:
-	ath10k_htc_stop(ar->htc_handle);
+	ath10k_htc_stop(ar->htc);
 err_htt_detach:
 	ath10k_htt_detach(ar->htt);
 err_wmi_detach:
 	ath10k_wmi_detach(ar);
 err_htc_destroy:
-	ath10k_htc_destroy(ar->htc_handle);
+	ath10k_htc_destroy(ar->htc);
 err:
 	return status;
 }
@@ -645,15 +638,15 @@ void ath10k_core_unregister(struct ath10k *ar)
 	 */
 	ath10k_mac_unregister(ar);
 
-	if (!WARN_ON(!ar->htc_handle))
-		ath10k_htc_stop(ar->htc_handle);
+	if (!WARN_ON(!ar->htc))
+		ath10k_htc_stop(ar->htc);
 
 	/* FIXME: we may need to free up htt tx desc here too */
 	ath10k_htt_detach(ar->htt);
 
 	ath10k_wmi_detach(ar);
 
-	ath10k_htc_destroy(ar->htc_handle);
+	ath10k_htc_destroy(ar->htc);
 }
 EXPORT_SYMBOL(ath10k_core_unregister);
 

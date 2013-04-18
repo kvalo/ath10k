@@ -35,39 +35,39 @@ static void ath10k_htt_wake_queue(void *context)
 
 static int ath10k_htt_htc_attach(struct htt_struct *htt)
 {
-	struct htc_service_connect_req connect;
-	struct htc_service_connect_resp response;
+	struct ath10k_htc_svc_conn_req conn_req;
+	struct ath10k_htc_svc_conn_resp conn_resp;
 	int status;
 
-	memset(&connect, 0, sizeof(connect));
-	memset(&response, 0, sizeof(response));
+	memset(&conn_req, 0, sizeof(conn_req));
+	memset(&conn_resp, 0, sizeof(conn_resp));
 
-	connect.ep_callbacks.context = htt;
-	connect.ep_callbacks.ep_tx_complete = ath10k_htt_htc_tx_complete;
-	connect.ep_callbacks.ep_rx_complete = ath10k_htt_t2h_msg_handler;
-	connect.ep_callbacks.stop_queue = ath10k_htt_stop_queue;
-	connect.ep_callbacks.wake_queue = ath10k_htt_wake_queue;
+	conn_req.ep_ops.context = htt;
+	conn_req.ep_ops.ep_tx_complete = ath10k_htt_htc_tx_complete;
+	conn_req.ep_ops.ep_rx_complete = ath10k_htt_t2h_msg_handler;
+	conn_req.ep_ops.stop_queue = ath10k_htt_stop_queue;
+	conn_req.ep_ops.wake_queue = ath10k_htt_wake_queue;
 
 	/*
 	 * Specify how deep to let a queue get before ath10k_htc_send will
 	 * call the ep_send_full function due to excessive send queue depth.
 	 */
-	connect.max_send_queue_depth = HTT_MAX_SEND_QUEUE_DEPTH;
+	conn_req.max_send_queue_depth = HTT_MAX_SEND_QUEUE_DEPTH;
 
 	/* connect to control service */
-	connect.service_id = HTC_SVC_HTT_DATA_MSG;
+	conn_req.service_id = ATH10K_HTC_SVC_ID_HTT_DATA_MSG;
 
-	status = ath10k_htc_connect_service(htt->htc_target, &connect, &response);
+	status = ath10k_htc_connect_service(htt->htc, &conn_req, &conn_resp);
 
 	if (status)
 		return status;
 
-	htt->ep_id = response.ep_id;
+	htt->eid = conn_resp.eid;
 
 	return 0;
 }
 
-struct htt_struct *ath10k_htt_attach(struct ath10k *ar, void *htc_target)
+struct htt_struct *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc)
 {
 	struct htt_struct *htt;
 
@@ -76,7 +76,7 @@ struct htt_struct *ath10k_htt_attach(struct ath10k *ar, void *htc_target)
 		goto fail1;
 
 	htt->ar = ar;
-	htt->htc_target = htc_target;
+	htt->htc = htc;
 	htt->cfg.max_throughput_mbps = 800;
 
 	/*

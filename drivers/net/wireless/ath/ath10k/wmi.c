@@ -112,7 +112,7 @@ static int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb,
 
 	trace_ath10k_wmi_cmd(cmd_id, skb->data, skb->len);
 
-	status = ath10k_htc_send(ar->htc_handle, ar->wmi.eid, skb);
+	status = ath10k_htc_send(ar->htc, ar->wmi.eid, skb);
 	if (status) {
 		dev_kfree_skb_any(skb);
 		atomic_dec(&ar->wmi.pending_tx_count);
@@ -1107,28 +1107,28 @@ void ath10k_wmi_detach(struct ath10k *ar)
 int ath10k_wmi_connect_htc_service(struct ath10k *ar)
 {
 	int status;
-	struct htc_service_connect_req connect;
-	struct htc_service_connect_resp response;
+	struct ath10k_htc_svc_conn_req conn_req;
+	struct ath10k_htc_svc_conn_resp conn_resp;
 
-	memset(&connect, 0, sizeof(connect));
-	memset(&response, 0, sizeof(response));
+	memset(&conn_req, 0, sizeof(conn_req));
+	memset(&conn_resp, 0, sizeof(conn_resp));
 
 	/* these fields are the same for all service endpoints */
-	connect.ep_callbacks.context = ar;
-	connect.ep_callbacks.ep_tx_complete = ath10k_wmi_htc_tx_complete;
-	connect.ep_callbacks.ep_rx_complete = ath10k_wmi_process_rx;
+	conn_req.ep_ops.context = ar;
+	conn_req.ep_ops.ep_tx_complete = ath10k_wmi_htc_tx_complete;
+	conn_req.ep_ops.ep_rx_complete = ath10k_wmi_process_rx;
 
 	/* connect to control service */
-	connect.service_id = HTC_SVC_WMI_CONTROL;
+	conn_req.service_id = ATH10K_HTC_SVC_ID_WMI_CONTROL;
 
-	status = ath10k_htc_connect_service(ar->htc_handle, &connect, &response);
+	status = ath10k_htc_connect_service(ar->htc, &conn_req, &conn_resp);
 	if (status) {
 		ath10k_warn("failed to connect to WMI CONTROL"
 			    " service status: %d\n", status);
 		return status;
 	}
 
-	ar->wmi.eid = response.ep_id;
+	ar->wmi.eid = conn_resp.eid;
 	return 0;
 }
 

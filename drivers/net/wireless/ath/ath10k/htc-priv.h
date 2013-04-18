@@ -44,19 +44,19 @@
  * 4-byte aligned.
  */
 
-enum htc_tx_flags {
-	HTC_FLAG_NEED_CREDIT_UPDATE = 0x01,
-	HTC_FLAG_SEND_BUNDLE        = 0x02
+enum ath10k_htc_tx_flags {
+	ATH10K_HTC_FLAG_NEED_CREDIT_UPDATE = 0x01,
+	ATH10K_HTC_FLAG_SEND_BUNDLE        = 0x02
 };
 
-enum htc_rx_flags {
-	HTC_FLAG_TRAILER_PRESENT = 0x02,
-	HTC_FLAG_BUNDLE_MASK     = 0xF0
+enum ath10k_htc_rx_flags {
+	ATH10K_HTC_FLAG_TRAILER_PRESENT = 0x02,
+	ATH10K_HTC_FLAG_BUNDLE_MASK     = 0xF0
 };
 
-struct htc_hdr {
-	u8 eid; /* @enum htc_endpoint_id */
-	u8 flags; /* @enum htc_tx_flags, htc_rx_flags */
+struct ath10k_htc_hdr {
+	u8 eid; /* @enum ath10k_htc_ep_id */
+	u8 flags; /* @enum ath10k_htc_tx_flags, ath10k_htc_rx_flags */
 	__le16 len;
 	union {
 		u8 trailer_len; /* for rx */
@@ -70,82 +70,79 @@ struct htc_hdr {
 	u8 pad1;
 } __packed __aligned(4);
 
-#define HTC_MAX_LEN 4096
-#define HTC_MAX_CTRL_MSG_LEN 256
-
-enum htc_msg_id {
-	HTC_MSG_READY_ID                = 1,
-	HTC_MSG_CONNECT_SERVICE_ID      = 2,
-	HTC_MSG_CONNECT_SERVICE_RESP_ID = 3,
-	HTC_MSG_SETUP_COMPLETE_ID       = 4,
-	HTC_MSG_SETUP_COMPLETE_EX_ID    = 5,
-	HTC_MSG_SEND_SUSPEND_COMPLETE   = 6
+enum ath10k_ath10k_htc_msg_id {
+	ATH10K_HTC_MSG_READY_ID                = 1,
+	ATH10K_HTC_MSG_CONNECT_SERVICE_ID      = 2,
+	ATH10K_HTC_MSG_CONNECT_SERVICE_RESP_ID = 3,
+	ATH10K_HTC_MSG_SETUP_COMPLETE_ID       = 4,
+	ATH10K_HTC_MSG_SETUP_COMPLETE_EX_ID    = 5,
+	ATH10K_HTC_MSG_SEND_SUSPEND_COMPLETE   = 6
 };
 
-enum htc_version {
-	HTC_VERSION_2P0 = 0x00, /* 2.0 */
-	HTC_VERSION_2P1 = 0x01, /* 2.1 */
+enum ath10k_htc_version {
+	ATH10K_HTC_VERSION_2P0 = 0x00, /* 2.0 */
+	ATH10K_HTC_VERSION_2P1 = 0x01, /* 2.1 */
 };
 
-enum htc_connect_flags {
-	HTC_CONNECT_FLAGS_THRESHOLD_LEVEL_ONE_FOURTH    = 0x0,
-	HTC_CONNECT_FLAGS_THRESHOLD_LEVEL_ONE_HALF      = 0x1,
-	HTC_CONNECT_FLAGS_THRESHOLD_LEVEL_THREE_FOURTHS = 0x2,
-	HTC_CONNECT_FLAGS_THRESHOLD_LEVEL_UNITY         = 0x3,
-#define HTC_CONNECT_FLAGS_THRESHOLD_LEVEL_MASK 0x3
-	HTC_CONNECT_FLAGS_REDUCE_CREDIT_DRIBBLE    = 1 << 2,
-	HTC_CONNECT_FLAGS_DISABLE_CREDIT_FLOW_CTRL = 1 << 3
-#define HTC_CONNECT_FLAGS_RECV_ALLOC_MASK 0xFF00
-#define HTC_CONNECT_FLAGS_RECV_ALLOC_LSB  8
+enum ath10k_htc_conn_flags {
+	ATH10K_HTC_CONN_FLAGS_THRESHOLD_LEVEL_ONE_FOURTH    = 0x0,
+	ATH10K_HTC_CONN_FLAGS_THRESHOLD_LEVEL_ONE_HALF      = 0x1,
+	ATH10K_HTC_CONN_FLAGS_THRESHOLD_LEVEL_THREE_FOURTHS = 0x2,
+	ATH10K_HTC_CONN_FLAGS_THRESHOLD_LEVEL_UNITY         = 0x3,
+#define ATH10K_HTC_CONN_FLAGS_THRESHOLD_LEVEL_MASK 0x3
+	ATH10K_HTC_CONN_FLAGS_REDUCE_CREDIT_DRIBBLE    = 1 << 2,
+	ATH10K_HTC_CONN_FLAGS_DISABLE_CREDIT_FLOW_CTRL = 1 << 3
+#define ATH10K_HTC_CONN_FLAGS_RECV_ALLOC_MASK 0xFF00
+#define ATH10K_HTC_CONN_FLAGS_RECV_ALLOC_LSB  8
 };
 
-enum htc_connect_service_status {
-	HTC_SERVICE_SUCCESS      = 0,
-	HTC_SERVICE_NOT_FOUND    = 1,
-	HTC_SERVICE_FAILED       = 2,
-	HTC_SERVICE_NO_RESOURCES = 3,
-	HTC_SERVICE_NO_MORE_EP   = 4
+enum ath10k_htc_conn_svc_status {
+	ATH10K_HTC_CONN_SVC_STATUS_SUCCESS      = 0,
+	ATH10K_HTC_CONN_SVC_STATUS_NOT_FOUND    = 1,
+	ATH10K_HTC_CONN_SVC_STATUS_FAILED       = 2,
+	ATH10K_HTC_CONN_SVC_STATUS_NO_RESOURCES = 3,
+	ATH10K_HTC_CONN_SVC_STATUS_NO_MORE_EP   = 4
 };
 
-struct htc_msg_hdr {
+struct ath10k_ath10k_htc_msg_hdr {
 	__le16 message_id; /* @enum htc_message_id */
 } __packed;
 
-struct htc_unknown {
+struct ath10k_htc_unknown {
 	u8 pad0;
 	u8 pad1;
 } __packed;
 
-struct htc_ready {
+struct ath10k_htc_ready {
 	__le16 credit_count;
 	__le16 credit_size;
 	u8 max_endpoints;
 	u8 pad0;
 } __packed;
 
-struct htc_ready_extended {
-	struct htc_ready base;
-	u8 htc_version;
+struct ath10k_htc_ready_extended {
+	struct ath10k_htc_ready base;
+	u8 htc_version; /* @enum ath10k_htc_version */
 	u8 max_msgs_per_htc_bundle;
 	u8 pad0;
 	u8 pad1;
 } __packed;
 
-struct htc_connect_service {
+struct ath10k_htc_conn_svc {
 	__le16 service_id;
-	__le16 flags; /* @enum htc_connect_flags */
+	__le16 flags; /* @enum ath10k_htc_conn_flags */
 	u8 pad0;
 	u8 pad1;
 } __packed;
 
-struct htc_connect_service_response {
+struct ath10k_htc_conn_svc_response {
 	__le16 service_id;
-	u8 status; /* @enum htc_connect_service_status */
+	u8 status; /* @enum ath10k_htc_conn_svc_status */
 	u8 eid;
 	__le16 max_msg_size;
 } __packed;
 
-struct htc_setup_complete_extended {
+struct ath10k_htc_setup_complete_extended {
 	u8 pad0;
 	u8 pad1;
 	__le32 flags; /* @enum htc_setup_complete_flags */
@@ -155,44 +152,44 @@ struct htc_setup_complete_extended {
 	u8 pad4;
 } __packed;
 
-struct htc_msg {
-	struct htc_msg_hdr hdr;
+struct ath10k_htc_msg {
+	struct ath10k_ath10k_htc_msg_hdr hdr;
 	union {
 		/* host-to-target */
-		struct htc_connect_service connect_service;
-		struct htc_ready ready;
-		struct htc_ready_extended ready_ext;
-		struct htc_unknown unknown;
-		struct htc_setup_complete_extended setup_complete_ext;
+		struct ath10k_htc_conn_svc connect_service;
+		struct ath10k_htc_ready ready;
+		struct ath10k_htc_ready_extended ready_ext;
+		struct ath10k_htc_unknown unknown;
+		struct ath10k_htc_setup_complete_extended setup_complete_ext;
 
 		/* target-to-host */
-		struct htc_connect_service_response connect_service_response;
+		struct ath10k_htc_conn_svc_response connect_service_response;
 	};
 } __packed __aligned(4);
 
-enum htc_record_id {
-	HTC_RECORD_NULL    = 0,
-	HTC_RECORD_CREDITS = 1
+enum ath10k_ath10k_htc_record_id {
+	ATH10K_HTC_RECORD_NULL    = 0,
+	ATH10K_HTC_RECORD_CREDITS = 1
 };
 
-struct htc_record_hdr {
-	u8 id; /* @enum htc_record_id */
+struct ath10k_ath10k_htc_record_hdr {
+	u8 id; /* @enum ath10k_ath10k_htc_record_id */
 	u8 len;
 	u8 pad0;
 	u8 pad1;
 } __packed;
 
-struct htc_credit_report {
-	u8 eid; /* @enum htc_endpoint_id */
+struct ath10k_htc_credit_report {
+	u8 eid; /* @enum ath10k_htc_ep_id */
 	u8 credits;
 	u8 pad0;
 	u8 pad1;
 } __packed;
 
-struct htc_record {
-	struct htc_record_hdr hdr;
+struct ath10k_htc_record {
+	struct ath10k_ath10k_htc_record_hdr hdr;
 	union {
-		struct htc_credit_report credit_report[0];
+		struct ath10k_htc_credit_report credit_report[0];
 		u8 pauload[0];
 	};
 } __packed __aligned(4);
@@ -201,27 +198,27 @@ struct htc_record {
  * note: the trailer offset is dynamic depending
  * on payload length. this is only a struct layout draft
  */
-struct htc_frame {
-	struct htc_hdr hdr;
+struct ath10k_htc_frame {
+	struct ath10k_htc_hdr hdr;
 	union {
-		struct htc_msg msg;
+		struct ath10k_htc_msg msg;
 		u8 payload[0];
 	};
-	struct htc_record trailer[0];
+	struct ath10k_htc_record trailer[0];
 } __packed __aligned(4);
 
-/* HTC operational parameters */
-#define NUM_CONTROL_TX_BUFFERS 2
+#define ATH10K_NUM_CONTROL_TX_BUFFERS 2
+#define ATH10K_HTC_MAX_LEN 4096
+#define ATH10K_HTC_MAX_CTRL_MSG_LEN 256
+#define ATH10K_HTC_WAIT_TIMEOUT_HZ (1*HZ)
+#define ATH10K_HTC_CONTROL_BUFFER_SIZE (ATH10K_HTC_MAX_CTRL_MSG_LEN + sizeof(struct ath10k_htc_hdr))
+#define ATH10K_HTC_CONN_SVC_TIMEOUT_HZ (1*HZ)
 
-#define HTC_WAIT_TIMEOUT_HZ (1*HZ)
-#define HTC_CONTROL_BUFFER_SIZE (HTC_MAX_CTRL_MSG_LEN + sizeof(struct htc_hdr))
-#define HTC_CONN_SVC_TIMEOUT_HZ (1*HZ)
-
-struct htc_endpoint {
-	struct htc_target *target;
-	enum htc_endpoint_id ep_id;
-	enum htc_service_id service_id;
-	struct htc_ep_callbacks ep_callbacks;
+struct ath10k_htc_ep {
+	struct ath10k_htc *htc;
+	enum ath10k_htc_ep_id eid;
+	enum ath10k_htc_svc_id service_id;
+	struct ath10k_htc_ep_ops ep_ops;
 
 	int max_tx_queue_depth;
 	int max_ep_message_len;
@@ -243,26 +240,26 @@ struct htc_endpoint {
 	struct work_struct send_work;
 };
 
-struct htc_service_tx_creadit_alloc {
+struct ath10k_htc_svc_tx_credits {
 	u16 service_id;
 	u8  credit_allocation;
 };
 
-struct htc_target {
+struct ath10k_htc {
 	struct ath10k *ar;
-	struct htc_endpoint endpoint[HTC_EP_COUNT];
+	struct ath10k_htc_ep endpoint[ATH10K_HTC_EP_COUNT];
 
 	spinlock_t htc_tx_lock;
 
-	struct htc_target_cb htc_cb;
+	struct ath10k_htc_ops htc_ops;
 
-	u8 control_resp_buffer[HTC_MAX_CTRL_MSG_LEN];
+	u8 control_resp_buffer[ATH10K_HTC_MAX_CTRL_MSG_LEN];
 	int control_resp_len;
 
 	struct completion ctl_resp;
 
 	int total_transmit_credits;
-	struct htc_service_tx_creadit_alloc service_tx_alloc[HTC_EP_COUNT];
+	struct ath10k_htc_svc_tx_credits service_tx_alloc[ATH10K_HTC_EP_COUNT];
 	int target_credit_size;
 
 	bool stopping;
