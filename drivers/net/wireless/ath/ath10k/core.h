@@ -369,5 +369,4 @@ void ath10k_core_destroy(struct ath10k *ar);
 int ath10k_core_register(struct ath10k *ar);
 void ath10k_core_unregister(struct ath10k *ar);
 
-void ath10k_remain_on_channel_reset(unsigned long ptr);
 #endif /* _CORE_H_ */
