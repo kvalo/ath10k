@@ -70,7 +70,7 @@ static inline void ath10k_debug_read_target_stats(struct ath10k *ar,
 	num_peer_stats = __le32_to_cpu(ev->num_peer_stats); /* 0 or max peers */
 
 	if (num_pdev_stats) {
-		struct wmi_pdev_stats *pdev_stats = (void *)tmp;
+		struct wmi_pdev_stats *pdev_stats = (struct wmi_pdev_stats *)tmp;
 
 		fw_stats->ch_noise_floor = __le32_to_cpu(pdev_stats->chan_nf);
 		fw_stats->tx_frame_count = __le32_to_cpu(pdev_stats->tx_frame_count);
@@ -127,7 +127,7 @@ static inline void ath10k_debug_read_target_stats(struct ath10k *ar,
 		struct wmi_vdev_stats *vdev_stats;
 
 		for (i = 0; i < num_vdev_stats; i++) {
-			vdev_stats = (void *)tmp;
+			vdev_stats = (struct wmi_vdev_stats *)tmp;
 			tmp += sizeof(struct wmi_vdev_stats);
 		}
 	}
@@ -138,7 +138,7 @@ static inline void ath10k_debug_read_target_stats(struct ath10k *ar,
 		fw_stats->peers = num_peer_stats;
 
 		for (i = 0; i < num_peer_stats; i++) {
-			peer_stats = (void *)tmp;
+			peer_stats = (struct wmi_peer_stats *)tmp;
 
 			WMI_MAC_ADDR_TO_CHAR_ARRAY(&peer_stats->peer_macaddr,
 						   fw_stats->peer_stat[i].peer_macaddr);
