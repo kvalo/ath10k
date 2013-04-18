@@ -1327,7 +1327,7 @@ void ath10k_offchan_tx_work(struct work_struct *work)
 		spin_unlock_bh(&ar->data_lock);
 
 		if (peer)
-			ath10k_info("peer %pM on vdev %d already present\n",
+			ath10k_dbg(ATH10K_DBG_MAC, "peer %pM on vdev %d already present\n",
 				    peer_addr, vdev_id);
 
 		if (!peer) {
