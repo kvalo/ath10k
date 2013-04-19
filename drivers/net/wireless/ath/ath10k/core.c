@@ -46,7 +46,7 @@ enum ath10k_file {
 static const struct ath10k_hw_params ath10k_hw_params_list[] = {
 	{
 		.id = AR9888_HW_1_0_VERSION,
-		.name = "ar9888 rev1 (build 44)",
+		.name = "qca988x hw1.0",
 		.patch_load_addr = AR9888_HW_1_0_PATCH_LOAD_ADDR,
 		.fw = {
 			.dir = AR9888_HW_1_0_FW_DIR,
@@ -57,7 +57,7 @@ static const struct ath10k_hw_params ath10k_hw_params_list[] = {
 	},
 	{
 		.id = AR9888_HW_2_0_VERSION,
-		.name = "ar9888 rev2 (build 348)",
+		.name = "qca988x hw2.0",
 		.patch_load_addr = AR9888_HW_2_0_PATCH_LOAD_ADDR,
 		.fw = {
 			.dir = AR9888_HW_2_0_FW_DIR,
