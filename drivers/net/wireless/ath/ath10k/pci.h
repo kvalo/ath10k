@@ -218,6 +218,9 @@ struct ath10k_pci {
 
 	/* Map CE id to ce_state */
 	struct ce_state *ce_id_to_state[CE_COUNT_MAX];
+
+	bool hw_v1_workaround;
+	spinlock_t hw_v1_workaround_lock;
 };
 
 static inline struct ath10k_pci *ath10k_pci_priv(struct ath10k *ar)
@@ -259,17 +262,19 @@ static inline void pci_write32_v1_workaround(struct ath10k *ar,
 					     void __iomem *addr,
 					     u32 offset, u32 value)
 {
-	if (ar->hw_v1_workaround) {
+	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+
+	if (ar_pci->hw_v1_workaround) {
 		unsigned long irq_flags;
 
-		spin_lock_irqsave(&ar->hw_v1_workaround_lock, irq_flags);
+		spin_lock_irqsave(&ar_pci->hw_v1_workaround_lock, irq_flags);
 
 		ioread32(addr+offset+4); /* 3rd read prior to write */
 		ioread32(addr+offset+4); /* 2nd read prior to write */
 		ioread32(addr+offset+4); /* 1st read prior to write */
 		iowrite32(value, addr+offset);
 
-		spin_unlock_irqrestore(&ar->hw_v1_workaround_lock, irq_flags);
+		spin_unlock_irqrestore(&ar_pci->hw_v1_workaround_lock, irq_flags);
 	} else
 		iowrite32(value, addr+offset);
 }
@@ -315,10 +320,11 @@ static inline void WAR_CE_SRC_RING_WRITE_IDX_SET(struct ath10k *ar,
 						 u32 ctrl_addr,
 						 unsigned int write_index)
 {
+	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *indicator_addr;
-	void __iomem *targid = ath10k_pci_priv(ar)->mem;
+	void __iomem *targid = ar_pci->mem;
 
-	if (!ar->hw_v1_workaround) {
+	if (!ar_pci->hw_v1_workaround) {
 		CE_SRC_RING_WRITE_IDX_SET(ar, targid, ctrl_addr, write_index);
 		return;
 	}

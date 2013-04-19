@@ -2221,8 +2221,8 @@ retry:
 
 	/* Enable AR9888 V1 HW workarounds */
 	if (pci_dev->device == AR9888_1_0_DEVICE_ID) {
-		ar->hw_v1_workaround = true;
-		spin_lock_init(&ar->hw_v1_workaround_lock);
+		ar_pci->hw_v1_workaround = true;
+		spin_lock_init(&ar_pci->hw_v1_workaround_lock);
 	}
 
 	ar_pci->ar = ar;

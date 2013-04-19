@@ -337,9 +337,6 @@ struct ath10k {
 
 	struct completion vdev_setup_done;
 
-	bool hw_v1_workaround;
-	spinlock_t hw_v1_workaround_lock;
-
 	struct workqueue_struct *workqueue;
 
 	/* prevents concurrent FW reconfiguration */
