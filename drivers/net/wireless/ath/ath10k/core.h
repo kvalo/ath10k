@@ -26,7 +26,6 @@
 #include "htc.h"
 #include "hw.h"
 #include "targaddrs.h"
-#include "regtable.h"
 #include "wmi.h"
 #include "../ath.h"
 #include "../regd.h"

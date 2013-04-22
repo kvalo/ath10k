@@ -19,7 +19,6 @@
 #include "pci.h"
 #include "ce.h"
 #include "debug.h"
-#include "regtable.h"
 
 /*
  * Support for Copy Engine hardware, which is mainly used for

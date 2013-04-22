@@ -20,6 +20,7 @@
 
 #include <linux/interrupt.h>
 
+#include "ar9888def.h"
 #include "ce.h"
 
 /*
@@ -229,11 +230,11 @@ static inline struct ath10k_pci *ath10k_pci_priv(struct ath10k *ar)
 }
 
 #define A_PCIE_LOCAL_REG_READ(mem, addr) \
-	ioread32((mem) + PCIE_LOCAL_BASE_ADDRESS_T(ar) + (u32)(addr))
+	ioread32((mem) + PCIE_LOCAL_BASE_ADDRESS + (u32)(addr))
 
 #define A_PCIE_LOCAL_REG_WRITE(mem, addr, val) \
 	iowrite32((val),		       \
-		  ((mem) + PCIE_LOCAL_BASE_ADDRESS_T(ar) + (u32)(addr)))
+		  ((mem) + PCIE_LOCAL_BASE_ADDRESS + (u32)(addr)))
 
 #define ATH_PCI_RESET_WAIT_MAX 10 /* Ms */
 #define PCIE_WAKE_TIMEOUT 5000	/* 5Ms */
@@ -251,8 +252,8 @@ static inline struct ath10k_pci *ath10k_pci_priv(struct ath10k *ar)
  * for this device; but that's not guaranteed.
  */
 #define TARG_CPU_SPACE_TO_CE_SPACE(ar, pci_addr, addr)			\
-	(((ioread32((pci_addr)+(SOC_CORE_BASE_ADDRESS_T((ar))|	\
-	  CORE_CTRL_ADDRESS_T((ar)))) & 0x7ff) << 21) | \
+	(((ioread32((pci_addr)+(SOC_CORE_BASE_ADDRESS|			\
+	  CORE_CTRL_ADDRESS)) & 0x7ff) << 21) |				\
 	 0x100000 | ((addr) & 0xfffff))
 
 /* Wait up to this many Ms for a Diagnostic Access CE operation to complete */

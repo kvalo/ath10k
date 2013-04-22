@@ -474,8 +474,8 @@ struct ce_attr {
 
 
 #define CE_BASE_ADDRESS(ar, ce_id) \
-	(CE0_BASE_ADDRESS_T((ar)) + \
-	((CE1_BASE_ADDRESS_T((ar))-CE0_BASE_ADDRESS_T((ar)))*(ce_id)))
+	(CE0_BASE_ADDRESS + \
+	(CE1_BASE_ADDRESS - CE0_BASE_ADDRESS)*(ce_id))
 
 #define CE_SRC_RING_WRITE_IDX_SET(ar, targid, ce_ctrl_addr, n) \
 	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + SR_WR_INDEX_ADDRESS, (n))
@@ -609,7 +609,7 @@ struct ce_attr {
 
 #define CE_INTERRUPT_SUMMARY(ar, targid) \
 	CE_WRAPPER_INTERRUPT_SUMMARY_HOST_MSI_GET( \
-		TARGET_READ((targid), CE_WRAPPER_BASE_ADDRESS_T((ar)) + \
+		TARGET_READ((targid), CE_WRAPPER_BASE_ADDRESS + \
 		CE_WRAPPER_INTERRUPT_SUMMARY_ADDRESS))
 
 #endif /* _CE_H_ */

@@ -22,7 +22,6 @@
 
 #include "core.h"
 #include "debug.h"
-#include "regtable.h"
 
 #include "targaddrs.h"
 #include "bmi.h"
@@ -121,7 +120,7 @@ static int ath10k_pci_diag_read_mem(struct ath10k *ar, u32 address, u8 *data,
 	 * register read fn but preserve the multi word read capability of
 	 * this fn
 	 */
-	if (address < DRAM_BASE_ADDRESS_T(ar)) {
+	if (address < DRAM_BASE_ADDRESS) {
 		if ((address & 0x3) || ((dma_addr_t)data & 0x3))
 			return -EIO;
 
@@ -250,7 +249,7 @@ done:
 static int ath10k_pci_diag_read_access(struct ath10k *ar, u32 address, u32 *data)
 {
 	/* Assume range doesn't cross this boundary */
-	if (address >= DRAM_BASE_ADDRESS_T(ar))
+	if (address >= DRAM_BASE_ADDRESS)
 		return ath10k_pci_diag_read_mem(ar, address, (u8 *)data,
 						sizeof(u32));
 	else {
@@ -404,7 +403,7 @@ static int ath10k_pci_diag_write_access(struct ath10k *ar, u32 address,
 					u32 data)
 {
 	/* Assume range doesn't cross this boundary */
-	if (address >= DRAM_BASE_ADDRESS_T(ar)) {
+	if (address >= DRAM_BASE_ADDRESS) {
 		u32 data_buf = data;
 		return ath10k_pci_diag_write_mem(ar, address, (u8 *) &data_buf,
 					  sizeof(u32));
@@ -426,9 +425,9 @@ static bool ath10k_pci_target_is_awake(struct ath10k *ar)
 {
 	void __iomem *mem = ath10k_pci_priv(ar)->mem;
 	u32 val;
-	val = ioread32(mem + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-		       RTC_STATE_ADDRESS_T(ar));
-	return (RTC_STATE_V_GET(ar, val) == RTC_STATE_V_ON_T(ar));
+	val = ioread32(mem + PCIE_LOCAL_BASE_ADDRESS +
+		       RTC_STATE_ADDRESS);
+	return (RTC_STATE_V_GET(val) == RTC_STATE_V_ON);
 }
 
 static void ath10k_pci_wait_for_target_to_awake(struct ath10k *ar)
@@ -452,8 +451,8 @@ void ath10k_do_pci_wake(struct ath10k *ar)
 
 	if (atomic_read(&ar_pci->keep_awake_count) == 0) {
 		/* Force AWAKE */
-		iowrite32(PCIE_SOC_WAKE_V_MASK_T(ar),
-			  pci_addr + PCIE_LOCAL_BASE_ADDRESS_T(ar) + PCIE_SOC_WAKE_ADDRESS_T(ar));
+		iowrite32(PCIE_SOC_WAKE_V_MASK,
+			  pci_addr + PCIE_LOCAL_BASE_ADDRESS + PCIE_SOC_WAKE_ADDRESS);
 	}
 	atomic_inc(&ar_pci->keep_awake_count);
 
@@ -488,8 +487,8 @@ void ath10k_do_pci_sleep(struct ath10k *ar)
 	if (atomic_dec_and_test(&ar_pci->keep_awake_count)) {
 		/* Allow sleep */
 		ar_pci->verified_awake = false;
-		iowrite32(PCIE_SOC_WAKE_RESET_T(ar),
-			  pci_addr + PCIE_LOCAL_BASE_ADDRESS_T(ar) + PCIE_SOC_WAKE_ADDRESS_T(ar));
+		iowrite32(PCIE_SOC_WAKE_RESET,
+			  pci_addr + PCIE_LOCAL_BASE_ADDRESS + PCIE_SOC_WAKE_ADDRESS);
 	}
 }
 
@@ -835,7 +834,7 @@ static void ath10k_pci_stop_ce(struct ath10k *ar)
 	/* Cancel the pending tasklet */
 	tasklet_kill(&ar_pci->intr_tq);
 
-	for (i = 0; i < CE_COUNT_T(ar); i++)
+	for (i = 0; i < CE_COUNT; i++)
 		tasklet_kill(&ar_pci->pipe_info[i].intr);
 
 	/* Mark pending completions as aborted, so that upper layers free up
@@ -1459,8 +1458,8 @@ static int ath10k_pci_wake_target_cpu(struct ath10k *ar)
 	int ret;
 	u32 core_ctrl;
 
-	ret = ath10k_pci_diag_read_access(ar, SOC_CORE_BASE_ADDRESS_T(ar) |
-					      CORE_CTRL_ADDRESS_T(ar),
+	ret = ath10k_pci_diag_read_access(ar, SOC_CORE_BASE_ADDRESS |
+					      CORE_CTRL_ADDRESS,
 					  &core_ctrl);
 	if (ret) {
 		ath10k_warn("Unable to read core ctrl\n");
@@ -1468,10 +1467,10 @@ static int ath10k_pci_wake_target_cpu(struct ath10k *ar)
 	}
 
 	/* A_INUM_FIRMWARE interrupt to Target CPU */
-	core_ctrl |= CORE_CTRL_CPU_INTR_MASK_T(ar);
+	core_ctrl |= CORE_CTRL_CPU_INTR_MASK;
 
-	ret = ath10k_pci_diag_write_access(ar, SOC_CORE_BASE_ADDRESS_T(ar) |
-					       CORE_CTRL_ADDRESS_T(ar),
+	ret = ath10k_pci_diag_write_access(ar, SOC_CORE_BASE_ADDRESS |
+					       CORE_CTRL_ADDRESS,
 					   core_ctrl);
 	if (ret)
 		ath10k_warn("Unable to set interrupt mask\n");
@@ -1675,7 +1674,7 @@ static int ath10k_pci_probe_device(struct ath10k *ar)
 	int ret;
 
 	atomic_set(&ar_pci->keep_awake_count, 0);
-	ar_pci->fw_indicator_address = FW_INDICATOR_ADDRESS_T(ar);
+	ar_pci->fw_indicator_address = FW_INDICATOR_ADDRESS;
 
 	if (ath10k_target_ps)
 		ath10k_dbg(ATH10K_DBG_PCI, "on-chip power save enabled\n");
@@ -1717,10 +1716,10 @@ static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 	fw_indicator_address = ar_pci->fw_indicator_address;
 	fw_indicator = TARGET_READ(targid, fw_indicator_address);
 
-	if (fw_indicator & FW_IND_EVENT_PENDING_T(ar)) {
+	if (fw_indicator & FW_IND_EVENT_PENDING) {
 		/* ACK: clear Target-side pending event */
 		TARGET_WRITE(ar, targid, fw_indicator_address,
-			     fw_indicator & ~FW_IND_EVENT_PENDING_T(ar));
+			     fw_indicator & ~FW_IND_EVENT_PENDING);
 		ath10k_pci_sleep(ar);
 
 		if (ar_pci->started)
@@ -1772,7 +1771,7 @@ static irqreturn_t ath10k_pci_per_engine_handler(int irq, void *arg)
 {
 	struct ath10k *ar = arg;
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	int ce_id = irq - ar_pci->pdev->irq - MSI_ASSIGN_CE_INITIAL_T(ar);
+	int ce_id = irq - ar_pci->pdev->irq - MSI_ASSIGN_CE_INITIAL;
 
 	if (ce_id < 0 || ce_id > ARRAY_SIZE(ar_pci->pipe_info)) {
 		ath10k_warn("%s: unexpected/invalid irq %d ce_id %d\n",
@@ -1818,19 +1817,19 @@ static irqreturn_t ath10k_pci_interrupt_handler(int irq, void *arg)
 		 * really cleared.
 		 */
 		iowrite32(0, ar_pci->mem +
-			  (SOC_CORE_BASE_ADDRESS_T(ar) |
-			   PCIE_INTR_ENABLE_ADDRESS_T(ar)));
-		iowrite32(PCIE_INTR_FIRMWARE_MASK_T(ar) |
-			  PCIE_INTR_CE_MASK_ALL_T(ar),
-			  ar_pci->mem + (SOC_CORE_BASE_ADDRESS_T(ar) |
-					 PCIE_INTR_CLR_ADDRESS_T(ar)));
+			  (SOC_CORE_BASE_ADDRESS |
+			   PCIE_INTR_ENABLE_ADDRESS));
+		iowrite32(PCIE_INTR_FIRMWARE_MASK |
+			  PCIE_INTR_CE_MASK_ALL,
+			  ar_pci->mem + (SOC_CORE_BASE_ADDRESS |
+					 PCIE_INTR_CLR_ADDRESS));
 		/*
 		 * IMPORTANT: this extra read transaction is required to
 		 * flush the posted write buffer.
 		 */
 		(void) ioread32(ar_pci->mem +
-				(SOC_CORE_BASE_ADDRESS_T(ar) |
-				 PCIE_INTR_ENABLE_ADDRESS_T(ar)));
+				(SOC_CORE_BASE_ADDRESS |
+				 PCIE_INTR_ENABLE_ADDRESS));
 	}
 
 	tasklet_schedule(&ar_pci->intr_tq);
@@ -1848,17 +1847,17 @@ static void ath10k_pci_tasklet(unsigned long data)
 
 	if (ar_pci->num_msi_intrs == 0) {
 		/* Enable Legacy PCI line interrupts */
-		iowrite32(PCIE_INTR_FIRMWARE_MASK_T(ar) |
-			  PCIE_INTR_CE_MASK_ALL_T(ar),
-			  ar_pci->mem + (SOC_CORE_BASE_ADDRESS_T(ar) |
-					 PCIE_INTR_ENABLE_ADDRESS_T(ar)));
+		iowrite32(PCIE_INTR_FIRMWARE_MASK |
+			  PCIE_INTR_CE_MASK_ALL,
+			  ar_pci->mem + (SOC_CORE_BASE_ADDRESS |
+					 PCIE_INTR_ENABLE_ADDRESS));
 		/*
 		 * IMPORTANT: this extra read transaction is required to
 		 * flush the posted write buffer
 		 */
 		(void) ioread32(ar_pci->mem +
-				(SOC_CORE_BASE_ADDRESS_T(ar) |
-				 PCIE_INTR_ENABLE_ADDRESS_T(ar)));
+				(SOC_CORE_BASE_ADDRESS |
+				 PCIE_INTR_ENABLE_ADDRESS));
 	}
 }
 
@@ -1883,29 +1882,29 @@ static int ath10k_pci_reset_target(struct ath10k *ar)
 	int wait_limit = 300; /* 3 sec */
 
 	while (wait_limit-- &&
-	       !(ioread32(ar_pci->mem + FW_INDICATOR_ADDRESS_T(ar)) &
-		 FW_IND_INITIALIZED_T(ar))) {
+	       !(ioread32(ar_pci->mem + FW_INDICATOR_ADDRESS) &
+		 FW_IND_INITIALIZED)) {
 
 		if (ar_pci->num_msi_intrs == 0)
 			/* Fix potential race by repeating CORE_BASE writes */
-			iowrite32(PCIE_INTR_FIRMWARE_MASK_T(ar) |
-				  PCIE_INTR_CE_MASK_ALL_T(ar),
-				  ar_pci->mem + (SOC_CORE_BASE_ADDRESS_T(ar) |
-						 PCIE_INTR_ENABLE_ADDRESS_T(ar)));
+			iowrite32(PCIE_INTR_FIRMWARE_MASK |
+				  PCIE_INTR_CE_MASK_ALL,
+				  ar_pci->mem + (SOC_CORE_BASE_ADDRESS |
+						 PCIE_INTR_ENABLE_ADDRESS));
 		mdelay(10);
 	}
 
 	if (wait_limit < 0) {
 		ath10k_err("Target stalled\n");
-		iowrite32(PCIE_SOC_WAKE_RESET_T(ar),
-			  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-			  PCIE_SOC_WAKE_ADDRESS_T(ar));
+		iowrite32(PCIE_SOC_WAKE_RESET,
+			  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
+			  PCIE_SOC_WAKE_ADDRESS);
 		return -EIO;
 	}
 
-	iowrite32(PCIE_SOC_WAKE_RESET_T(ar),
-		  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-		  PCIE_SOC_WAKE_ADDRESS_T(ar));
+	iowrite32(PCIE_SOC_WAKE_RESET,
+		  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
+		  PCIE_SOC_WAKE_ADDRESS);
 
 	return 0;
 }
@@ -1914,14 +1913,14 @@ static int ath10k_pci_configure(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	int ret = 0;
-	int num_msi_desired = MSI_NUM_REQUEST_T(ar);
+	int num_msi_desired = MSI_NUM_REQUEST;
 	int i;
 
 	tasklet_init(&ar_pci->intr_tq, ath10k_pci_tasklet, (unsigned long) ar);
 	tasklet_init(&ar_pci->msi_fw_err, ath10k_msi_err_tasklet,
 		     (unsigned long) ar);
 
-	for (i = 0; i < CE_COUNT_T(ar); i++) {
+	for (i = 0; i < CE_COUNT; i++) {
 		ar_pci->pipe_info[i].ar_pci = ar_pci;
 		tasklet_init(&ar_pci->pipe_info[i].intr,
 			     ath10k_pci_ce_tasklet,
@@ -1952,7 +1951,7 @@ static int ath10k_pci_configure(struct ath10k *ar)
 		if (ret == 0) {
 			ar_pci->num_msi_intrs = num_msi_desired;
 			ret = request_irq(ar_pci->pdev->irq +
-					  MSI_ASSIGN_FW_T(ar),
+					  MSI_ASSIGN_FW,
 					  ath10k_pci_msi_fw_handler,
 					  IRQF_SHARED,
 					  "ath10k_pci",
@@ -1962,8 +1961,8 @@ static int ath10k_pci_configure(struct ath10k *ar)
 				goto err_intr;
 			}
 
-			for (i = MSI_ASSIGN_CE_INITIAL_T(ar);
-			     i <= MSI_ASSIGN_CE_MAX_T(ar); i++) {
+			for (i = MSI_ASSIGN_CE_INITIAL;
+			     i <= MSI_ASSIGN_CE_MAX; i++) {
 				ret = request_irq(ar_pci->pdev->irq + i,
 						ath10k_pci_per_engine_handler,
 						IRQF_SHARED,
@@ -2031,9 +2030,9 @@ static int ath10k_pci_configure(struct ath10k *ar)
 		 * Make sure to wake the Target before enabling Legacy
 		 * Interrupt.
 		 */
-		iowrite32(PCIE_SOC_WAKE_V_MASK_T(ar),
-			  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-			  PCIE_SOC_WAKE_ADDRESS_T(ar));
+		iowrite32(PCIE_SOC_WAKE_V_MASK,
+			  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
+			  PCIE_SOC_WAKE_ADDRESS);
 
 		ath10k_pci_wait_for_target_to_awake(ar);
 
@@ -2045,25 +2044,25 @@ static int ath10k_pci_configure(struct ath10k *ar)
 		 * For now, fix the race by repeating the write in below
 		 * synchronization checking.
 		 */
-		iowrite32(PCIE_INTR_FIRMWARE_MASK_T(ar) |
-			  PCIE_INTR_CE_MASK_ALL_T(ar),
-			  ar_pci->mem + (SOC_CORE_BASE_ADDRESS_T(ar) |
-					 PCIE_INTR_ENABLE_ADDRESS_T(ar)));
-		iowrite32(PCIE_SOC_WAKE_RESET_T(ar),
-			  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-			  PCIE_SOC_WAKE_ADDRESS_T(ar));
+		iowrite32(PCIE_INTR_FIRMWARE_MASK |
+			  PCIE_INTR_CE_MASK_ALL,
+			  ar_pci->mem + (SOC_CORE_BASE_ADDRESS |
+					 PCIE_INTR_ENABLE_ADDRESS));
+		iowrite32(PCIE_SOC_WAKE_RESET,
+			  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
+			  PCIE_SOC_WAKE_ADDRESS);
 	}
 
 	ar_pci->num_msi_intrs = num_msi_desired;
-	ar_pci->ce_count = CE_COUNT_T(ar);
+	ar_pci->ce_count = CE_COUNT;
 
 	/*
 	 * Synchronization point: Wait for Target to finish initialization
 	 * before we proceed.
 	 */
-	iowrite32(PCIE_SOC_WAKE_V_MASK_T(ar),
-		  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-		  PCIE_SOC_WAKE_ADDRESS_T(ar));
+	iowrite32(PCIE_SOC_WAKE_V_MASK,
+		  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
+		  PCIE_SOC_WAKE_ADDRESS);
 
 	ath10k_pci_wait_for_target_to_awake(ar);
 
@@ -2104,14 +2103,14 @@ static void ath10k_pci_device_reset(struct ath10k_pci *ar_pci)
 	int i;
 	u32 val;
 
-	if (!SOC_GLOBAL_RESET_ADDRESS_T(ar))
+	if (!SOC_GLOBAL_RESET_ADDRESS)
 		return;
 
 	if (!mem)
 		return;
 
-	A_PCIE_LOCAL_REG_WRITE(mem, PCIE_SOC_WAKE_ADDRESS_T(ar),
-			       PCIE_SOC_WAKE_V_MASK_T(ar));
+	A_PCIE_LOCAL_REG_WRITE(mem, PCIE_SOC_WAKE_ADDRESS,
+			       PCIE_SOC_WAKE_V_MASK);
 	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
 		if (ath10k_pci_target_is_awake(ar))
 			break;
@@ -2119,30 +2118,30 @@ static void ath10k_pci_device_reset(struct ath10k_pci *ar_pci)
 	}
 
 	/* Put Target, including PCIe, into RESET. */
-	val = A_PCIE_LOCAL_REG_READ(mem, SOC_GLOBAL_RESET_ADDRESS_T(ar));
+	val = A_PCIE_LOCAL_REG_READ(mem, SOC_GLOBAL_RESET_ADDRESS);
 	val |= 1;
-	A_PCIE_LOCAL_REG_WRITE(mem, SOC_GLOBAL_RESET_ADDRESS_T(ar), val);
+	A_PCIE_LOCAL_REG_WRITE(mem, SOC_GLOBAL_RESET_ADDRESS, val);
 
 	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
-		if (A_PCIE_LOCAL_REG_READ(mem, RTC_STATE_ADDRESS_T(ar)) &
-					  RTC_STATE_COLD_RESET_MASK_T(ar))
+		if (A_PCIE_LOCAL_REG_READ(mem, RTC_STATE_ADDRESS) &
+					  RTC_STATE_COLD_RESET_MASK)
 			break;
 		msleep(1);
 	}
 
 	/* Pull Target, including PCIe, out of RESET. */
 	val &= ~1;
-	A_PCIE_LOCAL_REG_WRITE(mem, SOC_GLOBAL_RESET_ADDRESS_T(ar), val);
+	A_PCIE_LOCAL_REG_WRITE(mem, SOC_GLOBAL_RESET_ADDRESS, val);
 
 	for (i = 0; i < ATH_PCI_RESET_WAIT_MAX; i++) {
-		if (!(A_PCIE_LOCAL_REG_READ(mem, RTC_STATE_ADDRESS_T(ar)) &
-					    RTC_STATE_COLD_RESET_MASK_T(ar)))
+		if (!(A_PCIE_LOCAL_REG_READ(mem, RTC_STATE_ADDRESS) &
+					    RTC_STATE_COLD_RESET_MASK))
 			break;
 		msleep(1);
 	}
 
-	A_PCIE_LOCAL_REG_WRITE(mem, PCIE_SOC_WAKE_ADDRESS_T(ar),
-			       PCIE_SOC_WAKE_RESET_T(ar));
+	A_PCIE_LOCAL_REG_WRITE(mem, PCIE_SOC_WAKE_ADDRESS,
+			       PCIE_SOC_WAKE_RESET);
 }
 
 static void ath10k_pci_dump_features(struct ath10k_pci *ar_pci)
@@ -2289,14 +2288,6 @@ retry:
 	ar_pci->cacheline_sz = dma_get_cache_alignment();
 
 	/*
-	 * Attach Target register table.  This is needed early on --
-	 * even before BMI -- since PCI and HIF initialization (and BMI init)
-	 * directly access Target registers (e.g. CE registers).
-	 */
-	ath10k_register_host_reg_table(ar, hif_type);
-	ath10k_register_target_reg_table(ar, target_type);
-
-	/*
 	 * Verify that the Target was started cleanly.
 	 *
 	 * The case where this is most likely is with an AUX-powered
@@ -2307,17 +2298,17 @@ retry:
 	 * We try to catch that here in order to reset the Target and
 	 * retry the probe.
 	 */
-	iowrite32(PCIE_SOC_WAKE_V_MASK_T(ar),
-		  mem + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-		  PCIE_SOC_WAKE_ADDRESS_T(ar));
+	iowrite32(PCIE_SOC_WAKE_V_MASK,
+		  mem + PCIE_LOCAL_BASE_ADDRESS +
+		  PCIE_SOC_WAKE_ADDRESS);
 	ath10k_pci_wait_for_target_to_awake(ar);
 
-	fw_indicator = ioread32(mem + FW_INDICATOR_ADDRESS_T(ar));
-	iowrite32(PCIE_SOC_WAKE_RESET_T(ar),
-		  mem + PCIE_LOCAL_BASE_ADDRESS_T(ar) +
-		  PCIE_SOC_WAKE_ADDRESS_T(ar));
+	fw_indicator = ioread32(mem + FW_INDICATOR_ADDRESS);
+	iowrite32(PCIE_SOC_WAKE_RESET,
+		  mem + PCIE_LOCAL_BASE_ADDRESS +
+		  PCIE_SOC_WAKE_ADDRESS);
 
-	if (fw_indicator & FW_IND_INITIALIZED_T(ar)) {
+	if (fw_indicator & FW_IND_INITIALIZED) {
 		probe_again++;
 		ath10k_err("target is in an unknown state. "
 			   "resetting (attempt %d).\n", probe_again);
