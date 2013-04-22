@@ -438,7 +438,6 @@ struct ath10k *ath10k_core_create(void *hif_priv, struct device *dev,
 
 	init_completion(&ar->scan.started);
 	init_completion(&ar->scan.completed);
-	spin_lock_init(&ar->scan.lock);
 
 	init_completion(&ar->install_key_done);
 	init_completion(&ar->vdev_setup_done);

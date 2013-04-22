@@ -149,10 +149,12 @@ static int ath10k_wmi_event_scan(struct ath10k *ar, struct sk_buff *skb)
 	case WMI_SCAN_EVENT_STARTED:
 		ath10k_dbg(ATH10K_DBG_WMI, "SCAN_EVENT_STARTED\n");
 
-		if (ar->scan.is_roc)
+		spin_lock_bh(&ar->data_lock);
+		if (ar->scan.in_progress && ar->scan.is_roc)
 			ieee80211_ready_on_channel(ar->hw);
 
 		complete(&ar->scan.started);
+		spin_unlock_bh(&ar->data_lock);
 		break;
 	case WMI_SCAN_EVENT_COMPLETED:
 		ath10k_dbg(ATH10K_DBG_WMI, "SCAN_EVENT_COMPLETED\n");
@@ -175,10 +177,10 @@ static int ath10k_wmi_event_scan(struct ath10k *ar, struct sk_buff *skb)
 
 		rcu_assign_pointer(ar->scan_channel, NULL);
 
-		spin_lock_bh(&ar->scan.lock);
+		spin_lock_bh(&ar->data_lock);
 		if (!ar->scan.in_progress) {
+			spin_unlock_bh(&ar->data_lock);
 			ath10k_warn("no scan requested, ignoring\n");
-			spin_unlock_bh(&ar->scan.lock);
 			break;
 		}
 
@@ -194,7 +196,7 @@ static int ath10k_wmi_event_scan(struct ath10k *ar, struct sk_buff *skb)
 		del_timer(&ar->scan.timeout);
 		complete_all(&ar->scan.completed);
 		ar->scan.in_progress = false;
-		spin_unlock_bh(&ar->scan.lock);
+		spin_unlock_bh(&ar->data_lock);
 		break;
 	case WMI_SCAN_EVENT_BSS_CHANNEL:
 		ath10k_dbg(ATH10K_DBG_WMI, "SCAN_EVENT_BSS_CHANNEL\n");

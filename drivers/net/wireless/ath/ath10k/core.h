@@ -308,7 +308,6 @@ struct ath10k {
 	} hw_params;
 
 	struct {
-		spinlock_t lock;
 		struct completion started;
 		struct completion completed;
 		struct timer_list timeout;

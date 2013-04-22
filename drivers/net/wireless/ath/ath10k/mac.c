@@ -1372,11 +1372,9 @@ void ath10k_reset_scan(unsigned long ptr)
 {
 	struct ath10k *ar = (struct ath10k *)ptr;
 
-	spin_lock_bh(&ar->scan.lock);
-
+	spin_lock_bh(&ar->data_lock);
 	if (!ar->scan.in_progress) {
-		/* lucky! scan must've completed right before timeout */
-		spin_unlock_bh(&ar->scan.lock);
+		spin_unlock_bh(&ar->data_lock);
 		return;
 	}
 
@@ -1389,7 +1387,7 @@ void ath10k_reset_scan(unsigned long ptr)
 
 	ar->scan.in_progress = false;
 	complete_all(&ar->scan.completed);
-	spin_unlock_bh(&ar->scan.lock);
+	spin_unlock_bh(&ar->data_lock);
 }
 
 static void ath10k_abort_scan(struct ath10k *ar)
@@ -1405,14 +1403,14 @@ static void ath10k_abort_scan(struct ath10k *ar)
 
 	del_timer_sync(&ar->scan.timeout);
 
-	spin_lock_bh(&ar->scan.lock);
+	spin_lock_bh(&ar->data_lock);
 	if (!ar->scan.in_progress) {
-		spin_unlock_bh(&ar->scan.lock);
+		spin_unlock_bh(&ar->data_lock);
 		return;
 	}
 
 	ar->scan.aborting = true;
-	spin_unlock_bh(&ar->scan.lock);
+	spin_unlock_bh(&ar->data_lock);
 
 	ret = ath10k_wmi_stop_scan(ar, &arg);
 	if (ret)
@@ -1424,13 +1422,13 @@ static void ath10k_abort_scan(struct ath10k *ar)
 	if (ret == 0)
 		ret = -ETIMEDOUT;
 
-	spin_lock_bh(&ar->scan.lock);
+	spin_lock_bh(&ar->data_lock);
 	if (ar->scan.in_progress) {
 		ath10k_warn("%s: could not stop scan (%d)\n", __func__, ret);
 		ar->scan.in_progress = false;
 		ath10k_offchan_tx_purge(ar);
 	}
-	spin_unlock_bh(&ar->scan.lock);
+	spin_unlock_bh(&ar->data_lock);
 }
 
 static int ath10k_start_scan(struct ath10k *ar,
@@ -1438,9 +1436,11 @@ static int ath10k_start_scan(struct ath10k *ar,
 {
 	int ret;
 
+	lockdep_assert_held(&ar->conf_mutex);
+
 	ret = ath10k_wmi_start_scan(ar, arg);
 	if (ret)
-		goto abort;
+		return ret;
 
 	/* make sure we submit the command so the completion
 	* timeout makes sense */
@@ -1450,7 +1450,7 @@ static int ath10k_start_scan(struct ath10k *ar,
 	if (ret == 0)
 		ret = -ETIMEDOUT;
 	if (ret < 0)
-		goto abort;
+		return ret;
 
 	/* the scan can complete earlier, before we even
 	 * start the timer. in that case the timer handler
@@ -1458,11 +1458,6 @@ static int ath10k_start_scan(struct ath10k *ar,
 	 * false. */
 	mod_timer(&ar->scan.timeout, jiffies + (arg->max_scan_time*HZ)/1000);
 	return 0;
-abort:
-	spin_lock_bh(&ar->scan.lock);
-	ar->scan.in_progress = false;
-	spin_unlock_bh(&ar->scan.lock);
-	return ret;
 }
 
 /**********************/
@@ -1509,10 +1504,10 @@ static void ath10k_tx(struct ieee80211_hw *hw,
 	ATH10K_SKB_CB(skb)->htt.tid = tid;
 
 	if (info->flags & IEEE80211_TX_CTL_TX_OFFCHAN) {
-		spin_lock_bh(&ar->scan.lock);
+		spin_lock_bh(&ar->data_lock);
 		ATH10K_SKB_CB(skb)->htt.is_offchan = true;
 		ATH10K_SKB_CB(skb)->htt.vdev_id = ar->scan.vdev_id;
-		spin_unlock_bh(&ar->scan.lock);
+		spin_unlock_bh(&ar->data_lock);
 
 		ath10k_dbg(ATH10K_DBG_MAC, "queued offchannel skb %p\n", skb);
 
@@ -1951,9 +1946,9 @@ static int ath10k_hw_scan(struct ieee80211_hw *hw,
 
 	mutex_lock(&ar->conf_mutex);
 
-	spin_lock_bh(&ar->scan.lock);
+	spin_lock_bh(&ar->data_lock);
 	if (ar->scan.in_progress) {
-		spin_unlock_bh(&ar->scan.lock);
+		spin_unlock_bh(&ar->data_lock);
 		ret = -EBUSY;
 		goto exit;
 	}
@@ -1964,7 +1959,7 @@ static int ath10k_hw_scan(struct ieee80211_hw *hw,
 	ar->scan.aborting = false;
 	ar->scan.is_roc = false;
 	ar->scan.vdev_id = arvif->vdev_id;
-	spin_unlock_bh(&ar->scan.lock);
+	spin_unlock_bh(&ar->data_lock);
 
 	memset(&arg, 0, sizeof(arg));
 	ath10k_wmi_start_scan_init(ar, &arg);
@@ -1995,9 +1990,10 @@ static int ath10k_hw_scan(struct ieee80211_hw *hw,
 
 	ret = ath10k_start_scan(ar, &arg);
 	if (ret) {
-		spin_lock_bh(&ar->scan.lock);
+		ath10k_warn("could not start hw scan (%d)\n", ret);
+		spin_lock_bh(&ar->data_lock);
 		ar->scan.in_progress = false;
-		spin_unlock_bh(&ar->scan.lock);
+		spin_unlock_bh(&ar->data_lock);
 	}
 
 exit:
@@ -2228,9 +2224,9 @@ static int ath10k_remain_on_channel(struct ieee80211_hw *hw,
 
 	mutex_lock(&ar->conf_mutex);
 
-	spin_lock_bh(&ar->scan.lock);
+	spin_lock_bh(&ar->data_lock);
 	if (ar->scan.in_progress) {
-		spin_unlock_bh(&ar->scan.lock);
+		spin_unlock_bh(&ar->data_lock);
 		ret = -EBUSY;
 		goto exit;
 	}
@@ -2241,7 +2237,7 @@ static int ath10k_remain_on_channel(struct ieee80211_hw *hw,
 	ar->scan.aborting = false;
 	ar->scan.is_roc = true;
 	ar->scan.vdev_id = arvif->vdev_id;
-	spin_unlock_bh(&ar->scan.lock);
+	spin_unlock_bh(&ar->data_lock);
 
 	memset(&arg, 0, sizeof(arg));
 	ath10k_wmi_start_scan_init(ar, &arg);
@@ -2258,9 +2254,9 @@ static int ath10k_remain_on_channel(struct ieee80211_hw *hw,
 	ret = ath10k_start_scan(ar, &arg);
 	if (ret) {
 		ath10k_warn("could not start roc scan (%d)\n", ret);
-		spin_lock_bh(&ar->scan.lock);
+		spin_lock_bh(&ar->data_lock);
 		ar->scan.in_progress = false;
-		spin_unlock_bh(&ar->scan.lock);
+		spin_unlock_bh(&ar->data_lock);
 	}
 
 exit:
