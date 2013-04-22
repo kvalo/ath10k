@@ -1089,21 +1089,12 @@ int ath10k_wmi_attach(struct ath10k *ar)
 
 void ath10k_wmi_detach(struct ath10k *ar)
 {
-	struct sk_buff *skb;
-
 	/* HTC should've drained the packets already */
 	if (WARN_ON(atomic_read(&ar->wmi.pending_tx_count) > 0))
 		ath10k_warn("there are still pending packets\n");
 
 	cancel_work_sync(&ar->wmi.wmi_event_work);
-
-	for (;;) {
-		skb = skb_dequeue(&ar->wmi.wmi_event_list);
-		if (!skb)
-			break;
-
-		dev_kfree_skb_any(skb);
-	}
+	skb_queue_purge(&ar->wmi.wmi_event_list);
 }
 
 int ath10k_wmi_connect_htc_service(struct ath10k *ar)
