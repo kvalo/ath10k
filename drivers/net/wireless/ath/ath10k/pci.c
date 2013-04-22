@@ -2431,7 +2431,7 @@ static int ath10k_pci_suspend(struct device *device)
 		return -ENODEV;
 
 	if (ath10k_core_target_suspend(ar))
-		return 0;
+		return -EBUSY;
 
 	left = wait_event_interruptible_timeout(ar->event_queue,
 						ar->is_target_paused == true,
