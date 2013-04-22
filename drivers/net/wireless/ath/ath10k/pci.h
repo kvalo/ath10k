@@ -355,7 +355,19 @@ static inline void WAR_CE_SRC_RING_WRITE_IDX_SET(struct ath10k *ar,
 
 extern unsigned int ath10k_target_ps;
 
-void ath10k_pci_wake(struct ath10k *ar);
-void ath10k_pci_sleep(struct ath10k *ar);
+void ath10k_do_pci_wake(struct ath10k *ar);
+void ath10k_do_pci_sleep(struct ath10k *ar);
+
+static inline void ath10k_pci_wake(struct ath10k *ar)
+{
+	if (ath10k_target_ps)
+		ath10k_do_pci_wake(ar);
+}
+
+static inline void ath10k_pci_sleep(struct ath10k *ar)
+{
+	if (ath10k_target_ps)
+		ath10k_do_pci_sleep(ar);
+}
 
 #endif /* _PCI_H_ */

@@ -442,16 +442,13 @@ static void ath10k_pci_wait_for_target_to_awake(struct ath10k *ar)
 		ath10k_warn("Unable to wakeup target\n");
 }
 
-void ath10k_pci_wake(struct ath10k *ar)
+void ath10k_do_pci_wake(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *pci_addr = ar_pci->mem;
 	static int max_delay;
 	int tot_delay = 0;
 	int curr_delay = 5;
-
-	if (!ath10k_target_ps)
-		return;
 
 	if (atomic_read(&ar_pci->keep_awake_count) == 0) {
 		/* Force AWAKE */
@@ -483,13 +480,10 @@ void ath10k_pci_wake(struct ath10k *ar)
 		max_delay = tot_delay;
 }
 
-void ath10k_pci_sleep(struct ath10k *ar)
+void ath10k_do_pci_sleep(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *pci_addr = ar_pci->mem;
-
-	if (!ath10k_target_ps)
-		return;
 
 	if (atomic_dec_and_test(&ar_pci->keep_awake_count)) {
 		/* Allow sleep */
@@ -1688,7 +1682,7 @@ static int ath10k_pci_probe_device(struct ath10k *ar)
 	else {
 		/* Force AWAKE forever */
 		ath10k_dbg(ATH10K_DBG_PCI, "on-chip power save disabled\n");
-		ath10k_pci_wake(ar);
+		ath10k_do_pci_wake(ar);
 	}
 
 	ath10k_pci_ce_init(ar);
