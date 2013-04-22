@@ -991,27 +991,54 @@ void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb)
 		break;
 	}
 	case HTT_T2H_MSG_TYPE_MGMT_TX_COMPLETION: {
-		struct htt_mgmt_tx_done arg = {
-			.desc_id = __le32_to_cpu(resp->mgmt_tx_completion.desc_id),
-			.status  = __le32_to_cpu(resp->mgmt_tx_completion.status),
+		struct htt_tx_done tx_done = {
+			.msdu_id = __le32_to_cpu(resp->mgmt_tx_completion.desc_id),
 		};
-		ath10k_mgmt_tx_completed(htt, &arg);
+		int status = __le32_to_cpu(resp->mgmt_tx_completion.status);
+
+		switch (status) {
+		case HTT_MGMT_TX_STATUS_OK:
+			tx_done.discard = false;
+			break;
+		case HTT_MGMT_TX_STATUS_RETRY:
+		case HTT_MGMT_TX_STATUS_DROP:
+			tx_done.discard = true;
+			break;
+		}
+
+		ath10k_txrx_tx_completed(htt, &tx_done);
 		break;
 	}
 	case HTT_T2H_MSG_TYPE_TX_COMPL_IND: {
-		struct htt_data_tx_done ev = {
-			.status      = MS(resp->data_tx_completion.flags, HTT_DATA_TX_STATUS),
-			.tid         = MS(resp->data_tx_completion.flags, HTT_DATA_TX_TID),
-			.tid_invalid = !!(resp->data_tx_completion.flags & HTT_DATA_TX_TID_INVALID),
-		};
+		struct htt_tx_done tx_done = {};
+		int status = MS(resp->data_tx_completion.flags, HTT_DATA_TX_STATUS);
 		int i;
+
+		switch (status) {
+		case HTT_DATA_TX_STATUS_NO_ACK:
+			tx_done.no_ack = true;
+			tx_done.discard = false;
+			break;
+		case HTT_DATA_TX_STATUS_OK:
+			tx_done.discard = false;
+			break;
+		case HTT_DATA_TX_STATUS_DISCARD:
+		case HTT_DATA_TX_STATUS_POSTPONE:
+		case HTT_DATA_TX_STATUS_DOWNLOAD_FAIL:
+			tx_done.discard = true;
+			break;
+		default:
+			ath10k_warn("unhandled tx completion status %d\n", status);
+			tx_done.discard = true;
+			break;
+		}
 
 		ath10k_dbg(ATH10K_DBG_HTT, "htt tx completion num_msdus %d\n",
 			   resp->data_tx_completion.num_msdus);
 
 		for (i = 0; i < resp->data_tx_completion.num_msdus; i++) {
-			ev.msdu_id = __le16_to_cpu(resp->data_tx_completion.msdus[i]);
-			ath10k_data_tx_completed(htt, &ev);
+			tx_done.msdu_id = __le16_to_cpu(resp->data_tx_completion.msdus[i]);
+			ath10k_txrx_tx_completed(htt, &tx_done);
 		}
 		break;
 	}

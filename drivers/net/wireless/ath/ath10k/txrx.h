@@ -19,9 +19,8 @@
 
 #include "htt.h"
 
-void ath10k_data_tx_completed(struct htt_struct *htt,
-			      struct htt_data_tx_done *ev);
-void ath10k_mgmt_tx_completed(struct htt_struct *, struct htt_mgmt_tx_done *);
+void ath10k_txrx_tx_completed(struct htt_struct *htt,
+			      const struct htt_tx_done *tx_done);
 void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info);
 
 struct ath10k_peer *ath10k_peer_find(struct ath10k *ar, int vdev_id,

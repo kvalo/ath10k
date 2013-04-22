@@ -44,56 +44,55 @@ out:
 	spin_unlock_bh(&ar->data_lock);
 }
 
-void ath10k_data_tx_completed(struct htt_struct *htt,
-			      struct htt_data_tx_done *ev)
+void ath10k_txrx_tx_completed(struct htt_struct *htt,
+			      const struct htt_tx_done *tx_done)
 {
 	struct device *dev = htt->ar->dev;
-	struct htt_tx_info *txi;
 	struct ieee80211_tx_info *info;
+	struct htt_tx_info *txi;
 	int ret;
 
-	ath10k_dbg(ATH10K_DBG_HTT, "htt tx completion "
-		  "msdu_id %d tid %d tid_invalid %d status %d\n",
-		   ev->msdu_id, ev->tid, ev->tid_invalid, ev->status);
+	ath10k_dbg(ATH10K_DBG_HTT, "htt tx completion msdu_id %u discard %d no_ack %d\n",
+		   tx_done->msdu_id, !!tx_done->discard, !!tx_done->no_ack);
 
-	txi = ath10k_htt_tx_info_lookup(htt, ev->msdu_id);
+	txi = ath10k_htt_tx_info_lookup(htt, tx_done->msdu_id);
 	if (!txi) {
 		ath10k_dbg(ATH10K_DBG_HTT, "htt txi lookup fail\n");
 		return;
 	}
 
-	ret = ath10k_skb_unmap(dev, txi->txfrag);
-	if (ret)
-		ath10k_warn("txfrag unmap failed (%d)\n", ret);
+	if (txi->txfrag) {
+		ret = ath10k_skb_unmap(dev, txi->txfrag);
+		if (ret)
+			ath10k_warn("txfrag unmap failed (%d)\n", ret);
+
+		dev_kfree_skb_any(txi->txfrag);
+	}
 
 	ret = ath10k_skb_unmap(dev, txi->msdu);
 	if (ret)
 		ath10k_warn("data skb unmap failed (%d)\n", ret);
-
-	dev_kfree_skb_any(txi->txfrag);
 
 	ath10k_report_offchan_tx(htt->ar, txi->msdu);
 
 	info = IEEE80211_SKB_CB(txi->msdu);
 	memset(&info->status, 0, sizeof(info->status));
 
-	switch (ev->status) {
-	case HTT_DATA_TX_STATUS_OK:
-		if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
-			info->flags |= IEEE80211_TX_STAT_ACK;
-		/* fall through */
-	case HTT_DATA_TX_STATUS_NO_ACK:
-		ieee80211_tx_status(htt->ar->hw, txi->msdu);
-		break;
-	case HTT_DATA_TX_STATUS_DISCARD:
-		/* fall through */
-	case HTT_DATA_TX_STATUS_POSTPONE:
-		/* fall through */
-	case HTT_DATA_TX_STATUS_DOWNLOAD_FAIL:
+	if (tx_done->discard) {
 		ieee80211_free_txskb(htt->ar->hw, txi->msdu);
-		break;
+		goto exit;
 	}
 
+	if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
+		info->flags |= IEEE80211_TX_STAT_ACK;
+
+	if (tx_done->no_ack)
+		info->flags &= ~IEEE80211_TX_STAT_ACK;
+
+	ieee80211_tx_status(htt->ar->hw, txi->msdu);
+	/* we do not own the msdu anymore */
+
+exit:
 	txi->htt_tx_completed = true;
 	ath10k_htt_tx_info_unref(htt, txi, txi->txdesc);
 }
@@ -263,51 +262,6 @@ void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info)
 		   status->band);
 
 	ieee80211_rx(ar->hw, info->skb);
-}
-
-void ath10k_mgmt_tx_completed(struct htt_struct *htt,
-			      struct htt_mgmt_tx_done *arg)
-{
-	struct device *dev = htt->ar->dev;
-	struct ieee80211_tx_info *info;
-	struct sk_buff *msdu;
-	struct htt_tx_info *txi;
-	int ret;
-
-	ath10k_dbg(ATH10K_DBG_HTT, "%s called(), status: %d, msdu_id: %d\n",
-		   __func__, arg->status, arg->desc_id);
-
-	txi = ath10k_htt_tx_info_lookup(htt, arg->desc_id);
-	if (WARN_ON(!txi))
-		return;
-
-	msdu = txi->msdu;
-
-	ret = ath10k_skb_unmap(dev, msdu);
-	if (ret)
-		ath10k_warn("mgmt skb unmap failed (%d)\n", ret);
-
-	ath10k_report_offchan_tx(htt->ar, msdu);
-
-	info = IEEE80211_SKB_CB(msdu);
-	memset(&info->status, 0, sizeof(info->status));
-
-	switch (arg->status) {
-	case HTT_MGMT_TX_STATUS_OK:
-		if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
-			info->flags |= IEEE80211_TX_STAT_ACK;
-
-		ieee80211_tx_status(htt->ar->hw, msdu);
-		break;
-	case HTT_MGMT_TX_STATUS_RETRY:
-		/* fall through */
-	case HTT_MGMT_TX_STATUS_DROP:
-		ieee80211_free_txskb(htt->ar->hw, msdu);
-		break;
-	}
-
-	txi->htt_tx_completed = true;
-	ath10k_htt_tx_info_unref(htt, txi, txi->txdesc);
 }
 
 struct ath10k_peer *ath10k_peer_find(struct ath10k *ar, int vdev_id,

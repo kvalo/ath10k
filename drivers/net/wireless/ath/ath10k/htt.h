@@ -1080,16 +1080,10 @@ struct htt_resp {
 
 /*** host side structures follow ***/
 
-struct htt_mgmt_tx_done {
-	u32 desc_id;
-	u32 status;
-};
-
-struct htt_data_tx_done {
-	enum htt_data_tx_status status;
-	u8 tid;
-	bool tid_invalid;
-	u16 msdu_id;
+struct htt_tx_done {
+	u32 msdu_id;
+	bool discard;
+	bool no_ack;
 };
 
 struct htt_peer_map_event {
