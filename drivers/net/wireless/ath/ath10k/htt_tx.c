@@ -21,57 +21,35 @@
 #include "txrx.h"
 #include "debug.h"
 
-static void ath10k_htt_tx_info_pool_setup(struct htt_struct *htt)
+int ath10k_htt_tx_alloc_msdu_id(struct htt_struct *htt)
 {
-	int i;
+	int msdu_id;
 
-	memset(htt->txi_pool, 0, sizeof(htt->txi_pool));
-	for (i = 0; i < ARRAY_SIZE(htt->txi_pool); i++) {
-		htt->txi_pool[i].msdu_id = i;
-		htt->txi_pool[i].htt = htt;
-	}
+	lockdep_assert_held(&htt->tx_lock);
+
+	msdu_id = find_first_zero_bit(htt->used_msdu_ids, HTT_MAX_NUM_PENDING_TX);
+	if (msdu_id == HTT_MAX_NUM_PENDING_TX)
+		return -ENOMEM;
+
+	ath10k_dbg(ATH10K_DBG_HTT, "htt tx alloc msdu_id %d\n", msdu_id);
+	__set_bit(msdu_id, htt->used_msdu_ids);
+	return msdu_id;
 }
 
-struct htt_tx_info *ath10k_htt_tx_info_alloc(struct htt_struct *htt)
+void ath10k_htt_tx_free_msdu_id(struct htt_struct *htt, u16 msdu_id)
 {
-	struct htt_tx_info *txi = NULL;
-	int i;
+	lockdep_assert_held(&htt->tx_lock);
 
-	for (i = 0; i < ARRAY_SIZE(htt->txi_pool); i++) {
-		if (atomic_xchg(&htt->txi_pool[i].is_used, 1) == 0) {
-			txi = &htt->txi_pool[i];
-			break;
-		}
-	}
+	if (!test_bit(msdu_id, htt->used_msdu_ids))
+		ath10k_warn("trying to free unallocated msdu_id %d\n", msdu_id);
 
-	if (txi) {
-		ath10k_dbg(ATH10K_DBG_HTT, "htt txi alloc idx %d\n",
-			   txi->msdu_id);
-
-		atomic_inc(&htt->num_used_txi);
-	}
-
-	return txi;
-}
-
-void ath10k_htt_tx_info_free(struct htt_struct *htt, struct htt_tx_info *txi)
-{
-	int pending;
-
-	ath10k_dbg(ATH10K_DBG_HTT, "htt txi free idx %d\n",
-		   txi->msdu_id);
-
-	WARN_ON(atomic_xchg(&txi->is_used, 0) == 0);
-
-	pending = atomic_sub_return(1, &htt->num_used_txi);
-	WARN_ON(pending < 0);
-	if (pending == 0)
-		wake_up(&htt->empty_tx_wq);
+	ath10k_dbg(ATH10K_DBG_HTT, "htt tx free msdu_id %hu\n", msdu_id);
+	__clear_bit(msdu_id, htt->used_msdu_ids);
 }
 
 void ath10k_htt_tx_attach(struct htt_struct *htt)
 {
-	ath10k_htt_tx_info_pool_setup(htt);
+	spin_lock_init(&htt->tx_lock);
 	init_waitqueue_head(&htt->empty_tx_wq);
 }
 
@@ -80,33 +58,13 @@ void ath10k_htt_tx_detach(struct htt_struct *htt)
 	return;
 }
 
-struct htt_tx_info *ath10k_htt_tx_info_lookup(struct htt_struct *htt,
-					      u16 msdu_id)
-{
-	if (WARN_ON(msdu_id >= ARRAY_SIZE(htt->txi_pool)))
-		return NULL;
-
-	if (WARN_ON(atomic_read(&htt->txi_pool[msdu_id].is_used) == 0))
-		return NULL;
-
-	return &htt->txi_pool[msdu_id];
-}
-
 void ath10k_htt_htc_tx_complete(void *context, struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 	struct htt_struct *htt = (struct htt_struct *)context;
-	struct htt_tx_info *txi;
 
 	if (skb_cb->htt.is_conf) {
 		dev_kfree_skb_any(skb);
-		return;
-	}
-
-	txi = ath10k_htt_tx_info_lookup(htt, skb_cb->htt.msdu_id);
-	if (!txi) {
-		ath10k_warn("tx completion failure, wrong htt msdu_id %d\n",
-			    skb_cb->htt.msdu_id);
 		return;
 	}
 
@@ -121,7 +79,7 @@ void ath10k_htt_htc_tx_complete(void *context, struct sk_buff *skb)
 			skb_cb->htt.refcount = 1;
 	}
 
-	ath10k_txrx_tx_unref(htt, txi);
+	ath10k_txrx_tx_unref(htt, skb);
 }
 
 int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt)
@@ -240,46 +198,52 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 {
 	struct device *dev = htt->ar->dev;
 	struct ath10k_skb_cb *skb_cb;
-	struct htt_tx_info *txi;
+	struct sk_buff *txdesc = NULL;
 	struct htt_cmd *cmd;
 	u8 vdev_id = ATH10K_SKB_CB(msdu)->htt.vdev_id;
 	int len = 0;
+	int msdu_id = -1;
 	int res;
-
-	txi = ath10k_htt_tx_info_alloc(htt);
-	if (!txi)
-		return -ENOMEM;
 
 	len += sizeof(cmd->hdr);
 	len += sizeof(cmd->mgmt_tx);
 
-	txi->txdesc = ath10k_htc_alloc_skb(len);
-	txi->msdu = msdu;
-
-	if (!txi->txdesc) {
+	txdesc = ath10k_htc_alloc_skb(len);
+	if (!txdesc) {
 		res = -ENOMEM;
 		goto err;
 	}
+
+	spin_lock_bh(&htt->tx_lock);
+	msdu_id = ath10k_htt_tx_alloc_msdu_id(htt);
+	if (msdu_id < 0) {
+		spin_unlock_bh(&htt->tx_lock);
+		res = msdu_id;
+		goto err;
+	}
+	htt->pending_tx[msdu_id] = txdesc;
+	spin_unlock_bh(&htt->tx_lock);
 
 	res = ath10k_skb_map(dev, msdu);
 	if (res)
 		goto err;
 
-	skb_put(txi->txdesc, len);
-	cmd = (struct htt_cmd *)txi->txdesc->data;
+	skb_put(txdesc, len);
+	cmd = (struct htt_cmd *)txdesc->data;
 	cmd->hdr.msg_type         = HTT_H2T_MSG_TYPE_MGMT_TX;
 	cmd->mgmt_tx.msdu_paddr = __cpu_to_le32(ATH10K_SKB_CB(msdu)->paddr);
 	cmd->mgmt_tx.len        = __cpu_to_le32(msdu->len);
-	cmd->mgmt_tx.desc_id    = __cpu_to_le32(txi->msdu_id);
+	cmd->mgmt_tx.desc_id    = __cpu_to_le32(msdu_id);
 	cmd->mgmt_tx.vdev_id    = __cpu_to_le32(vdev_id);
 	memcpy(cmd->mgmt_tx.hdr, msdu->data,
 	       min((int)msdu->len, HTT_MGMT_FRM_HDR_DOWNLOAD_LEN));
 
-	skb_cb = ATH10K_SKB_CB(txi->txdesc);
-	skb_cb->htt.msdu_id = txi->msdu_id;
+	skb_cb = ATH10K_SKB_CB(txdesc);
+	skb_cb->htt.msdu_id = msdu_id;
 	skb_cb->htt.refcount = 2;
+	skb_cb->htt.msdu = msdu;
 
-	res = ath10k_htc_send(htt->htc, htt->eid, txi->txdesc);
+	res = ath10k_htc_send(htt->htc, htt->eid, txdesc);
 	if (res)
 		goto err;
 
@@ -288,10 +252,14 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 err:
 	ath10k_skb_unmap(dev, msdu);
 
-	if (txi->txdesc)
-		dev_kfree_skb_any(txi->txdesc);
-
-	ath10k_htt_tx_info_free(htt, txi);
+	if (txdesc)
+		dev_kfree_skb_any(txdesc);
+	if (msdu_id >= 0) {
+		spin_lock_bh(&htt->tx_lock);
+		htt->pending_tx[msdu_id] = NULL;
+		ath10k_htt_tx_free_msdu_id(htt, msdu_id);
+		spin_unlock_bh(&htt->tx_lock);
+	}
 	return res;
 }
 
@@ -300,13 +268,15 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	struct device *dev = htt->ar->dev;
 	struct htt_cmd *cmd;
 	struct htt_data_tx_desc_frag *tx_frags;
-	struct htt_tx_info *txi;
 	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)msdu->data;
 	struct ath10k_skb_cb *skb_cb;
+	struct sk_buff *txdesc = NULL;
+	struct sk_buff *txfrag = NULL;
 	u8 vdev_id = ATH10K_SKB_CB(msdu)->htt.vdev_id;
 	u8 tid;
 	int prefetch_len, desc_len, frag_len;
 	dma_addr_t frags_paddr;
+	int msdu_id = -1;
 	int res;
 	u8 flags0;
 	u16 flags1;
@@ -314,61 +284,63 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	prefetch_len = min(htt->prefetch_len, msdu->len);
 	prefetch_len = roundup(prefetch_len, 4);
 
-	txi = ath10k_htt_tx_info_alloc(htt);
-	if (!txi)
-		return -ENOMEM;
-
 	desc_len = sizeof(cmd->hdr) + sizeof(cmd->data_tx) + prefetch_len;
 	frag_len = sizeof(*tx_frags) * 2;
 
-	txi->txdesc = ath10k_htc_alloc_skb(desc_len);
-	if (!txi->txdesc) {
+	txdesc = ath10k_htc_alloc_skb(desc_len);
+	if (!txdesc) {
 		res = -ENOMEM;
 		goto err;
 	}
 
-	txi->txfrag = dev_alloc_skb(frag_len);
-	if (!txi->txfrag) {
+	txfrag = dev_alloc_skb(frag_len);
+	if (!txfrag) {
 		res = -ENOMEM;
 		goto err;
 	}
 
-	txi->msdu = msdu;
-
-	if ((unsigned long)txi->txdesc->data & 0x3) {
+	if ((unsigned long)txdesc->data & 0x3) {
 		ath10k_warn("htt alignment check failed. dropping packet.\n");
 		res = -EIO;
 		goto err;
 	}
+
+	spin_lock_bh(&htt->tx_lock);
+	msdu_id = ath10k_htt_tx_alloc_msdu_id(htt);
+	if (msdu_id < 0) {
+		spin_unlock_bh(&htt->tx_lock);
+		res = msdu_id;
+		goto err;
+	}
+	htt->pending_tx[msdu_id] = txdesc;
+	spin_unlock_bh(&htt->tx_lock);
 
 	res = ath10k_skb_map(dev, msdu);
 	if (res)
 		goto err;
 
 	/* tx fragment list must be terminated with zero-entry */
-	skb_put(txi->txfrag, frag_len);
-	tx_frags = (struct htt_data_tx_desc_frag *)txi->txfrag->data;
+	skb_put(txfrag, frag_len);
+	tx_frags = (struct htt_data_tx_desc_frag *)txfrag->data;
 	tx_frags[0].paddr = __cpu_to_le32(ATH10K_SKB_CB(msdu)->paddr);
 	tx_frags[0].len   = __cpu_to_le32(msdu->len);
 	tx_frags[1].paddr = __cpu_to_le32(0);
 	tx_frags[1].len   = __cpu_to_le32(0);
 
-	res = ath10k_skb_map(dev, txi->txfrag);
+	res = ath10k_skb_map(dev, txfrag);
 	if (res)
 		goto err;
 
 	ath10k_dbg(ATH10K_DBG_HTT, "txfrag 0x%llx msdu 0x%llx\n",
-		   (unsigned long long) ATH10K_SKB_CB(txi->txfrag)->paddr,
-		   (unsigned long long) ATH10K_SKB_CB(txi->msdu)->paddr);
+		   (unsigned long long) ATH10K_SKB_CB(txfrag)->paddr,
+		   (unsigned long long) ATH10K_SKB_CB(msdu)->paddr);
 	ath10k_dbg_dump(ATH10K_DBG_HTT, NULL, "txfrag: ",
-			txi->txfrag->data,
-			frag_len);
+			txfrag->data, frag_len);
 	ath10k_dbg_dump(ATH10K_DBG_HTT, NULL, "msdu: ",
-			txi->msdu->data,
-			txi->msdu->len);
+			msdu->data, msdu->len);
 
-	skb_put(txi->txdesc, desc_len);
-	cmd = (struct htt_cmd *)txi->txdesc->data;
+	skb_put(txdesc, desc_len);
+	cmd = (struct htt_cmd *)txdesc->data;
 	memset(cmd, 0, desc_len);
 
 	tid = ATH10K_SKB_CB(msdu)->htt.tid;
@@ -385,35 +357,42 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	flags1 |= SM((u16)vdev_id, HTT_DATA_TX_DESC_FLAGS1_VDEV_ID);
 	flags1 |= SM((u16)tid, HTT_DATA_TX_DESC_FLAGS1_EXT_TID);
 
-	frags_paddr = ATH10K_SKB_CB(txi->txfrag)->paddr;
+	frags_paddr = ATH10K_SKB_CB(txfrag)->paddr;
 
 	cmd->hdr.msg_type        = HTT_H2T_MSG_TYPE_TX_FRM;
 	cmd->data_tx.flags0      = flags0;
 	cmd->data_tx.flags1      = __cpu_to_le16(flags1);
 	cmd->data_tx.len         = __cpu_to_le16(msdu->len);
-	cmd->data_tx.id          = __cpu_to_le16(txi->msdu_id);
+	cmd->data_tx.id          = __cpu_to_le16(msdu_id);
 	cmd->data_tx.frags_paddr = __cpu_to_le32(frags_paddr);
 	cmd->data_tx.peerid      = __cpu_to_le32(HTT_INVALID_PEERID);
 
 	memcpy(cmd->data_tx.prefetch, msdu->data, prefetch_len);
 
-	skb_cb = ATH10K_SKB_CB(txi->txdesc);
-	skb_cb->htt.msdu_id = txi->msdu_id;
+	skb_cb = ATH10K_SKB_CB(txdesc);
+	skb_cb->htt.msdu_id = msdu_id;
 	skb_cb->htt.refcount = 2;
+	skb_cb->htt.txfrag = txfrag;
+	skb_cb->htt.msdu = msdu;
 
-	res = ath10k_htc_send(htt->htc, htt->eid, txi->txdesc);
+	res = ath10k_htc_send(htt->htc, htt->eid, txdesc);
 	if (res)
 		goto err;
 
 	return 0;
 err:
-	if (txi->txfrag)
-		ath10k_skb_unmap(dev, txi->txfrag);
-	if (txi->txdesc)
-		dev_kfree_skb_any(txi->txdesc);
-	if (txi->txfrag)
-		dev_kfree_skb_any(txi->txfrag);
-	ath10k_htt_tx_info_free(htt, txi);
+	if (txfrag)
+		ath10k_skb_unmap(dev, txfrag);
+	if (txdesc)
+		dev_kfree_skb_any(txdesc);
+	if (txfrag)
+		dev_kfree_skb_any(txfrag);
+	if (msdu_id >= 0) {
+		spin_lock_bh(&htt->tx_lock);
+		htt->pending_tx[msdu_id] = NULL;
+		ath10k_htt_tx_free_msdu_id(htt, msdu_id);
+		spin_unlock_bh(&htt->tx_lock);
+	}
 	ath10k_skb_unmap(dev, msdu);
 	return res;
 }

@@ -19,7 +19,7 @@
 
 #include "htt.h"
 
-void ath10k_txrx_tx_unref(struct htt_struct *htt, struct htt_tx_info *txi);
+void ath10k_txrx_tx_unref(struct htt_struct *htt, struct sk_buff *txdesc);
 void ath10k_txrx_tx_completed(struct htt_struct *htt,
 			      const struct htt_tx_done *tx_done);
 void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info);

@@ -61,13 +61,15 @@ struct ath10k_skb_cb {
 		bool discard;
 		bool no_ack;
 		u8 refcount;
+		struct sk_buff *txfrag;
+		struct sk_buff *msdu;
 	} __packed htt;
 
 	struct {
 		u8 credits_used;
 	} __packed htc;
 
-	/* 20 bytes left on 64bit arch */
+	/* 4 bytes left on 64bit arch */
 } __packed;
 
 static inline struct ath10k_skb_cb *ATH10K_SKB_CB(struct sk_buff *skb)

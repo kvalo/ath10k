@@ -2363,12 +2363,15 @@ static void ath10k_flush(struct ieee80211_hw *hw, u32 queues, bool drop)
 	if (drop)
 		return;
 
-	ret = wait_event_timeout(ar->htt->empty_tx_wq,
-				 atomic_read(&ar->htt->num_used_txi) == 0,
-				 ATH10K_FLUSH_TIMEOUT_HZ);
+	ret = wait_event_timeout(ar->htt->empty_tx_wq, ({
+			bool empty;
+			spin_lock_bh(&ar->htt->tx_lock);
+			empty = bitmap_empty(ar->htt->used_msdu_ids, HTT_MAX_NUM_PENDING_TX);
+			spin_unlock_bh(&ar->htt->tx_lock);
+			(empty);
+		}), ATH10K_FLUSH_TIMEOUT_HZ);
 	if (ret <= 0)
-		ath10k_warn("tx not flushed (%d frames still pending)\n",
-			    atomic_read(&ar->htt->num_used_txi));
+		ath10k_warn("tx not flushed\n");
 }
 
 /* TODO: Implement this function properly

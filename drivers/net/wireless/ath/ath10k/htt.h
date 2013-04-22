@@ -1109,18 +1109,6 @@ struct htt_rx_info {
 	bool fcs_err;
 };
 
-struct htt_tx_info {
-	struct htt_struct *htt;
-
-	u16 msdu_id;
-
-	atomic_t is_used;
-
-	struct sk_buff *txdesc;
-	struct sk_buff *txfrag; /* not used for mgmt tx */
-	struct sk_buff *msdu;
-};
-
 struct htt_struct {
 	struct ath10k *ar;
 	struct ath10k_htc *htc;
@@ -1205,9 +1193,10 @@ struct htt_struct {
 		int htc_err_cnt;
 	} stats;
 
-#define HTT_TX_INFO_POOL_SIZE 512 /* FIXME: find proper value? */
-	struct htt_tx_info txi_pool[HTT_TX_INFO_POOL_SIZE];
-	atomic_t num_used_txi;
+#define HTT_MAX_NUM_PENDING_TX 512 /* FIXME: find proper value? */
+	spinlock_t tx_lock;
+	struct sk_buff *pending_tx[HTT_MAX_NUM_PENDING_TX];
+	DECLARE_BITMAP(used_msdu_ids, HTT_MAX_NUM_PENDING_TX);
 	wait_queue_head_t empty_tx_wq;
 
 	/* set if host-fw communication goes haywire
@@ -1258,7 +1247,7 @@ struct htt_rx_desc {
  * changing conditions.
  * Hence, this queue depth threshold spec is mostly just a formality.
  */
-#define HTT_MAX_SEND_QUEUE_DEPTH (HTT_TX_INFO_POOL_SIZE)
+#define HTT_MAX_SEND_QUEUE_DEPTH (HTT_MAX_NUM_PENDING_TX)
 
 /*
  * FIX THIS
@@ -1291,11 +1280,8 @@ void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb);
 int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt);
 int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt);
 
-struct htt_tx_info *ath10k_htt_tx_info_alloc(struct htt_struct *htt);
-void ath10k_htt_tx_info_free(struct htt_struct *htt, struct htt_tx_info *pkt);
-void ath10k_htt_tx_info_unref(struct htt_struct *htt, struct htt_tx_info *pkt,
-			      struct sk_buff *skb);
-struct htt_tx_info *ath10k_htt_tx_info_lookup(struct htt_struct *htt, u16 msdu_id);
+int ath10k_htt_tx_alloc_msdu_id(struct htt_struct *htt);
+void ath10k_htt_tx_free_msdu_id(struct htt_struct *htt, u16 msdu_id);
 int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *);
 int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *);
 #endif
