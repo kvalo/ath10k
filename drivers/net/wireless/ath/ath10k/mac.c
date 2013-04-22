@@ -1418,6 +1418,8 @@ static void ath10k_abort_scan(struct ath10k *ar)
 	if (ret)
 		ath10k_warn("%s: ath10k_wmi_stop_scan failed (%d)\n", __func__, ret);
 
+	ath10k_wmi_flush_tx(ar);
+
 	ret = wait_for_completion_timeout(&ar->scan.completed, 3*HZ);
 	if (ret == 0)
 		ret = -ETIMEDOUT;
