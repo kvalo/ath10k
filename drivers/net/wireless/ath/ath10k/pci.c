@@ -2430,33 +2430,35 @@ static int ath10k_pci_suspend(struct device *device)
 	if (!ar_pci)
 		return -ENODEV;
 
-	if (!ath10k_core_target_suspend(ar)) {
-		left = wait_event_interruptible_timeout(ar->event_queue,
-					ar->is_target_paused == true,
-					1 * HZ);
+	if (ath10k_core_target_suspend(ar))
+		return 0;
 
-		if (!left) {
-			ath10k_warn("failed to receive target pasused"
-				   " event [left=%d]\n", left);
-			return -EIO;
-		}
-		/*
-		 * reset is_target_paused and host can check that in next time,
-		 * or it will always be TRUE and host just skip the waiting
-		 * condition, it causes target assert due to host already
-		 * suspend
-		 */
-		ar->is_target_paused = false;
+	left = wait_event_interruptible_timeout(ar->event_queue,
+						ar->is_target_paused == true,
+						1 * HZ);
 
-		pci_read_config_dword(pdev, ATH10K_PCI_PM_CONTROL, &val);
-
-		if ((val & 0x000000ff) != 0x3) {
-			pci_save_state(pdev);
-			pci_disable_device(pdev);
-			pci_write_config_dword(pdev, ATH10K_PCI_PM_CONTROL,
-					       (val & 0xffffff00) | 0x03);
-		}
+	if (!left) {
+		ath10k_warn("failed to receive target pasused event [left=%d]\n", left);
+		return -EIO;
 	}
+
+	/*
+	 * reset is_target_paused and host can check that in next time,
+	 * or it will always be TRUE and host just skip the waiting
+	 * condition, it causes target assert due to host already
+	 * suspend
+	 */
+	ar->is_target_paused = false;
+
+	pci_read_config_dword(pdev, ATH10K_PCI_PM_CONTROL, &val);
+
+	if ((val & 0x000000ff) != 0x3) {
+		pci_save_state(pdev);
+		pci_disable_device(pdev);
+		pci_write_config_dword(pdev, ATH10K_PCI_PM_CONTROL,
+				       (val & 0xffffff00) | 0x03);
+	}
+
 	return 0;
 }
 
