@@ -236,8 +236,8 @@ static inline struct ath10k_pci *ath10k_pci_priv(struct ath10k *ar)
 	iowrite32((val),		       \
 		  ((mem) + PCIE_LOCAL_BASE_ADDRESS + (u32)(addr)))
 
-#define ATH_PCI_RESET_WAIT_MAX 10 /* Ms */
-#define PCIE_WAKE_TIMEOUT 5000	/* 5Ms */
+#define ATH_PCI_RESET_WAIT_MAX 10 /* ms */
+#define PCIE_WAKE_TIMEOUT 5000	/* 5ms */
 
 #define BAR_NUM 0
 
