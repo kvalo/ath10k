@@ -134,8 +134,7 @@ static int ath10k_init_configure_target(struct ath10k *ar)
 	int ret;
 
 	/* tell target which HTC version it is used*/
-	param_host = HTC_PROTOCOL_VERSION;
-	ret = ath10k_bmi_write32(ar, hi_app_host_interest, param_host);
+	ret = ath10k_bmi_write32(ar, hi_app_host_interest, HTC_PROTOCOL_VERSION);
 	if (ret) {
 		ath10k_err("settings HTC version failed\n");
 		return ret;
@@ -167,17 +166,15 @@ static int ath10k_init_configure_target(struct ath10k *ar)
 		return ret;
 	}
 
-	param_host = 0;
 	/* We do all byte-swapping on the host */
-	ret = ath10k_bmi_write32(ar, hi_be, param_host);
+	ret = ath10k_bmi_write32(ar, hi_be, 0);
 	if (ret) {
 		ath10k_err("setting host CPU BE mode failed\n");
 		return ret;
 	}
 
 	/* FW descriptor/Data swap flags */
-	param_host = 0;
-	ret = ath10k_bmi_write32(ar, hi_fw_swap, param_host);
+	ret = ath10k_bmi_write32(ar, hi_fw_swap, 0);
 
 	if (ret) {
 		ath10k_err("setting FW data/desc swap flags failed\n");
@@ -197,7 +194,6 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 	u32 fw_entry_size;
 	u8 *temp_eeprom = NULL, *fw_buf = NULL;
 	u32 board_data_size;
-	u32 param_host;
 
 	switch (file) {
 	default:
@@ -293,8 +289,8 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 			/*
 			 * Record the fact that extended board Data IS initialized
 			 */
-			param_host = (board_ext_data_size << 16) | 1;
-			ath10k_bmi_write32(ar, hi_board_ext_data_config, param_host);
+			ath10k_bmi_write32(ar, hi_board_ext_data_config,
+					   (board_ext_data_size << 16) | 1);
 
 			fw_entry_size = board_data_size;
 		}
@@ -347,8 +343,7 @@ static int ath10k_init_download_firmware(struct ath10k *ar)
 	}
 
 	/* Record the fact that Board Data is initialized */
-	param_host = 1;
-	ath10k_bmi_write32(ar, hi_board_data_initialized, param_host);
+	ath10k_bmi_write32(ar, hi_board_data_initialized, 1);
 
 	/* Transfer One Time Programmable data */
 	address = ar->hw_params.patch_load_addr;
@@ -376,18 +371,14 @@ static int ath10k_init_download_firmware(struct ath10k *ar)
 
 	if (uart_print) {
 		/* Configure GPIO AR9888 UART */
-		param_host = 7;
-		ath10k_bmi_write32(ar, hi_dbg_uart_txpin, param_host);
-
-		param_host = 1;
-		ath10k_bmi_write32(ar, hi_serial_enable, param_host);
+		ath10k_bmi_write32(ar, hi_dbg_uart_txpin, 7);
+		ath10k_bmi_write32(ar, hi_serial_enable, 1);
 	} else {
 		/*
 		 * Explicitly setting UART prints to zero as target turns it on
 		 * based on scratch registers.
 		 */
-		param_host = 0;
-		ath10k_bmi_write32(ar, hi_serial_enable, param_host);
+		ath10k_bmi_write32(ar, hi_serial_enable, 0);
 	}
 
 	ath10k_dbg(ATH10K_DBG_CORE, "Firmware downloaded\n");
