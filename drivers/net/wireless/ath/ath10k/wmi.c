@@ -74,10 +74,9 @@ static struct sk_buff *ath10k_wmi_alloc_skb(u32 len)
 	return skb;
 }
 
-static void ath10k_wmi_htc_tx_complete(struct sk_buff *skb)
+static void ath10k_wmi_htc_tx_complete(void *context, struct sk_buff *skb)
 {
-	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
-	struct ath10k *ar = skb_cb->htc.priv;
+	struct ath10k *ar = context;
 
 	dev_kfree_skb(skb);
 
@@ -110,7 +109,6 @@ static int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb,
 	}
 
 	memset(skb_cb, 0, sizeof(*skb_cb));
-	skb_cb->htc.complete = ath10k_wmi_htc_tx_complete;
 	skb_cb->htc.priv = ar;
 
 	trace_ath10k_wmi_cmd(cmd_id, skb->data, skb->len);
@@ -1118,6 +1116,7 @@ int ath10k_wmi_connect_htc_service(struct ath10k *ar)
 
 	/* these fields are the same for all service endpoints */
 	connect.ep_callbacks.context = ar;
+	connect.ep_callbacks.ep_tx_complete = ath10k_wmi_htc_tx_complete;
 	connect.ep_callbacks.ep_rx_complete = ath10k_wmi_process_rx;
 
 	/* connect to control service */

@@ -43,6 +43,7 @@ static int ath10k_htt_htc_attach(struct htt_struct *htt)
 	memset(&response, 0, sizeof(response));
 
 	connect.ep_callbacks.context = htt;
+	connect.ep_callbacks.ep_tx_complete = ath10k_htt_htc_tx_complete;
 	connect.ep_callbacks.ep_rx_complete = ath10k_htt_t2h_msg_handler;
 	connect.ep_callbacks.stop_queue = ath10k_htt_stop_queue;
 	connect.ep_callbacks.wake_queue = ath10k_htt_wake_queue;

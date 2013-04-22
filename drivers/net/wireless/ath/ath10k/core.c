@@ -106,6 +106,7 @@ static int ath10k_init_connect_htc(struct ath10k *ar)
 	memset(&connect, 0, sizeof(connect));
 
 	connect.ep_callbacks.context = ar;
+	connect.ep_callbacks.ep_tx_complete = NULL;
 	connect.ep_callbacks.ep_rx_complete = NULL;
 
 	status = ath10k_wmi_connect_htc_service(ar);

@@ -74,7 +74,7 @@ static inline void ath10k_htc_send_complete_check(struct htc_endpoint *ep,
 	ath10k_hif_send_complete_check(ep->target->ar, ep->ul_pipe_id, force);
 }
 
-static void ath10k_htc_control_tx_complete(struct sk_buff *skb)
+static void ath10k_htc_control_tx_complete(void *context, struct sk_buff *skb)
 {
 	kfree_skb(skb);
 }
@@ -110,20 +110,18 @@ static inline void ath10k_htc_restore_tx_skb(struct htc_target *target,
 static void ath10k_htc_notify_tx_completion(struct htc_endpoint *ep,
 					    struct sk_buff *skb)
 {
-	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
-
 	ath10k_dbg(ATH10K_DBG_HTC, "%s: ep %d skb %p\n", __func__,
 		   ep->ep_id, skb);
 
 	ath10k_htc_restore_tx_skb(ep->target, skb);
 
-	if (!skb_cb->htc.complete) {
+	if (!ep->ep_callbacks.ep_tx_complete) {
 		ath10k_warn("no tx handler for eid %d\n", ep->ep_id);
 		dev_kfree_skb_any(skb);
 		return;
 	}
 
-	skb_cb->htc.complete(skb);
+	ep->ep_callbacks.ep_tx_complete(ep->ep_callbacks.context, skb);
 }
 
 /* assumes htc_tx_lock is held */
@@ -740,6 +738,7 @@ int ath10k_htc_wait_target(struct htc_target *target)
 	memset(&connect, 0, sizeof(connect));
 	memset(&resp, 0, sizeof(resp));
 	connect.ep_callbacks.context = target;
+	connect.ep_callbacks.ep_tx_complete = ath10k_htc_control_tx_complete;
 	connect.ep_callbacks.ep_rx_complete = ath10k_htc_control_rx_complete;
 	connect.max_send_queue_depth = NUM_CONTROL_TX_BUFFERS;
 	connect.service_id = HTC_SVC_RSVD_CTRL;
@@ -808,7 +807,6 @@ int ath10k_htc_connect_service(struct htc_target *target,
 		}
 
 		skb_cb = ATH10K_SKB_CB(skb);
-		skb_cb->htc.complete = ath10k_htc_control_tx_complete;
 		skb_cb->htc.priv = target;
 
 		INIT_COMPLETION(target->ctl_resp);
@@ -950,7 +948,6 @@ int ath10k_htc_start(struct htc_target *target)
 	ath10k_dbg(ATH10K_DBG_HTC, "HTC is using TX credit flow control\n");
 
 	skb_cb = ATH10K_SKB_CB(skb);
-	skb_cb->htc.complete = ath10k_htc_control_tx_complete;
 	skb_cb->htc.priv = target;
 	status = ath10k_htc_send(target, HTC_EP_0, skb);
 

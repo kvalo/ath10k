@@ -79,6 +79,7 @@ struct htc_target_cb {
 
 struct htc_ep_callbacks {
 	void *context;
+	void (*ep_tx_complete)(void *context, struct sk_buff *);
 	void (*ep_rx_complete)(void *context, struct sk_buff *);
 	void (*stop_queue)(void *context);
 	void (*wake_queue)(void *context);
