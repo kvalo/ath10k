@@ -115,9 +115,9 @@ struct htt_tx_info *ath10k_htt_tx_info_lookup(struct htt_struct *htt,
 void ath10k_htt_htc_tx_complete(void *context, struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
+	struct htt_struct *htt = (struct htt_struct *)context;
+	struct device *dev = htt->ar->dev;
 	struct htt_tx_info *txi;
-	struct htt_struct *htt;
-	struct device *dev;
 	int ret;
 
 	if (skb_cb->htt.is_conf) {
@@ -125,9 +125,13 @@ void ath10k_htt_htc_tx_complete(void *context, struct sk_buff *skb)
 		return;
 	}
 
-	txi = skb_cb->htc.priv;
-	htt = txi->htt;
-	dev = htt->ar->dev;
+	txi = ath10k_htt_tx_info_lookup(htt, skb_cb->htt.msdu_id);
+	if (!txi) {
+		ath10k_warn("tx completion failure, wrong htt msdu_id %d\n",
+			    skb_cb->htt.msdu_id);
+		return;
+	}
+
 	txi->htc_tx_completed = true;
 
 	if (skb_cb->is_aborted) {
@@ -310,7 +314,7 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	       min((int)msdu->len, HTT_MGMT_FRM_HDR_DOWNLOAD_LEN));
 
 	skb_cb = ATH10K_SKB_CB(txi->txdesc);
-	skb_cb->htc.priv = txi;
+	skb_cb->htt.msdu_id = txi->msdu_id;
 
 	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->txdesc);
 	if (res)
@@ -431,7 +435,7 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 	memcpy(cmd->data_tx.prefetch, msdu->data, prefetch_len);
 
 	skb_cb = ATH10K_SKB_CB(txi->txdesc);
-	skb_cb->htc.priv = txi;
+	skb_cb->htt.msdu_id = txi->msdu_id;
 
 	res = ath10k_htc_send(htt->htc_target, htt->ep_id, txi->txdesc);
 	if (res)

@@ -761,7 +761,6 @@ int ath10k_htc_connect_service(struct htc_target *target,
 	enum htc_endpoint_id assigned_ep = HTC_EP_COUNT;
 	struct htc_endpoint *ep;
 	struct sk_buff *skb;
-	struct ath10k_skb_cb *skb_cb;
 	unsigned int max_msg_size = 0;
 	int length, status;
 	bool disable_credit_flow_ctrl = false;
@@ -805,9 +804,6 @@ int ath10k_htc_connect_service(struct htc_target *target,
 			flags |= HTC_CONNECT_FLAGS_DISABLE_CREDIT_FLOW_CTRL;
 			disable_credit_flow_ctrl = true;
 		}
-
-		skb_cb = ATH10K_SKB_CB(skb);
-		skb_cb->htc.priv = target;
 
 		INIT_COMPLETION(target->ctl_resp);
 
@@ -930,7 +926,6 @@ struct sk_buff *ath10k_htc_alloc_skb(int size)
 
 int ath10k_htc_start(struct htc_target *target)
 {
-	struct ath10k_skb_cb *skb_cb;
 	struct sk_buff *skb;
 	int status = 0;
 	struct htc_msg *msg;
@@ -947,8 +942,6 @@ int ath10k_htc_start(struct htc_target *target)
 
 	ath10k_dbg(ATH10K_DBG_HTC, "HTC is using TX credit flow control\n");
 
-	skb_cb = ATH10K_SKB_CB(skb);
-	skb_cb->htc.priv = target;
 	status = ath10k_htc_send(target, HTC_EP_0, skb);
 
 	return status;

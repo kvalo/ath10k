@@ -109,7 +109,6 @@ static int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb,
 	}
 
 	memset(skb_cb, 0, sizeof(*skb_cb));
-	skb_cb->htc.priv = ar;
 
 	trace_ath10k_wmi_cmd(cmd_id, skb->data, skb->len);
 
