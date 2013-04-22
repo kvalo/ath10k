@@ -18,6 +18,7 @@
 #include <linux/etherdevice.h>
 #include "htt.h"
 #include "mac.h"
+#include "txrx.h"
 #include "debug.h"
 
 static void ath10k_htt_tx_info_pool_setup(struct htt_struct *htt)
@@ -47,9 +48,6 @@ struct htt_tx_info *ath10k_htt_tx_info_alloc(struct htt_struct *htt)
 		ath10k_dbg(ATH10K_DBG_HTT, "htt txi alloc idx %d\n",
 			   txi->msdu_id);
 
-		txi->htc_tx_completed = false;
-		txi->htt_tx_completed = false;
-
 		atomic_inc(&htt->num_used_txi);
 	}
 
@@ -69,24 +67,6 @@ void ath10k_htt_tx_info_free(struct htt_struct *htt, struct htt_tx_info *txi)
 	WARN_ON(pending < 0);
 	if (pending == 0)
 		wake_up(&htt->empty_tx_wq);
-}
-
-void ath10k_htt_tx_info_unref(struct htt_struct *htt, struct htt_tx_info *txi,
-			      struct sk_buff *skb)
-{
-	/* FIXME: we have to carefully synchronize completion of htt
-	 *        messages because those come in asynchronously
-	 *        and not necessarily in order.
-	 *        since htc_packet structure is no more this could perhaps
-	 *        be reworked in a more clean manner? */
-	if (!txi->htc_tx_completed)
-		return;
-
-	if (!txi->htt_tx_completed)
-		return;
-
-	dev_kfree_skb_any(skb);
-	ath10k_htt_tx_info_free(htt, txi);
 }
 
 void ath10k_htt_tx_attach(struct htt_struct *htt)
@@ -116,9 +96,7 @@ void ath10k_htt_htc_tx_complete(void *context, struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 	struct htt_struct *htt = (struct htt_struct *)context;
-	struct device *dev = htt->ar->dev;
 	struct htt_tx_info *txi;
-	int ret;
 
 	if (skb_cb->htt.is_conf) {
 		dev_kfree_skb_any(skb);
@@ -132,34 +110,18 @@ void ath10k_htt_htc_tx_complete(void *context, struct sk_buff *skb)
 		return;
 	}
 
-	txi->htc_tx_completed = true;
-
 	if (skb_cb->is_aborted) {
-		/*
-		 * if a packet gets cancelled we need to make sure
-		 * to free skbs since htt mgmt tx completion indication
-		 * may have not came in yet
-		 */
-		if (!txi->htt_tx_completed) {
-			txi->htt_tx_completed = true;
+		skb_cb->htt.discard = true;
 
-			if (txi->txfrag) {
-				ret = ath10k_skb_unmap(dev, txi->txfrag);
-				if (ret)
-					ath10k_warn("txfrag unmap failed (%d)\n", ret);
-
-				dev_kfree_skb_any(txi->txfrag);
-			}
-
-			ret = ath10k_skb_unmap(dev, txi->msdu);
-			if (ret)
-				ath10k_warn("data skb unmap failed (%d)\n", ret);
-
-			ieee80211_free_txskb(htt->ar->hw, txi->msdu);
-		}
+		/* if the skbuff is aborted we need to make sure we'll free up
+		 * the tx resources, we can't simply run tx_unref() 2 times
+		 * because if htt tx completion came in earlier we'd access
+		 * unallocated memory */
+		if (skb_cb->htt.refcount > 1)
+			skb_cb->htt.refcount = 1;
 	}
 
-	ath10k_htt_tx_info_unref(htt, txi, skb);
+	ath10k_txrx_tx_unref(htt, txi);
 }
 
 int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt)
@@ -315,6 +277,7 @@ int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 
 	skb_cb = ATH10K_SKB_CB(txi->txdesc);
 	skb_cb->htt.msdu_id = txi->msdu_id;
+	skb_cb->htt.refcount = 2;
 
 	res = ath10k_htc_send(htt->htc, htt->eid, txi->txdesc);
 	if (res)
@@ -436,6 +399,7 @@ int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
 
 	skb_cb = ATH10K_SKB_CB(txi->txdesc);
 	skb_cb->htt.msdu_id = txi->msdu_id;
+	skb_cb->htt.refcount = 2;
 
 	res = ath10k_htc_send(htt->htc, htt->eid, txi->txdesc);
 	if (res)

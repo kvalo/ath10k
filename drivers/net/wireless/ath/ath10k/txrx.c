@@ -44,22 +44,17 @@ out:
 	spin_unlock_bh(&ar->data_lock);
 }
 
-void ath10k_txrx_tx_completed(struct htt_struct *htt,
-			      const struct htt_tx_done *tx_done)
+void ath10k_txrx_tx_unref(struct htt_struct *htt, struct htt_tx_info *txi)
 {
 	struct device *dev = htt->ar->dev;
 	struct ieee80211_tx_info *info;
-	struct htt_tx_info *txi;
 	int ret;
 
-	ath10k_dbg(ATH10K_DBG_HTT, "htt tx completion msdu_id %u discard %d no_ack %d\n",
-		   tx_done->msdu_id, !!tx_done->discard, !!tx_done->no_ack);
-
-	txi = ath10k_htt_tx_info_lookup(htt, tx_done->msdu_id);
-	if (!txi) {
-		ath10k_dbg(ATH10K_DBG_HTT, "htt txi lookup fail\n");
+	if (ATH10K_SKB_CB(txi->txdesc)->htt.refcount == 0)
 		return;
-	}
+
+	if (--ATH10K_SKB_CB(txi->txdesc)->htt.refcount > 0)
+		return;
 
 	if (txi->txfrag) {
 		ret = ath10k_skb_unmap(dev, txi->txfrag);
@@ -78,7 +73,7 @@ void ath10k_txrx_tx_completed(struct htt_struct *htt,
 	info = IEEE80211_SKB_CB(txi->msdu);
 	memset(&info->status, 0, sizeof(info->status));
 
-	if (tx_done->discard) {
+	if (ATH10K_SKB_CB(txi->txdesc)->htt.discard) {
 		ieee80211_free_txskb(htt->ar->hw, txi->msdu);
 		goto exit;
 	}
@@ -86,15 +81,35 @@ void ath10k_txrx_tx_completed(struct htt_struct *htt,
 	if (!(info->flags & IEEE80211_TX_CTL_NO_ACK))
 		info->flags |= IEEE80211_TX_STAT_ACK;
 
-	if (tx_done->no_ack)
+	if (ATH10K_SKB_CB(txi->txdesc)->htt.no_ack)
 		info->flags &= ~IEEE80211_TX_STAT_ACK;
 
 	ieee80211_tx_status(htt->ar->hw, txi->msdu);
 	/* we do not own the msdu anymore */
 
 exit:
-	txi->htt_tx_completed = true;
-	ath10k_htt_tx_info_unref(htt, txi, txi->txdesc);
+	dev_kfree_skb_any(txi->txdesc);
+	ath10k_htt_tx_info_free(htt, txi);
+}
+
+void ath10k_txrx_tx_completed(struct htt_struct *htt,
+			      const struct htt_tx_done *tx_done)
+{
+	struct htt_tx_info *txi;
+
+	ath10k_dbg(ATH10K_DBG_HTT, "htt tx completion msdu_id %u discard %d no_ack %d\n",
+		   tx_done->msdu_id, !!tx_done->discard, !!tx_done->no_ack);
+
+	txi = ath10k_htt_tx_info_lookup(htt, tx_done->msdu_id);
+	if (!txi) {
+		ath10k_dbg(ATH10K_DBG_HTT, "htt txi lookup fail\n");
+		return;
+	}
+
+	ATH10K_SKB_CB(txi->txdesc)->htt.discard = tx_done->discard;
+	ATH10K_SKB_CB(txi->txdesc)->htt.no_ack = tx_done->no_ack;
+
+	ath10k_txrx_tx_unref(htt, txi);
 }
 
 static u8 rx_legacy_rate_idx[] = {

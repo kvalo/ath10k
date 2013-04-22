@@ -1115,8 +1115,6 @@ struct htt_tx_info {
 	u16 msdu_id;
 
 	atomic_t is_used;
-	bool htc_tx_completed;
-	bool htt_tx_completed;
 
 	struct sk_buff *txdesc;
 	struct sk_buff *txfrag; /* not used for mgmt tx */
