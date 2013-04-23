@@ -21,8 +21,6 @@
 #include <linux/kernel.h>
 #include "core.h"
 
-#define HIF_TYPE_AR9888  1
-
 /* FW dump area */
 #define REG_DUMP_COUNT_AR9888 60
 

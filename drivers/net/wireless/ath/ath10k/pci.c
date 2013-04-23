@@ -2170,12 +2170,9 @@ retry:
 	switch (pci_dev->device) {
 	case AR9888_1_0_DEVICE_ID:
 		target_type = TARGET_TYPE_AR9888;
-		hif_type = HIF_TYPE_AR9888;
 		break;
 	case AR9888_2_0_DEVICE_ID:
 		target_type = TARGET_TYPE_AR9888;
-		hif_type = HIF_TYPE_AR9888;
-
 		set_bit(ATH10K_PCI_FEATURE_MSI_X, ar_pci->features);
 		break;
 	default:
