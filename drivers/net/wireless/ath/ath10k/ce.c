@@ -116,7 +116,7 @@ static int ath10k_ce_send_nolock(struct ce_state *ce_state,
 
 	/* WORKAROUND */
 	if (!(flags & CE_SEND_FLAG_GATHER))
-		WAR_CE_SRC_RING_WRITE_IDX_SET(ar, ctrl_addr, write_index);
+		ath10k_set_source_ring_write_index(ar, ctrl_addr, write_index);
 
 	src_ring->write_index = write_index;
 exit:

@@ -317,10 +317,14 @@ static inline void pci_write32_v1_workaround(struct ath10k *ar,
 
 #define TARGET_READ(targid, offset) ioread32(targid + (offset))
 
-
-static inline void WAR_CE_SRC_RING_WRITE_IDX_SET(struct ath10k *ar,
-						 u32 ctrl_addr,
-						 unsigned int write_index)
+/*
+ * FIXME: This function is a wrapper to workaround QCA988x_1.0 HW CE problem.
+          If we decide to drop this HW revision support in the future, we
+          may drop the function as well.
+ */
+static inline void ath10k_set_source_ring_write_index(struct ath10k *ar,
+						      u32 ctrl_addr,
+						      unsigned int write_index)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *indicator_addr;
@@ -331,7 +335,8 @@ static inline void WAR_CE_SRC_RING_WRITE_IDX_SET(struct ath10k *ar,
 		return;
 	}
 
-	/* use the workaround logic */
+	/* workaround path starts from here */
+
 	indicator_addr = targid + ctrl_addr + DST_WATERMARK_ADDRESS;
 
 	if (ctrl_addr == CE_BASE_ADDRESS(ar, CDC_WAR_DATA_CE)) {
