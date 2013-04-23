@@ -186,12 +186,14 @@ static int ath10k_clear_vdev_key(struct ath10k_vif *arvif,
 		spin_lock_bh(&ar->data_lock);
 		i = 0;
 		list_for_each_entry(peer, &ar->peers, list) {
-			for (i = 0; i < ARRAY_SIZE(peer->keys); i++)
+			for (i = 0; i < ARRAY_SIZE(peer->keys); i++) {
 				if (peer->keys[i] == key) {
 					memcpy(addr, peer->addr, ETH_ALEN);
 					peer->keys[i] = NULL;
 					break;
 				}
+			}
+
 			if (i < ARRAY_SIZE(peer->keys))
 				break;
 		}
