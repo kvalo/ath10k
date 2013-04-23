@@ -229,12 +229,13 @@ static inline struct ath10k_pci *ath10k_pci_priv(struct ath10k *ar)
 	return ar->hif.priv;
 }
 
-#define A_PCIE_LOCAL_REG_READ(mem, addr) \
-	ioread32((mem) + PCIE_LOCAL_BASE_ADDRESS + (u32)(addr))
+static inline u32 ath10k_pci_reg_read32(void __iomem *mem, u32 addr) {
+	return ioread32(mem + PCIE_LOCAL_BASE_ADDRESS + addr);
+}
 
-#define A_PCIE_LOCAL_REG_WRITE(mem, addr, val) \
-	iowrite32((val),		       \
-		  ((mem) + PCIE_LOCAL_BASE_ADDRESS + (u32)(addr)))
+static inline void ath10k_pci_reg_write32(void __iomem *mem, u32 addr, u32 val) {
+	iowrite32(val, mem + PCIE_LOCAL_BASE_ADDRESS + addr);
+}
 
 #define ATH_PCI_RESET_WAIT_MAX 10 /* ms */
 #define PCIE_WAKE_TIMEOUT 5000	/* 5ms */
