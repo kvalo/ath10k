@@ -477,104 +477,104 @@ struct ce_attr {
 	(CE0_BASE_ADDRESS + \
 	(CE1_BASE_ADDRESS - CE0_BASE_ADDRESS)*(ce_id))
 
-#define CE_SRC_RING_WRITE_IDX_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + SR_WR_INDEX_ADDRESS, (n))
+#define CE_SRC_RING_WRITE_IDX_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + SR_WR_INDEX_ADDRESS, (n))
 
-#define CE_SRC_RING_WRITE_IDX_GET(targid, ce_ctrl_addr) \
-	TARGET_READ((targid), (ce_ctrl_addr) + SR_WR_INDEX_ADDRESS)
+#define CE_SRC_RING_WRITE_IDX_GET(ar, ce_ctrl_addr) \
+	ath10k_pci_read32((ar), (ce_ctrl_addr) + SR_WR_INDEX_ADDRESS)
 
-#define CE_SRC_RING_READ_IDX_GET(targid, ce_ctrl_addr) \
-	TARGET_READ((targid), (ce_ctrl_addr) + CURRENT_SRRI_ADDRESS)
+#define CE_SRC_RING_READ_IDX_GET(ar, ce_ctrl_addr) \
+	ath10k_pci_read32((ar), (ce_ctrl_addr) + CURRENT_SRRI_ADDRESS)
 
-#define CE_SRC_RING_BASE_ADDR_SET(ar, targid, ce_ctrl_addr, addr) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + SR_BA_ADDRESS, (addr))
+#define CE_SRC_RING_BASE_ADDR_SET(ar, ce_ctrl_addr, addr) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + SR_BA_ADDRESS, (addr))
 
-#define CE_SRC_RING_SZ_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + SR_SIZE_ADDRESS, (n))
+#define CE_SRC_RING_SZ_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + SR_SIZE_ADDRESS, (n))
 
-#define CE_SRC_RING_DMAX_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + CE_CTRL1_ADDRESS, \
-	(TARGET_READ((targid), (ce_ctrl_addr) + CE_CTRL1_ADDRESS) & \
+#define CE_SRC_RING_DMAX_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + CE_CTRL1_ADDRESS, \
+	(ath10k_pci_read32((ar), (ce_ctrl_addr) + CE_CTRL1_ADDRESS) & \
 		~CE_CTRL1_DMAX_LENGTH_MASK) | \
 		CE_CTRL1_DMAX_LENGTH_SET(n))
 
-#define CE_SRC_RING_BYTE_SWAP_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + CE_CTRL1_ADDRESS, \
-	(TARGET_READ((targid), (ce_ctrl_addr) + CE_CTRL1_ADDRESS) & \
+#define CE_SRC_RING_BYTE_SWAP_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + CE_CTRL1_ADDRESS, \
+	(ath10k_pci_read32((ar), (ce_ctrl_addr) + CE_CTRL1_ADDRESS) & \
 		~CE_CTRL1_SRC_RING_BYTE_SWAP_EN_MASK) | \
 		CE_CTRL1_SRC_RING_BYTE_SWAP_EN_SET(n))
 
-#define CE_DEST_RING_BYTE_SWAP_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + CE_CTRL1_ADDRESS, \
-	(TARGET_READ((targid), (ce_ctrl_addr) + CE_CTRL1_ADDRESS) & \
+#define CE_DEST_RING_BYTE_SWAP_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + CE_CTRL1_ADDRESS, \
+	(ath10k_pci_read32((ar), (ce_ctrl_addr) + CE_CTRL1_ADDRESS) & \
 		~CE_CTRL1_DST_RING_BYTE_SWAP_EN_MASK) | \
 		CE_CTRL1_DST_RING_BYTE_SWAP_EN_SET(n))
 
-#define CE_DEST_RING_WRITE_IDX_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + DST_WR_INDEX_ADDRESS, (n))
+#define CE_DEST_RING_WRITE_IDX_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + DST_WR_INDEX_ADDRESS, (n))
 
-#define CE_DEST_RING_WRITE_IDX_GET(targid, ce_ctrl_addr) \
-	TARGET_READ((targid), (ce_ctrl_addr) + DST_WR_INDEX_ADDRESS)
+#define CE_DEST_RING_WRITE_IDX_GET(ar, ce_ctrl_addr) \
+	ath10k_pci_read32((ar), (ce_ctrl_addr) + DST_WR_INDEX_ADDRESS)
 
-#define CE_DEST_RING_READ_IDX_GET(targid, ce_ctrl_addr) \
-	TARGET_READ((targid), (ce_ctrl_addr) + CURRENT_DRRI_ADDRESS)
+#define CE_DEST_RING_READ_IDX_GET(ar, ce_ctrl_addr) \
+	ath10k_pci_read32((ar), (ce_ctrl_addr) + CURRENT_DRRI_ADDRESS)
 
-#define CE_DEST_RING_BASE_ADDR_SET(ar, targid, ce_ctrl_addr, addr) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + DR_BA_ADDRESS, (addr))
+#define CE_DEST_RING_BASE_ADDR_SET(ar, ce_ctrl_addr, addr) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + DR_BA_ADDRESS, (addr))
 
-#define CE_DEST_RING_SZ_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + DR_SIZE_ADDRESS, (n))
+#define CE_DEST_RING_SZ_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + DR_SIZE_ADDRESS, (n))
 
-#define CE_SRC_RING_HIGHMARK_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + SRC_WATERMARK_ADDRESS, \
-	(TARGET_READ((targid), (ce_ctrl_addr) + SRC_WATERMARK_ADDRESS) & \
+#define CE_SRC_RING_HIGHMARK_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + SRC_WATERMARK_ADDRESS, \
+	(ath10k_pci_read32((ar), (ce_ctrl_addr) + SRC_WATERMARK_ADDRESS) & \
 		~SRC_WATERMARK_HIGH_MASK) | SRC_WATERMARK_HIGH_SET(n))
 
-#define CE_SRC_RING_LOWMARK_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + SRC_WATERMARK_ADDRESS, \
-	(TARGET_READ((targid), (ce_ctrl_addr) + SRC_WATERMARK_ADDRESS) & \
+#define CE_SRC_RING_LOWMARK_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + SRC_WATERMARK_ADDRESS, \
+	(ath10k_pci_read32((ar), (ce_ctrl_addr) + SRC_WATERMARK_ADDRESS) & \
 		~SRC_WATERMARK_LOW_MASK) | SRC_WATERMARK_LOW_SET(n))
 
-#define CE_DEST_RING_HIGHMARK_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + DST_WATERMARK_ADDRESS, \
-	(TARGET_READ((targid), (ce_ctrl_addr) + DST_WATERMARK_ADDRESS) & \
+#define CE_DEST_RING_HIGHMARK_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + DST_WATERMARK_ADDRESS, \
+	(ath10k_pci_read32((ar), (ce_ctrl_addr) + DST_WATERMARK_ADDRESS) & \
 		~DST_WATERMARK_HIGH_MASK) | DST_WATERMARK_HIGH_SET(n))
 
-#define CE_DEST_RING_LOWMARK_SET(ar, targid, ce_ctrl_addr, n) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + DST_WATERMARK_ADDRESS, \
-	(TARGET_READ((targid), (ce_ctrl_addr) + DST_WATERMARK_ADDRESS) & \
+#define CE_DEST_RING_LOWMARK_SET(ar, ce_ctrl_addr, n) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + DST_WATERMARK_ADDRESS, \
+	(ath10k_pci_read32((ar), (ce_ctrl_addr) + DST_WATERMARK_ADDRESS) & \
 		~DST_WATERMARK_LOW_MASK) | DST_WATERMARK_LOW_SET(n))
 
-#define CE_COPY_COMPLETE_INTR_ENABLE(ar, targid, ce_ctrl_addr) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + HOST_IE_ADDRESS, \
-	TARGET_READ((targid), (ce_ctrl_addr) + HOST_IE_ADDRESS) | \
+#define CE_COPY_COMPLETE_INTR_ENABLE(ar, ce_ctrl_addr) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + HOST_IE_ADDRESS, \
+	ath10k_pci_read32((ar), (ce_ctrl_addr) + HOST_IE_ADDRESS) | \
 		HOST_IE_COPY_COMPLETE_MASK)
 
-#define CE_COPY_COMPLETE_INTR_DISABLE(ar, targid, ce_ctrl_addr) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + HOST_IE_ADDRESS, \
-	TARGET_READ((targid), (ce_ctrl_addr) + HOST_IE_ADDRESS) & \
+#define CE_COPY_COMPLETE_INTR_DISABLE(ar, ce_ctrl_addr) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + HOST_IE_ADDRESS, \
+	ath10k_pci_read32((ar), (ce_ctrl_addr) + HOST_IE_ADDRESS) & \
 		~HOST_IE_COPY_COMPLETE_MASK)
 
-#define CE_WATERMARK_INTR_ENABLE(ar, targid, ce_ctrl_addr) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + HOST_IE_ADDRESS, \
-	TARGET_READ((targid), (ce_ctrl_addr) + HOST_IE_ADDRESS) | \
+#define CE_WATERMARK_INTR_ENABLE(ar, ce_ctrl_addr) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + HOST_IE_ADDRESS, \
+	ath10k_pci_read32((ar), (ce_ctrl_addr) + HOST_IE_ADDRESS) | \
 		CE_WATERMARK_MASK)
 
-#define CE_WATERMARK_INTR_DISABLE(ar, targid, ce_ctrl_addr) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + HOST_IE_ADDRESS, \
-	TARGET_READ((targid), (ce_ctrl_addr) + HOST_IE_ADDRESS) & \
+#define CE_WATERMARK_INTR_DISABLE(ar, ce_ctrl_addr) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + HOST_IE_ADDRESS, \
+	ath10k_pci_read32((ar), (ce_ctrl_addr) + HOST_IE_ADDRESS) & \
 		~CE_WATERMARK_MASK)
 
-#define CE_ERROR_INTR_ENABLE(ar, targid, ce_ctrl_addr) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr) + MISC_IE_ADDRESS, \
-	TARGET_READ((targid), (ce_ctrl_addr) + MISC_IE_ADDRESS) | \
+#define CE_ERROR_INTR_ENABLE(ar, ce_ctrl_addr) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr) + MISC_IE_ADDRESS, \
+	ath10k_pci_read32((ar), (ce_ctrl_addr) + MISC_IE_ADDRESS) | \
 		CE_ERROR_MASK)
 
-#define CE_ENGINE_INT_STATUS_GET(targid, ce_ctrl_addr) \
-	TARGET_READ((targid), (ce_ctrl_addr)+HOST_IS_ADDRESS)
+#define CE_ENGINE_INT_STATUS_GET(ar, ce_ctrl_addr) \
+	ath10k_pci_read32((ar), (ce_ctrl_addr)+HOST_IS_ADDRESS)
 
-#define CE_ENGINE_INT_STATUS_CLEAR(ar, targid, ce_ctrl_addr, mask) \
-	TARGET_WRITE((ar), (targid), (ce_ctrl_addr)+HOST_IS_ADDRESS, (mask))
+#define CE_ENGINE_INT_STATUS_CLEAR(ar, ce_ctrl_addr, mask) \
+	ath10k_pci_write32((ar), (ce_ctrl_addr)+HOST_IS_ADDRESS, (mask))
 
 #define CE_WATERMARK_MASK (HOST_IS_SRC_RING_LOW_WATERMARK_MASK  | \
 			   HOST_IS_SRC_RING_HIGH_WATERMARK_MASK | \
@@ -607,9 +607,9 @@ struct ce_attr {
 		CE_WRAPPER_INTERRUPT_SUMMARY_HOST_MSI_LSB)
 #define CE_WRAPPER_INTERRUPT_SUMMARY_ADDRESS			0x0000
 
-#define CE_INTERRUPT_SUMMARY(ar, targid) \
+#define CE_INTERRUPT_SUMMARY(ar) \
 	CE_WRAPPER_INTERRUPT_SUMMARY_HOST_MSI_GET( \
-		TARGET_READ((targid), CE_WRAPPER_BASE_ADDRESS + \
+		ath10k_pci_read32((ar), CE_WRAPPER_BASE_ADDRESS + \
 		CE_WRAPPER_INTERRUPT_SUMMARY_ADDRESS))
 
 #endif /* _CE_H_ */

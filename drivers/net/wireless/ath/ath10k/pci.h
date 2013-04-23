@@ -260,11 +260,10 @@ static inline void ath10k_pci_reg_write32(void __iomem *mem, u32 addr, u32 val) 
 /* Wait up to this many Ms for a Diagnostic Access CE operation to complete */
 #define DIAG_ACCESS_CE_TIMEOUT_MS 10
 
-static inline void pci_write32_v1_workaround(struct ath10k *ar,
-					     void __iomem *addr,
-					     u32 offset, u32 value)
+static inline void pci_write32_v1_workaround(struct ath10k *ar, u32 offset, u32 value)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+	void __iomem *addr = ar_pci->mem;
 
 	if (ar_pci->hw_v1_workaround) {
 		unsigned long irq_flags;
@@ -282,8 +281,8 @@ static inline void pci_write32_v1_workaround(struct ath10k *ar,
 }
 
 /*
- * This API allows the Host to access Target registers of a given
- * A_target_id_t directly and relatively efficiently over PCIe.
+ * This API allows the Host to access Target registers directly
+ * and relatively efficiently over PCIe.
  * This allows the Host to avoid extra overhead associated with
  * sending a message to firmware and waiting for a response message
  * from firmware, as is done on other interconnects.
@@ -294,10 +293,8 @@ static inline void pci_write32_v1_workaround(struct ath10k *ar,
  * and to verify that it is awake and will remain awake.
  *
  * Usage:
- *   During initialization, use TARGET_ID to obtain an 'target ID'
- *   for use with these interfaces.
  *
- *   Use TARGET_READ and TARGET_WRITE to access Target space.
+ *   Use ath10k_pci_read32 and ath10k_pci_write32 to access Target space.
  *   These calls must be bracketed by ath10k_pci_wake and
  *   ath10k_pci_sleep.  A single BEGIN/END pair is adequate for
  *   multiple READ/WRITE operations.
@@ -312,10 +309,15 @@ static inline void pci_write32_v1_workaround(struct ath10k *ar,
  *   directly accessible.  BEGIN/END is under a reference counter;
  *   multiple code paths may issue BEGIN/END on a single targid.
  */
-#define TARGET_WRITE(ar, targid, offset, value) \
-	pci_write32_v1_workaround(ar, targid , (offset), (value))
+static inline void ath10k_pci_write32(struct ath10k *ar, u32 offset, u32 value) {
+	pci_write32_v1_workaround(ar, offset, value);
+}
 
-#define TARGET_READ(targid, offset) ioread32(targid + (offset))
+static inline u32 ath10k_pci_read32(struct ath10k *ar, u32 offset) {
+	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+
+	return ioread32(ar_pci->mem + offset);
+}
 
 /*
  * FIXME: This function is a wrapper to workaround QCA988x_1.0 HW CE problem.
@@ -328,16 +330,15 @@ static inline void ath10k_set_source_ring_write_index(struct ath10k *ar,
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *indicator_addr;
-	void __iomem *targid = ar_pci->mem;
 
 	if (!ar_pci->hw_v1_workaround) {
-		CE_SRC_RING_WRITE_IDX_SET(ar, targid, ctrl_addr, write_index);
+		CE_SRC_RING_WRITE_IDX_SET(ar, ctrl_addr, write_index);
 		return;
 	}
 
 	/* workaround path starts from here */
 
-	indicator_addr = targid + ctrl_addr + DST_WATERMARK_ADDRESS;
+	indicator_addr = ar_pci->mem + ctrl_addr + DST_WATERMARK_ADDRESS;
 
 	if (ctrl_addr == CE_BASE_ADDRESS(ar, CDC_WAR_DATA_CE)) {
 		iowrite32((CDC_WAR_MAGIC_STR | write_index), indicator_addr);
@@ -353,7 +354,7 @@ static inline void ath10k_set_source_ring_write_index(struct ath10k *ar,
 		(void)ioread32(indicator_addr);
 		(void)ioread32(indicator_addr); /* conservative */
 
-		CE_SRC_RING_WRITE_IDX_SET(ar, targid, ctrl_addr, write_index);
+		CE_SRC_RING_WRITE_IDX_SET(ar, ctrl_addr, write_index);
 
 		iowrite32(0, indicator_addr);
 		local_irq_restore(irq_flags);

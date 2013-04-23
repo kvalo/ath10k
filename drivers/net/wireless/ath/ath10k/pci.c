@@ -102,7 +102,6 @@ static int ath10k_pci_diag_read_mem(struct ath10k *ar, u32 address, u8 *data,
 				    int nbytes)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	void __iomem *targid;
 	int ret = 0;
 	u32 buf;
 	unsigned int completed_nbytes, orig_nbytes, remaining_bytes;
@@ -133,7 +132,6 @@ static int ath10k_pci_diag_read_mem(struct ath10k *ar, u32 address, u8 *data,
 		return ret;
 	}
 
-	targid = ar_pci->mem;
 	ce_diag = ar_pci->ce_diag;
 
 	/*
@@ -253,13 +251,8 @@ static int ath10k_pci_diag_read_access(struct ath10k *ar, u32 address, u32 *data
 		return ath10k_pci_diag_read_mem(ar, address, (u8 *)data,
 						sizeof(u32));
 	else {
-		struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-		void __iomem *targid;
-
-		targid = ar_pci->mem;
-
 		ath10k_pci_wake(ar);
-		*data = TARGET_READ(targid, address);
+		*data = ath10k_pci_read32(ar, address);
 		ath10k_pci_sleep(ar);
 		return 0;
 	}
@@ -269,7 +262,6 @@ static int ath10k_pci_diag_write_mem(struct ath10k *ar, u32 address, u8 *data,
 				     int nbytes)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	void __iomem *targid;
 	int ret = 0;
 	u32 buf;
 	unsigned int completed_nbytes, orig_nbytes, remaining_bytes;
@@ -281,7 +273,6 @@ static int ath10k_pci_diag_write_mem(struct ath10k *ar, u32 address, u8 *data,
 	dma_addr_t ce_data_base = 0;
 	int i;
 
-	targid = ar_pci->mem;
 	ce_diag = ar_pci->ce_diag;
 
 	/*
@@ -408,13 +399,8 @@ static int ath10k_pci_diag_write_access(struct ath10k *ar, u32 address,
 		return ath10k_pci_diag_write_mem(ar, address, (u8 *) &data_buf,
 					  sizeof(u32));
 	} else {
-		struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-		void __iomem *targid;
-
-		targid = ar_pci->mem;
-
 		ath10k_pci_wake(ar);
-		TARGET_WRITE(ar, targid, address, data);
+		ath10k_pci_write32(ar, address, data);
 		ath10k_pci_sleep(ar);
 
 		return 0;
@@ -1708,18 +1694,16 @@ ce_deinit:
 static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	void __iomem *targid = ar_pci->mem;
 	u32 fw_indicator_address, fw_indicator;
 
 	ath10k_pci_wake(ar);
 
 	fw_indicator_address = ar_pci->fw_indicator_address;
-	fw_indicator = TARGET_READ(targid, fw_indicator_address);
+	fw_indicator = ath10k_pci_read32(ar, fw_indicator_address);
 
 	if (fw_indicator & FW_IND_EVENT_PENDING) {
 		/* ACK: clear Target-side pending event */
-		TARGET_WRITE(ar, targid, fw_indicator_address,
-			     fw_indicator & ~FW_IND_EVENT_PENDING);
+		ath10k_pci_write32(ar, fw_indicator_address, fw_indicator & ~FW_IND_EVENT_PENDING);
 		ath10k_pci_sleep(ar);
 
 		if (ar_pci->started)
