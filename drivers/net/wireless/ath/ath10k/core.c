@@ -396,15 +396,15 @@ static int ath10k_init_hw_params(struct ath10k *ar)
 	}
 
 	if (i == ARRAY_SIZE(ath10k_hw_params_list)) {
-		ath10k_err("unsupported hardware version: 0x%x\n",
+		ath10k_err("Unsupported hardware version: 0x%x\n",
 			   ar->target_version);
 		return -EINVAL;
 	}
 
 	ar->hw_params = *hw_params;
 
-	ath10k_info("target_ver 0x%x target_type 0x%x name %s\n",
-		    ar->target_version, ar->target_type, ar->hw_params.name);
+	ath10k_info("Hardware name %s version 0x%x\n",
+		    ar->hw_params.name, ar->target_version);
 
 	return 0;
 }
