@@ -813,7 +813,7 @@ static void ath10k_htt_rx_handler(struct ath10k_htt *htt, struct htt_rx_indicati
 				continue;
 			}
 
-			/* FIXME: qca_main doesn't support chaining either yet.
+			/* FIXME: we do not support chaining yet.
 			 * this needs investigation */
 			if (msdu_chaining) {
 				ath10k_warn("msdu_chaining is true\n");

@@ -2351,8 +2351,7 @@ err_ar_pci:
 	kfree(ar_pci);
 
 	/*
-	 * FIXME: for some reason qca_main loops probe
-	 * ATH_PCI_PROBE_RETRY_MAX times, do we need that in ath10k?
+	 * FIXME: Get rid of this hack as soon as HW is mature enough.
 	 */
 	if (ret && retries--)
 		goto retry;
