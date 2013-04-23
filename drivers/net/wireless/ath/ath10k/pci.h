@@ -20,7 +20,7 @@
 
 #include <linux/interrupt.h>
 
-#include "ar9888def.h"
+#include "hw.h"
 #include "ce.h"
 
 /*
