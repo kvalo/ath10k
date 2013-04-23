@@ -23,6 +23,9 @@
 #include "hw.h"
 #include "ce.h"
 
+/* FW dump area */
+#define REG_DUMP_COUNT_AR9888 60
+
 /*
  * maximum number of bytes that can be
  * handled atomically by DiagRead/DiagWrite
