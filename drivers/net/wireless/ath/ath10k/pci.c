@@ -416,7 +416,7 @@ static bool ath10k_pci_target_is_awake(struct ath10k *ar)
 	return (RTC_STATE_V_GET(val) == RTC_STATE_V_ON);
 }
 
-static void ath10k_pci_wait_for_target_to_awake(struct ath10k *ar)
+static void ath10k_pci_wait(struct ath10k *ar)
 {
 	int n = 100;
 
@@ -2018,7 +2018,7 @@ static int ath10k_pci_configure(struct ath10k *ar)
 			  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
 			  PCIE_SOC_WAKE_ADDRESS);
 
-		ath10k_pci_wait_for_target_to_awake(ar);
+		ath10k_pci_wait(ar);
 
 		/*
 		 * A potential race occurs here: The CORE_BASE write
@@ -2048,7 +2048,7 @@ static int ath10k_pci_configure(struct ath10k *ar)
 		  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
 		  PCIE_SOC_WAKE_ADDRESS);
 
-	ath10k_pci_wait_for_target_to_awake(ar);
+	ath10k_pci_wait(ar);
 
 	ret = ath10k_pci_reset_target(ar);
 	if (ret)
@@ -2280,7 +2280,7 @@ retry:
 	iowrite32(PCIE_SOC_WAKE_V_MASK,
 		  mem + PCIE_LOCAL_BASE_ADDRESS +
 		  PCIE_SOC_WAKE_ADDRESS);
-	ath10k_pci_wait_for_target_to_awake(ar);
+	ath10k_pci_wait(ar);
 
 	fw_indicator = ioread32(mem + FW_INDICATOR_ADDRESS);
 	iowrite32(PCIE_SOC_WAKE_RESET,
