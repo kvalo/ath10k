@@ -21,6 +21,11 @@
 #include <net/mac80211.h>
 #include "core.h"
 
+struct ath10k_generic_iter {
+	struct ath10k *ar;
+	int ret;
+};
+
 struct ath10k *ath10k_mac_create(void);
 void ath10k_mac_destroy(struct ath10k *ar);
 int ath10k_mac_register(struct ath10k *ar);

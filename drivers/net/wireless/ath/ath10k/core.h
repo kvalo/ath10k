@@ -360,11 +360,6 @@ struct ath10k {
 #endif
 };
 
-struct ath10k_generic_iter {
-	struct ath10k *ar;
-	int ret;
-};
-
 static inline struct ath_common *ath10k_common(struct ath10k *ar)
 {
 	return &ar->common;
