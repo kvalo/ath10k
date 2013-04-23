@@ -39,7 +39,7 @@
 /* when under memory pressure rx ring refill may fail and needs a retry */
 #define HTT_RX_RING_REFILL_RETRY_MS 50
 
-static int ath10k_htt_rx_ring_size(struct htt_struct *htt)
+static int ath10k_htt_rx_ring_size(struct ath10k_htt *htt)
 {
 	int size;
 
@@ -80,7 +80,7 @@ static int ath10k_htt_rx_ring_size(struct htt_struct *htt)
 	return size;
 }
 
-static int ath10k_htt_rx_ring_fill_level(struct htt_struct *htt)
+static int ath10k_htt_rx_ring_fill_level(struct ath10k_htt *htt)
 {
 	int size;
 
@@ -101,7 +101,7 @@ static int ath10k_htt_rx_ring_fill_level(struct htt_struct *htt)
 	return size;
 }
 
-static void ath10k_htt_rx_ring_fill_n(struct htt_struct *htt, int num)
+static void ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
 {
 	struct htt_rx_desc *rx_desc;
 	struct sk_buff *skb;
@@ -156,7 +156,7 @@ fail:
 	return;
 }
 
-static void ath10k_htt_rx_msdu_buff_replenish(struct htt_struct *htt)
+static void ath10k_htt_rx_msdu_buff_replenish(struct ath10k_htt *htt)
 {
 	int num_to_fill;
 
@@ -168,17 +168,17 @@ static void ath10k_htt_rx_msdu_buff_replenish(struct htt_struct *htt)
 
 static void ath10k_htt_rx_ring_refill_retry(unsigned long arg)
 {
-	struct htt_struct *htt = (struct htt_struct *)arg;
+	struct ath10k_htt *htt = (struct ath10k_htt *)arg;
 	ath10k_htt_rx_msdu_buff_replenish(htt);
 }
 
-static unsigned ath10k_htt_rx_ring_elems(struct htt_struct *htt)
+static unsigned ath10k_htt_rx_ring_elems(struct ath10k_htt *htt)
 {
 	return (__le32_to_cpu(*htt->rx_ring.alloc_idx.vaddr) -
 		htt->rx_ring.sw_rd_idx.msdu_payld) & htt->rx_ring.size_mask;
 }
 
-void ath10k_htt_rx_detach(struct htt_struct *htt)
+void ath10k_htt_rx_detach(struct ath10k_htt *htt)
 {
 	int sw_rd_idx = htt->rx_ring.sw_rd_idx.msdu_payld;
 
@@ -211,7 +211,7 @@ void ath10k_htt_rx_detach(struct htt_struct *htt)
 	kfree(htt->rx_ring.buf.netbufs_ring);
 }
 
-static inline struct sk_buff *ath10k_htt_rx_netbuf_pop(struct htt_struct *htt)
+static inline struct sk_buff *ath10k_htt_rx_netbuf_pop(struct ath10k_htt *htt)
 {
 	int idx;
 	struct sk_buff *msdu;
@@ -233,7 +233,7 @@ static inline struct sk_buff *ath10k_htt_rx_netbuf_pop(struct htt_struct *htt)
 	return msdu;
 }
 
-static int ath10k_htt_rx_amsdu_pop(struct htt_struct *htt,
+static int ath10k_htt_rx_amsdu_pop(struct ath10k_htt *htt,
 				   u8 **fw_desc, int *fw_desc_len,
 				   struct sk_buff **head_msdu,
 				   struct sk_buff **tail_msdu)
@@ -399,7 +399,7 @@ static int ath10k_htt_rx_amsdu_pop(struct htt_struct *htt,
 	return msdu_chaining;
 }
 
-int ath10k_htt_rx_attach(struct htt_struct *htt)
+int ath10k_htt_rx_attach(struct ath10k_htt *htt)
 {
 	dma_addr_t paddr;
 	void *vaddr;
@@ -552,7 +552,7 @@ static void ath10k_htt_rx_free_msdu_chain(struct sk_buff *skb)
 	}
 }
 
-static int ath10k_htt_rx_amsdu(struct htt_struct *htt,
+static int ath10k_htt_rx_amsdu(struct ath10k_htt *htt,
 			struct htt_rx_info *info)
 {
 	struct htt_rx_desc *rxd;
@@ -655,7 +655,7 @@ static int ath10k_htt_rx_amsdu(struct htt_struct *htt,
 	return 0;
 }
 
-static int ath10k_htt_rx_msdu(struct htt_struct *htt, struct htt_rx_info *info)
+static int ath10k_htt_rx_msdu(struct ath10k_htt *htt, struct htt_rx_info *info)
 {
 	struct sk_buff *skb = info->skb;
 	struct htt_rx_desc *rxd;
@@ -741,7 +741,7 @@ static bool ath10k_htt_rx_has_fcs_err(struct sk_buff *skb)
 	return false;
 }
 
-static void ath10k_htt_rx_handler(struct htt_struct *htt, struct htt_rx_indication *rx)
+static void ath10k_htt_rx_handler(struct ath10k_htt *htt, struct htt_rx_indication *rx)
 {
 	struct htt_rx_info info;
 	struct htt_rx_indication_mpdu_range *mpdu_ranges;
@@ -853,7 +853,7 @@ static void ath10k_htt_rx_handler(struct htt_struct *htt, struct htt_rx_indicati
 	ath10k_htt_rx_msdu_buff_replenish(htt);
 }
 
-static void ath10k_htt_rx_frag_handler(struct htt_struct *htt,
+static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 				struct htt_rx_fragment_indication *frag)
 {
 	struct sk_buff *msdu_head, *msdu_tail;
@@ -955,7 +955,7 @@ end:
 
 void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb)
 {
-	struct htt_struct *htt = (struct htt_struct *)context;
+	struct ath10k_htt *htt = (struct ath10k_htt *)context;
 	struct htt_resp *resp = (struct htt_resp *)skb->data;
 
 	/* confirm alignment */

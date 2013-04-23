@@ -1109,7 +1109,7 @@ struct htt_rx_info {
 	bool fcs_err;
 };
 
-struct htt_struct {
+struct ath10k_htt {
 	struct ath10k *ar;
 	struct ath10k_htc *htc;
 
@@ -1267,21 +1267,21 @@ struct htt_rx_desc {
 
 /* FIXME: add htt_tx_desc_init() */
 
-struct htt_struct *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc);
-int ath10k_htt_attach_target(struct htt_struct *htt);
-void ath10k_htt_detach(struct htt_struct *htt);
+struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc);
+int ath10k_htt_attach_target(struct ath10k_htt *htt);
+void ath10k_htt_detach(struct ath10k_htt *htt);
 
-void ath10k_htt_tx_attach(struct htt_struct *htt);
-void ath10k_htt_tx_detach(struct htt_struct *htt);
-int ath10k_htt_rx_attach(struct htt_struct *htt);
-void ath10k_htt_rx_detach(struct htt_struct *htt);
+void ath10k_htt_tx_attach(struct ath10k_htt *htt);
+void ath10k_htt_tx_detach(struct ath10k_htt *htt);
+int ath10k_htt_rx_attach(struct ath10k_htt *htt);
+void ath10k_htt_rx_detach(struct ath10k_htt *htt);
 void ath10k_htt_htc_tx_complete(void *context, struct sk_buff *skb);
 void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb);
-int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt);
-int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt);
+int ath10k_htt_h2t_ver_req_msg(struct ath10k_htt *htt);
+int ath10k_htt_send_rx_ring_cfg_ll(struct ath10k_htt *htt);
 
-int ath10k_htt_tx_alloc_msdu_id(struct htt_struct *htt);
-void ath10k_htt_tx_free_msdu_id(struct htt_struct *htt, u16 msdu_id);
-int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *);
-int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *);
+int ath10k_htt_tx_alloc_msdu_id(struct ath10k_htt *htt);
+void ath10k_htt_tx_free_msdu_id(struct ath10k_htt *htt, u16 msdu_id);
+int ath10k_htt_mgmt_tx(struct ath10k_htt *htt, struct sk_buff *);
+int ath10k_htt_tx(struct ath10k_htt *htt, struct sk_buff *);
 #endif

@@ -44,7 +44,7 @@ out:
 	spin_unlock_bh(&ar->data_lock);
 }
 
-void ath10k_txrx_tx_unref(struct htt_struct *htt, struct sk_buff *txdesc)
+void ath10k_txrx_tx_unref(struct ath10k_htt *htt, struct sk_buff *txdesc)
 {
 	struct device *dev = htt->ar->dev;
 	struct ieee80211_tx_info *info;
@@ -99,7 +99,7 @@ exit:
 	dev_kfree_skb_any(txdesc);
 }
 
-void ath10k_txrx_tx_completed(struct htt_struct *htt,
+void ath10k_txrx_tx_completed(struct ath10k_htt *htt,
 			      const struct htt_tx_done *tx_done)
 {
 	struct sk_buff *txdesc;
@@ -351,7 +351,7 @@ int ath10k_wait_for_peer_deleted(struct ath10k *ar, int vdev_id, const u8 *addr)
 	return ath10k_wait_for_peer_common(ar, vdev_id, addr, false);
 }
 
-void ath10k_peer_map_event(struct htt_struct *htt,
+void ath10k_peer_map_event(struct ath10k_htt *htt,
 			   struct htt_peer_map_event *ev)
 {
 	struct ath10k *ar = htt->ar;
@@ -378,7 +378,7 @@ exit:
 	spin_unlock_bh(&ar->data_lock);
 }
 
-void ath10k_peer_unmap_event(struct htt_struct *htt,
+void ath10k_peer_unmap_event(struct ath10k_htt *htt,
 			     struct htt_peer_unmap_event *ev)
 {
 	struct ath10k *ar = htt->ar;

@@ -297,7 +297,7 @@ struct ath10k {
 	struct ath10k_bmi bmi;
 
 	struct ath10k_htc *htc;
-	struct htt_struct *htt;
+	struct ath10k_htt *htt;
 
 	struct ath10k_hw_params {
 		u32 id;

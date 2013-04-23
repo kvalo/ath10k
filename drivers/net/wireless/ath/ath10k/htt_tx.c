@@ -21,7 +21,7 @@
 #include "txrx.h"
 #include "debug.h"
 
-int ath10k_htt_tx_alloc_msdu_id(struct htt_struct *htt)
+int ath10k_htt_tx_alloc_msdu_id(struct ath10k_htt *htt)
 {
 	int msdu_id;
 
@@ -36,7 +36,7 @@ int ath10k_htt_tx_alloc_msdu_id(struct htt_struct *htt)
 	return msdu_id;
 }
 
-void ath10k_htt_tx_free_msdu_id(struct htt_struct *htt, u16 msdu_id)
+void ath10k_htt_tx_free_msdu_id(struct ath10k_htt *htt, u16 msdu_id)
 {
 	lockdep_assert_held(&htt->tx_lock);
 
@@ -47,13 +47,13 @@ void ath10k_htt_tx_free_msdu_id(struct htt_struct *htt, u16 msdu_id)
 	__clear_bit(msdu_id, htt->used_msdu_ids);
 }
 
-void ath10k_htt_tx_attach(struct htt_struct *htt)
+void ath10k_htt_tx_attach(struct ath10k_htt *htt)
 {
 	spin_lock_init(&htt->tx_lock);
 	init_waitqueue_head(&htt->empty_tx_wq);
 }
 
-void ath10k_htt_tx_detach(struct htt_struct *htt)
+void ath10k_htt_tx_detach(struct ath10k_htt *htt)
 {
 	return;
 }
@@ -61,7 +61,7 @@ void ath10k_htt_tx_detach(struct htt_struct *htt)
 void ath10k_htt_htc_tx_complete(void *context, struct sk_buff *skb)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
-	struct htt_struct *htt = (struct htt_struct *)context;
+	struct ath10k_htt *htt = (struct ath10k_htt *)context;
 
 	if (skb_cb->htt.is_conf) {
 		dev_kfree_skb_any(skb);
@@ -82,7 +82,7 @@ void ath10k_htt_htc_tx_complete(void *context, struct sk_buff *skb)
 	ath10k_txrx_tx_unref(htt, skb);
 }
 
-int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt)
+int ath10k_htt_h2t_ver_req_msg(struct ath10k_htt *htt)
 {
 	struct sk_buff *skb;
 	struct htt_cmd *cmd;
@@ -111,7 +111,7 @@ int ath10k_htt_h2t_ver_req_msg(struct htt_struct *htt)
 	return 0;
 }
 
-int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt)
+int ath10k_htt_send_rx_ring_cfg_ll(struct ath10k_htt *htt)
 {
 	struct sk_buff *skb;
 	struct htt_cmd *cmd;
@@ -194,7 +194,7 @@ int ath10k_htt_send_rx_ring_cfg_ll(struct htt_struct *htt)
 	return 0;
 }
 
-int ath10k_htt_mgmt_tx(struct htt_struct *htt, struct sk_buff *msdu)
+int ath10k_htt_mgmt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 {
 	struct device *dev = htt->ar->dev;
 	struct ath10k_skb_cb *skb_cb;
@@ -263,7 +263,7 @@ err:
 	return res;
 }
 
-int ath10k_htt_tx(struct htt_struct *htt, struct sk_buff *msdu)
+int ath10k_htt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 {
 	struct device *dev = htt->ar->dev;
 	struct htt_cmd *cmd;

@@ -23,17 +23,17 @@
 
 static void ath10k_htt_stop_queue(void *context)
 {
-	struct htt_struct *htt = context;
+	struct ath10k_htt *htt = context;
 	ieee80211_stop_queues(htt->ar->hw);
 }
 
 static void ath10k_htt_wake_queue(void *context)
 {
-	struct htt_struct *htt = context;
+	struct ath10k_htt *htt = context;
 	ieee80211_wake_queues(htt->ar->hw);
 }
 
-static int ath10k_htt_htc_attach(struct htt_struct *htt)
+static int ath10k_htt_htc_attach(struct ath10k_htt *htt)
 {
 	struct ath10k_htc_svc_conn_req conn_req;
 	struct ath10k_htc_svc_conn_resp conn_resp;
@@ -67,9 +67,9 @@ static int ath10k_htt_htc_attach(struct htt_struct *htt)
 	return 0;
 }
 
-struct htt_struct *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc)
+struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc)
 {
-	struct htt_struct *htt;
+	struct ath10k_htt *htt;
 
 	htt = kzalloc(sizeof(*htt), GFP_KERNEL);
 	if (!htt)
@@ -117,7 +117,7 @@ fail1:
 
 #define HTT_TARGET_VERSION_TIMEOUT_HZ (3*HZ)
 
-static int ath10k_htt_verify_version(struct htt_struct *htt)
+static int ath10k_htt_verify_version(struct ath10k_htt *htt)
 {
 	ath10k_dbg(ATH10K_DBG_HTT,
 		   "htt target version %d.%d; host version %d.%d\n",
@@ -137,7 +137,7 @@ static int ath10k_htt_verify_version(struct htt_struct *htt)
 	return 0;
 }
 
-int ath10k_htt_attach_target(struct htt_struct *htt)
+int ath10k_htt_attach_target(struct ath10k_htt *htt)
 {
 	int status;
 
@@ -162,7 +162,7 @@ int ath10k_htt_attach_target(struct htt_struct *htt)
 
 }
 
-void ath10k_htt_detach(struct htt_struct *htt)
+void ath10k_htt_detach(struct ath10k_htt *htt)
 {
 	ath10k_htt_rx_detach(htt);
 	ath10k_htt_tx_detach(htt);
