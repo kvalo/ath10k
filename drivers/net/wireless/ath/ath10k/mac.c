@@ -96,11 +96,9 @@ static int ath10k_install_key(struct ath10k_vif *arvif,
 
 	ret = wait_for_completion_timeout(&ar->install_key_done, 3*HZ);
 	if (ret == 0)
-		ret = -ETIMEDOUT;
-	if (ret > 0)
-		ret = 0;
+		return -ETIMEDOUT;
 
-	return ret;
+	return 0;
 }
 
 static int ath10k_install_peer_wep_keys(struct ath10k_vif *arvif,
@@ -359,12 +357,9 @@ static inline int ath10k_vdev_setup_sync(struct ath10k *ar)
 	ret = wait_for_completion_timeout(&ar->vdev_setup_done,
 					  ATH10K_VDEV_SETUP_TIMEOUT_HZ);
 	if (ret == 0)
-		ret = -ETIMEDOUT;
+		return -ETIMEDOUT;
 
-	if (ret > 0)
-		ret = 0; /* success */
-
-	return ret;
+	return 0;
 }
 
 static int ath10k_vdev_start(struct ath10k_vif *arvif)
@@ -1420,7 +1415,7 @@ static void ath10k_abort_scan(struct ath10k *ar)
 
 	ret = wait_for_completion_timeout(&ar->scan.completed, 3*HZ);
 	if (ret == 0)
-		ret = -ETIMEDOUT;
+		ath10k_warn("timed out while waiting for scan to stop\n");
 
 	spin_lock_bh(&ar->data_lock);
 	if (ar->scan.in_progress) {
@@ -1448,8 +1443,6 @@ static int ath10k_start_scan(struct ath10k *ar,
 
 	ret = wait_for_completion_timeout(&ar->scan.started, 1*HZ);
 	if (ret == 0)
-		ret = -ETIMEDOUT;
-	if (ret < 0)
 		return ret;
 
 	/* the scan can complete earlier, before we even
