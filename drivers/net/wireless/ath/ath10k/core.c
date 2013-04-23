@@ -72,10 +72,8 @@ static void ath10k_send_suspend_complete(struct ath10k *ar)
 {
 	ath10k_dbg(ATH10K_DBG_CORE, "%s\n", __func__);
 
-#if defined(CONFIG_PM_SLEEP)
 	ar->is_target_paused = true;
 	wake_up(&ar->event_queue);
-#endif
 }
 
 static int ath10k_check_fw_version(struct ath10k *ar)
@@ -458,9 +456,8 @@ struct ath10k *ath10k_core_create(void *hif_priv, struct device *dev,
 	INIT_WORK(&ar->offchan_tx_work, ath10k_offchan_tx_work);
 	skb_queue_head_init(&ar->offchan_tx_queue);
 
-#if defined(CONFIG_PM_SLEEP)
 	init_waitqueue_head(&ar->event_queue);
-#endif
+
 	return ar;
 
 err_wq:
