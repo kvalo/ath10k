@@ -2408,20 +2408,20 @@ struct wmi_quiet_info {
 #define WMI_P2P_MAX_NOA_DESCRIPTORS 4
 #define WMI_P2P_OPPPS_ENABLE_BIT	BIT(0)
 #define WMI_P2P_OPPPS_CTWINDOW_OFFSET	1
+#define WMI_P2P_NOA_CHANGED_BIT	BIT(0)
 
 struct wmi_p2p_noa_info {
-	/* Flag to indicate an update in NOA schedule */
-	__le32 p2p_noa_changed;
-	/* Identifies the instance of NOA sub element */
-	__le32 index;
-	/*
-	 * Bit 0:	Opp PS state of the AP
-	 * Bits 1-7:	Ctwindow in TUs
-	 * Bits 8-31:	Reserved
-	 */
-	__le32 opp_ps_info;
+	/* Bit 0 - Flag to indicate an update in NOA schedule
+	   Bits 7-1 - Reserved */
+	u8 changed;
+	/* NOA index */
+	u8 index;
+	/* Bit 0 - Opp PS state of the AP
+	   Bits 1-7 - Ctwindow in TUs */
+	u8 ctwindow_oppps;
 	/* Number of NOA descriptors */
-	__le32 num_descriptors;
+	u8 num_descriptors;
+
 	struct wmi_p2p_noa_descriptor noa_descriptors[WMI_P2P_MAX_NOA_DESCRIPTORS];
 } __packed;
 

@@ -539,12 +539,12 @@ static void ath10k_p2p_fill_noa_ie(u8 *data, u32 len,
 				   struct wmi_p2p_noa_info *noa)
 {
 	struct ath10k_p2p_noa_attr *noa_attr;
-	u8  ctwindow_oppps = (u8) __le32_to_cpu(noa->opp_ps_info);
+	u8  ctwindow_oppps = noa->ctwindow_oppps;
 	u8 ctwindow = ctwindow_oppps >> WMI_P2P_OPPPS_CTWINDOW_OFFSET;
 	bool oppps = !!(ctwindow_oppps & WMI_P2P_OPPPS_ENABLE_BIT);
 	__le16 *noa_attr_len;
 	u16 attr_len;
-	u32 noa_descriptors = __le32_to_cpu(noa->num_descriptors);
+	u8 noa_descriptors = noa->num_descriptors;
 	int i;
 
 	/* P2P IE */
@@ -560,7 +560,7 @@ static void ath10k_p2p_fill_noa_ie(u8 *data, u32 len,
 	noa_attr_len = (__le16 *) &data[7]; /* 2 bytes */
 	noa_attr = (struct ath10k_p2p_noa_attr *) &data[9];
 
-	noa_attr->index = __le32_to_cpu(noa->index);
+	noa_attr->index = noa->index;
 	noa_attr->oppps_ctwindow = ctwindow;
 	if (oppps)
 		noa_attr->oppps_ctwindow |= ATH10K_P2P_OPPPS_ENABLE_BIT;
@@ -582,8 +582,8 @@ static void ath10k_p2p_fill_noa_ie(u8 *data, u32 len,
 static u32 ath10k_p2p_calc_noa_ie_len(struct wmi_p2p_noa_info *noa)
 {
 	u32 len = 0;
-	u32 noa_descriptors = __le32_to_cpu(noa->num_descriptors);
-	u8 opp_ps_info = (u8) __le32_to_cpu(noa->opp_ps_info);
+	u8 noa_descriptors = noa->num_descriptors;
+	u8 opp_ps_info = noa->ctwindow_oppps;
 	bool opps_enabled = !!(opp_ps_info & WMI_P2P_OPPPS_ENABLE_BIT);
 
 
@@ -609,8 +609,8 @@ static void ath10k_wmi_update_noa(struct ath10k *ar, struct ath10k_vif *arvif,
 	if (arvif->vdev_subtype != WMI_VDEV_SUBTYPE_P2P_GO)
 		return;
 
-	ath10k_dbg(ATH10K_DBG_BEACON, "noa changed: %d\n", noa->p2p_noa_changed);
-	if (noa->p2p_noa_changed) {
+	ath10k_dbg(ATH10K_DBG_BEACON, "noa changed: %d\n", noa->changed);
+	if (noa->changed & WMI_P2P_NOA_CHANGED_BIT) {
 		new_len = ath10k_p2p_calc_noa_ie_len(noa);
 		if (!new_len)
 			goto cleanup;
