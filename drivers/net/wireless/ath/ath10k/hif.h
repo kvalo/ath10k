@@ -21,9 +21,6 @@
 #include <linux/kernel.h>
 #include "core.h"
 
-void ath10k_register_host_reg_table(struct ath10k *ar, u32 hif_type);
-void ath10k_register_target_reg_table(struct ath10k *ar, u32 target_type);
-
 struct ath10k_hif_cb {
 	int (*tx_completion_handler)(struct ath10k *ar,
 				     struct sk_buff *wbuf,
