@@ -59,14 +59,6 @@ struct htt_ver_req {
 	u8 pad[sizeof(u32) - sizeof(struct htt_cmd_hdr)];
 } __packed;
 
-enum htt_pkt_type {
-	HTT_PKT_TYPE_RAW         = 1 << 0,
-	HTT_PKT_TYPE_NATIVE_WIFI = 1 << 1,
-	HTT_PKT_TYPE_ETHERNET    = 1 << 2,
-
-	HTT_PKT_TYPE_COUNT  /* keep this last */
-};
-
 /*
  * HTT tx MSDU descriptor
  *

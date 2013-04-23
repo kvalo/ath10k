@@ -44,6 +44,19 @@
 #define AR9888_HW_2_0_BOARD_DATA_FILE	"board.bin"
 #define AR9888_HW_2_0_PATCH_LOAD_ADDR	0x1234
 
+/* Known pecularities:
+ *  - current FW doesn't support raw rx mode (last tested v599)
+ *  - current FW dumps upon raw tx mode (last tested v599)
+ *  - raw appears in nwifi decap, raw and nwifi appear in ethernet decap
+ *  - raw have FCS, nwifi doesn't
+ *  - ethernet frames have 802.11 header decapped and parts (base hdr, cipher
+ *    param, llc/snap) are aligned to 4byte boundaries each */
+enum ath10k_hw_txrx_mode {
+	ATH10K_HW_TXRX_RAW = 0,
+	ATH10K_HW_TXRX_NATIVE_WIFI = 1,
+	ATH10K_HW_TXRX_ETHERNET = 2,
+};
+
 #define TARGET_NUM_VDEV				8
 #define TARGET_NUM_PEER_AST			2
 #define TARGET_WDS_ENTRIES			32
@@ -58,8 +71,7 @@
 #define TARGET_RX_CHAIN_MASK			0x7
 #define TARGET_RX_TIMEOUT_LO_PRI		100
 #define TARGET_RX_TIMEOUT_HI_PRI		40
-#define TARGET_RX_DECAP_MODE			(0x2)
-#define TARGET_RX_DECAP_MODE_NWIFI		(0x1)
+#define TARGET_RX_DECAP_MODE			ATH10K_HW_TXRX_ETHERNET
 #define TARGET_SCAN_MAX_REQS			0x4
 #define TARGET_BMISS_OFFLOAD_MAX_VDEV		0x3
 #define TARGET_ROAM_OFFLOAD_MAX_VDEV		0x3

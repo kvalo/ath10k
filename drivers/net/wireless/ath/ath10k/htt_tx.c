@@ -351,7 +351,7 @@ int ath10k_htt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 	if (!ieee80211_has_protected(hdr->frame_control))
 		flags0 |= HTT_DATA_TX_DESC_FLAGS0_NO_ENCRYPT;
 	flags0 |= HTT_DATA_TX_DESC_FLAGS0_MAC_HDR_PRESENT;
-	flags0 |= SM(HTT_PKT_TYPE_RAW, HTT_DATA_TX_DESC_FLAGS0_PKT_TYPE);
+	flags0 |= SM(ATH10K_HW_TXRX_NATIVE_WIFI, HTT_DATA_TX_DESC_FLAGS0_PKT_TYPE);
 
 	flags1  = 0;
 	flags1 |= SM((u16)vdev_id, HTT_DATA_TX_DESC_FLAGS1_VDEV_ID);
