@@ -21,12 +21,6 @@
 #include <linux/kernel.h>
 #include "core.h"
 
-/*
- * maximum number of bytes that can be
- * handled atomically by DiagRead/DiagWrite
- */
-#define DIAG_TRANSFER_LIMIT 2048
-
 void ath10k_register_host_reg_table(struct ath10k *ar, u32 hif_type);
 void ath10k_register_target_reg_table(struct ath10k *ar, u32 target_type);
 
