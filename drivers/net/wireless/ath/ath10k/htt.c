@@ -73,7 +73,7 @@ struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc)
 
 	htt = kzalloc(sizeof(*htt), GFP_KERNEL);
 	if (!htt)
-		goto fail1;
+		return NULL;
 
 	htt->ar = ar;
 	htt->htc = htc;
@@ -86,12 +86,12 @@ struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc)
 	 * message to the target.
 	 */
 	if (ath10k_htt_htc_attach(htt))
-		goto fail2;
+		goto err_htc_attach;
 
 	ath10k_htt_tx_attach(htt);
 
 	if (ath10k_htt_rx_attach(htt))
-		goto fail3;
+		goto err_rx_attach;
 
 	/*
 	 * Prefetch enough data to satisfy target
@@ -107,11 +107,10 @@ struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc)
 
 	return htt;
 
-fail3:
+err_rx_attach:
 	ath10k_htt_tx_detach(htt);
-fail2:
+err_htc_attach:
 	kfree(htt);
-fail1:
 	return NULL;
 }
 
