@@ -2147,7 +2147,6 @@ static int ath10k_pci_probe(struct pci_dev *pdev,
 {
 	void __iomem *mem;
 	int ret;
-	u32 hif_type;
 	int probe_again = 0;
 	struct ath10k *ar;
 	struct ath10k_pci *ar_pci;
