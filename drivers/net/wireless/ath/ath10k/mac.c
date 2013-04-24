@@ -2658,16 +2658,19 @@ int ath10k_mac_register(struct ath10k *ar)
 		ar->hw->wiphy->bands[IEEE80211_BAND_2GHZ] = band;
 	}
 
-
-
 	if (ar->phy_capability & WHAL_WLAN_11A_CAPABILITY) {
 		channels = kmemdup(ath10k_5ghz_channels,
 				   sizeof(ath10k_5ghz_channels),
 				   GFP_KERNEL);
-		if (!channels)
+		if (!channels) {
+			if (ar->phy_capability & WHAL_WLAN_11G_CAPABILITY) {
+				band = &ar->mac.sbands[IEEE80211_BAND_2GHZ];
+				kfree(band->channels);
+			}
 			return -ENOMEM;
+		}
 
-		band = &ar->mac.sbands[IEEE80211_BAND_2GHZ];
+		band = &ar->mac.sbands[IEEE80211_BAND_5GHZ];
 		band->n_channels = ARRAY_SIZE(ath10k_5ghz_channels);
 		band->channels = channels;
 		band->n_bitrates = ath10k_a_rates_size;
