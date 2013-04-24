@@ -798,7 +798,10 @@ struct wmi_resource_config {
 	 *   This parameter specifies the timeout in milliseconds for each
 	 *   class.
 	 */
-	__le32 rx_timeout_pri[4];
+	__le32 rx_timeout_pri_vi;
+	__le32 rx_timeout_pri_vo;
+	__le32 rx_timeout_pri_be;
+	__le32 rx_timeout_pri_bk;
 
 	/*
 	 * what mode the rx should decap packets to
@@ -810,7 +813,7 @@ struct wmi_resource_config {
 	__le32 rx_decap_mode;
 
 	/* what is the maximum scan requests than can be queued */
-	__le32 scan_max_pending_req;
+	__le32 scan_max_pending_reqs;
 
 	/* maximum VDEV that could use BMISS offload */
 	__le32 bmiss_offload_max_vdev;
@@ -865,7 +868,6 @@ struct wmi_resource_config {
 	 *        transmit the frame as multicast.
 	 */
 	__le32 mcast2ucast_mode;
-
 
 	/*
 	 * how much memory to allocate for a tx PPDU dbg log
