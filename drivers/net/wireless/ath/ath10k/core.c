@@ -264,7 +264,7 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 		/* Determine where in Target RAM to write Board Data */
 		ath10k_bmi_read32(ar, hi_board_ext_data, &board_ext_address);
 
-		ath10k_dbg(ATH10K_DBG_BOOT,
+		ath10k_dbg(ATH10K_DBG_CORE,
 			   "ath10k: Board extended Data download addr: 0x%x\n",
 			   board_ext_address);
 
@@ -345,7 +345,7 @@ static int ath10k_init_download_firmware(struct ath10k *ar)
 
 	/* Transfer One Time Programmable data */
 	address = ar->hw_params.patch_load_addr;
-	ath10k_dbg(ATH10K_DBG_BOOT,
+	ath10k_dbg(ATH10K_DBG_CORE,
 		   "Using 0x%x for the remainder of init\n", address);
 
 	status = ath10k_init_transfer_bin_file(ar, ATH10K_FILE_OTP,

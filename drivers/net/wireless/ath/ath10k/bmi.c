@@ -27,7 +27,7 @@ int ath10k_bmi_done(struct ath10k *ar)
 	int ret;
 
 	if (ar->bmi.done_sent) {
-		ath10k_dbg(ATH10K_DBG_BMI, "%s skipped\n", __func__);
+		ath10k_dbg(ATH10K_DBG_CORE, "%s skipped\n", __func__);
 		return 0;
 	}
 
@@ -91,7 +91,7 @@ int ath10k_bmi_read_memory(struct ath10k *ar,
 		return -EBUSY;
 	}
 
-	ath10k_dbg(ATH10K_DBG_BMI,
+	ath10k_dbg(ATH10K_DBG_CORE,
 		   "%s: (device: 0x%p, address: 0x%x, length: %d)\n",
 		   __func__, ar, address, length);
 
@@ -130,7 +130,7 @@ int ath10k_bmi_write_memory(struct ath10k *ar,
 		return -EBUSY;
 	}
 
-	ath10k_dbg(ATH10K_DBG_BMI,
+	ath10k_dbg(ATH10K_DBG_CORE,
 		   "%s: (device: 0x%p, address: 0x%x, length: %d)\n",
 		   __func__, ar, address, length);
 
@@ -176,7 +176,7 @@ int ath10k_bmi_execute(struct ath10k *ar, u32 address, u32 *param)
 		return -EBUSY;
 	}
 
-	ath10k_dbg(ATH10K_DBG_BMI,
+	ath10k_dbg(ATH10K_DBG_CORE,
 		   "%s: (device: 0x%p, address: 0x%x, param: %d)\n",
 		   __func__, ar, address, *param);
 

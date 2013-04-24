@@ -270,7 +270,7 @@ void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info)
 	status->freq = ch->center_freq;
 	rcu_read_unlock();
 
-	ath10k_dbg(ATH10K_DBG_RX,
+	ath10k_dbg(ATH10K_DBG_HTT,
 		   "rx skb %p len %u %s%s%s%s%s %srate_idx %u vht_nss %u freq %u band %u\n",
 		   info->skb,
 		   info->skb->len,
