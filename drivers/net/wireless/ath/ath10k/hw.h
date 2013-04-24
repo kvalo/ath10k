@@ -72,7 +72,7 @@ enum ath10k_mcast2ucast_mode {
 #define TARGET_NUM_OFFLOAD_PEERS		0
 #define TARGET_NUM_OFFLOAD_REORDER_BUFS         0
 #define TARGET_NUM_PEER_KEYS			2
-#define TARGET_NUM_TIDS				(2 * ((TARGET_NUM_PEERS) + (TARGET_NUM_VDEVS)))
+#define TARGET_NUM_TIDS		(2 * ((TARGET_NUM_PEERS) + (TARGET_NUM_VDEVS)))
 #define TARGET_TX_CHAIN_MASK			(BIT(0) | BIT(1) | BIT(2))
 #define TARGET_RX_CHAIN_MASK			(BIT(0) | BIT(1) | BIT(2))
 #define TARGET_RX_TIMEOUT_LO_PRI		100
@@ -224,7 +224,7 @@ enum ath10k_mcast2ucast_mode {
 #define SCRATCH_3_ADDRESS			0x0030
 
 /* Firmware indications to the Host via SCRATCH_3 register. */
-#define FW_INDICATOR_ADDRESS			(SOC_CORE_BASE_ADDRESS + SCRATCH_3_ADDRESS)
+#define FW_INDICATOR_ADDRESS	(SOC_CORE_BASE_ADDRESS + SCRATCH_3_ADDRESS)
 #define FW_IND_EVENT_PENDING			1
 #define FW_IND_INITIALIZED			2
 
@@ -304,7 +304,6 @@ enum ath10k_mcast2ucast_mode {
 #define MY_TARGET_BOARD_DATA_SZ			AR9888_BOARD_DATA_SZ
 #define MY_TARGET_BOARD_EXT_DATA_SZ		AR9888_BOARD_EXT_DATA_SZ
 
-#define RTC_STATE_V_GET(x) \
-	                (((x) & RTC_STATE_V_MASK) >> RTC_STATE_V_LSB)
+#define RTC_STATE_V_GET(x) (((x) & RTC_STATE_V_MASK) >> RTC_STATE_V_LSB)
 
 #endif /* _HW_H_ */

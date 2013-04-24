@@ -206,7 +206,7 @@ int ath10k_bmi_write_memory(struct ath10k *ar, u32 address,
 	 })
 
 #define ath10k_bmi_write32(ar, item, val)				\
-	({ 								\
+	({								\
 		int ret;						\
 		u32 address;						\
 		__le32 v = __cpu_to_le32(val);				\

@@ -26,8 +26,10 @@ void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info);
 
 struct ath10k_peer *ath10k_peer_find(struct ath10k *ar, int vdev_id,
 				     const u8 *addr);
-int ath10k_wait_for_peer_created(struct ath10k *ar, int vdev_id, const u8 *addr);
-int ath10k_wait_for_peer_deleted(struct ath10k *ar, int vdev_id, const u8 *addr);
+int ath10k_wait_for_peer_created(struct ath10k *ar, int vdev_id,
+				 const u8 *addr);
+int ath10k_wait_for_peer_deleted(struct ath10k *ar, int vdev_id,
+				 const u8 *addr);
 
 void ath10k_peer_map_event(struct ath10k_htt *htt,
 			   struct htt_peer_map_event *ev);
