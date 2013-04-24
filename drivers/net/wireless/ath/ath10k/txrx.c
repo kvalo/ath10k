@@ -120,7 +120,7 @@ void ath10k_txrx_tx_completed(struct ath10k_htt *htt,
 	ath10k_txrx_tx_unref(htt, txdesc);
 }
 
-static u8 rx_legacy_rate_idx[] = {
+static const u8 rx_legacy_rate_idx[] = {
 	3,	/* 0x00  - 11Mbps  */
 	2,	/* 0x01  - 5.5Mbps */
 	1,	/* 0x02  - 2Mbps   */
