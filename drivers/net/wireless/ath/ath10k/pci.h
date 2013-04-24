@@ -151,7 +151,8 @@ struct service_to_pipe {
 };
 
 enum ath10k_pci_features {
-	ATH10K_PCI_FEATURE_MSI_X = 0,
+	ATH10K_PCI_FEATURE_MSI_X		= 0,
+	ATH10K_PCI_FEATURE_HW_1_0_WARKAROUND	= 1,
 
 	/* keep last */
 	ATH10K_PCI_FEATURE_COUNT
@@ -228,7 +229,6 @@ struct ath10k_pci {
 	/* Map CE id to ce_state */
 	struct ce_state *ce_id_to_state[CE_COUNT_MAX];
 
-	bool hw_v1_workaround;
 	spinlock_t hw_v1_workaround_lock;
 };
 
@@ -306,7 +306,7 @@ static inline void ath10k_pci_write32(struct ath10k *ar, u32 offset,
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *addr = ar_pci->mem;
 
-	if (ar_pci->hw_v1_workaround) {
+	if (test_bit(ATH10K_PCI_FEATURE_HW_1_0_WARKAROUND, ar_pci->features)) {
 		unsigned long irq_flags;
 
 		spin_lock_irqsave(&ar_pci->hw_v1_workaround_lock, irq_flags);
@@ -340,7 +340,7 @@ static inline void ath10k_set_source_ring_write_index(struct ath10k *ar,
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *indicator_addr;
 
-	if (!ar_pci->hw_v1_workaround) {
+	if (!test_bit(ATH10K_PCI_FEATURE_HW_1_0_WARKAROUND, ar_pci->features)) {
 		CE_SRC_RING_WRITE_IDX_SET(ar, ctrl_addr, write_index);
 		return;
 	}

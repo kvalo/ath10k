@@ -2130,6 +2130,9 @@ static void ath10k_pci_dump_features(struct ath10k_pci *ar_pci)
 		case ATH10K_PCI_FEATURE_MSI_X:
 			ath10k_dbg(ATH10K_DBG_PCI, "device supports MSI-X\n");
 			break;
+		case ATH10K_PCI_FEATURE_HW_1_0_WARKAROUND:
+			ath10k_dbg(ATH10K_DBG_PCI, "QCA988X_1.0 workaround enabled\n");
+			break;
 		}
 	}
 }
@@ -2159,6 +2162,7 @@ retry:
 
 	switch (pci_dev->device) {
 	case QCA988X_1_0_DEVICE_ID:
+		set_bit(ATH10K_PCI_FEATURE_HW_1_0_WARKAROUND, ar_pci->features);
 		break;
 	case QCA988X_2_0_DEVICE_ID:
 		set_bit(ATH10K_PCI_FEATURE_MSI_X, ar_pci->features);
@@ -2180,10 +2184,8 @@ retry:
 	}
 
 	/* Enable QCA988X_1.0 HW workarounds */
-	if (pci_dev->device == QCA988X_1_0_DEVICE_ID) {
-		ar_pci->hw_v1_workaround = true;
+	if (test_bit(ATH10K_PCI_FEATURE_HW_1_0_WARKAROUND, ar_pci->features))
 		spin_lock_init(&ar_pci->hw_v1_workaround_lock);
-	}
 
 	ar_pci->ar = ar;
 	pci_set_drvdata(pdev, ar);
