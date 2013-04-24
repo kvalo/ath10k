@@ -2526,7 +2526,7 @@ void ath10k_mac_destroy(struct ath10k *ar)
 	ieee80211_free_hw(ar->hw);
 }
 
-static struct ieee80211_iface_limit ath10k_if_limits[] = {
+static const struct ieee80211_iface_limit ath10k_if_limits[] = {
 	{
 	.max	= 8,
 	.types	= BIT(NL80211_IFTYPE_STATION)
@@ -2536,7 +2536,7 @@ static struct ieee80211_iface_limit ath10k_if_limits[] = {
 	}
 };
 
-static struct ieee80211_iface_combination ath10k_if_comb = {
+static const struct ieee80211_iface_combination ath10k_if_comb = {
 	.limits = ath10k_if_limits,
 	.n_limits = ARRAY_SIZE(ath10k_if_limits),
 	.max_interfaces = 8,
