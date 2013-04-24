@@ -270,28 +270,6 @@ static inline void ath10k_pci_reg_write32(void __iomem *mem, u32 addr, u32 val)
 /* Wait up to this many Ms for a Diagnostic Access CE operation to complete */
 #define DIAG_ACCESS_CE_TIMEOUT_MS 10
 
-static inline void pci_write32_v1_workaround(struct ath10k *ar, u32 offset,
-					     u32 value)
-{
-	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	void __iomem *addr = ar_pci->mem;
-
-	if (ar_pci->hw_v1_workaround) {
-		unsigned long irq_flags;
-
-		spin_lock_irqsave(&ar_pci->hw_v1_workaround_lock, irq_flags);
-
-		ioread32(addr+offset+4); /* 3rd read prior to write */
-		ioread32(addr+offset+4); /* 2nd read prior to write */
-		ioread32(addr+offset+4); /* 1st read prior to write */
-		iowrite32(value, addr+offset);
-
-		spin_unlock_irqrestore(&ar_pci->hw_v1_workaround_lock,
-				       irq_flags);
-	} else
-		iowrite32(value, addr+offset);
-}
-
 /*
  * This API allows the Host to access Target registers directly
  * and relatively efficiently over PCIe.
@@ -324,7 +302,23 @@ static inline void pci_write32_v1_workaround(struct ath10k *ar, u32 offset,
 static inline void ath10k_pci_write32(struct ath10k *ar, u32 offset,
 				      u32 value)
 {
-	pci_write32_v1_workaround(ar, offset, value);
+
+	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+	void __iomem *addr = ar_pci->mem;
+
+	if (ar_pci->hw_v1_workaround) {
+		unsigned long irq_flags;
+
+		spin_lock_irqsave(&ar_pci->hw_v1_workaround_lock, irq_flags);
+
+		ioread32(addr+offset+4); /* 3rd read prior to write */
+		ioread32(addr+offset+4); /* 2nd read prior to write */
+		ioread32(addr+offset+4); /* 1st read prior to write */
+		iowrite32(value, addr+offset);
+
+		spin_unlock_irqrestore(&ar_pci->hw_v1_workaround_lock, irq_flags);
+	} else
+		iowrite32(value, addr+offset);
 }
 
 static inline u32 ath10k_pci_read32(struct ath10k *ar, u32 offset)
