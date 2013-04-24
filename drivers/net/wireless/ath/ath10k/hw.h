@@ -28,7 +28,7 @@
 
 /* QCA988X 1.0 definitions */
 #define QCA988X_HW_1_0_VERSION		0x4000002c
-#define QCA988X_HW_1_0_FW_DIR		"ath10k/AR9888/hw1.0"
+#define QCA988X_HW_1_0_FW_DIR		"ath10k/QCA988X/hw1.0"
 #define QCA988X_HW_1_0_FW_FILE		"firmware.bin"
 #define QCA988X_HW_1_0_OTP_FILE		"otp.bin"
 #define QCA988X_HW_1_0_BOARD_DATA_FILE	"board.bin"
@@ -36,7 +36,7 @@
 
 /* QCA988X 2.0 definitions */
 #define QCA988X_HW_2_0_VERSION		0x4100016c
-#define QCA988X_HW_2_0_FW_DIR		"ath10k/AR9888/hw2.0"
+#define QCA988X_HW_2_0_FW_DIR		"ath10k/QCA988X/hw2.0"
 #define QCA988X_HW_2_0_FW_FILE		"firmware.bin"
 #define QCA988X_HW_2_0_OTP_FILE		"otp.bin"
 #define QCA988X_HW_2_0_BOARD_DATA_FILE	"board.bin"
