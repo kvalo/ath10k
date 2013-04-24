@@ -1235,6 +1235,7 @@ int ath10k_wmi_cmd_init(struct ath10k *ar)
 		.num_vdevs = __cpu_to_le32(TARGET_NUM_VDEVS),
 		.num_peers = __cpu_to_le32(TARGET_NUM_PEERS + TARGET_NUM_VDEVS),
 		.num_offload_peers = __cpu_to_le32(TARGET_NUM_OFFLOAD_PEERS),
+		.num_offload_reorder_bufs = __cpu_to_le32(TARGET_NUM_OFFLOAD_REORDER_BUFS),
 		.num_peer_keys = __cpu_to_le32(TARGET_NUM_PEER_KEYS),
 		.num_tids = __cpu_to_le32(TARGET_NUM_TIDS),
 		.ast_skid_limit = __cpu_to_le32(TARGET_AST_SKID_LIMIT),

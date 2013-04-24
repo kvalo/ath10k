@@ -378,6 +378,8 @@ enum wmi_cmd_id {
 	WMI_DBGLOG_CFG_CMDID,
 	WMI_PDEV_QVIT_CMDID,
 	WMI_PDEV_FTM_INTG_CMDID,
+	WMI_VDEV_SET_KEEPALIVE_CMDID,
+	WMI_VDEV_GET_KEEPALIVE_CMDID,
 	WMI_PDEV_UTF_CMDID,
 };
 
@@ -440,6 +442,8 @@ enum wmi_event_id {
 	WMI_PDEV_QVIT_EVENTID,
 	WMI_WLAN_PROFILE_DATA_EVENTID,
 	WMI_PDEV_FTM_INTG_EVENTID,
+	WMI_WLAN_FREQ_AVOID_EVENTID,
+	WMI_VDEV_GET_KEEPALIVE_EVENTID,
 	WMI_PDEV_UTF_EVENTID,
 };
 
@@ -747,6 +751,9 @@ struct wmi_resource_config {
 	 * maximum number of peers suported by target in offload mode
 	 */
 	__le32 num_offload_peers;
+
+	/* For target-based RX reordering */
+	__le32 num_offload_reorder_bufs;
 
 	/* number of keys per peer */
 	__le32 num_peer_keys;
@@ -1056,6 +1063,9 @@ struct wmi_start_scan_cmd {
 	__le32 probe_delay;
 	/* Scan control flags */
 	__le32 scan_ctrl_flags;
+
+	/* Burst duration time in msecs */
+	__le32 burst_duration;
 	/*
 	 * TLV (tag length value )  paramerters follow the scan_cmd structure.
 	 * TLV can contain channel list, bssid list, ssid list and
@@ -2040,6 +2050,8 @@ enum wmi_vdev_param {
 	WMI_VDEV_PARAM_MCAST_INDICATE,
 	/* Tx DHCP packet indicate Enable/Disable */
 	WMI_VDEV_PARAM_DHCP_INDICATE,
+	/* Enable host inspection of Tx unicast packet to unknown destination */
+	WMI_VDEV_PARAM_UNKNOWN_DEST_INDICATE,
 
 	/* The minimum amount of time AP begins to consider STA inactive */
 	WMI_VDEV_PARAM_AP_KEEPALIVE_MIN_IDLE_INACTIVE_TIME_SECS,
