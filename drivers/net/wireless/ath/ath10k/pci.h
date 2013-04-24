@@ -237,11 +237,13 @@ static inline struct ath10k_pci *ath10k_pci_priv(struct ath10k *ar)
 	return ar->hif.priv;
 }
 
-static inline u32 ath10k_pci_reg_read32(void __iomem *mem, u32 addr) {
+static inline u32 ath10k_pci_reg_read32(void __iomem *mem, u32 addr)
+{
 	return ioread32(mem + PCIE_LOCAL_BASE_ADDRESS + addr);
 }
 
-static inline void ath10k_pci_reg_write32(void __iomem *mem, u32 addr, u32 val) {
+static inline void ath10k_pci_reg_write32(void __iomem *mem, u32 addr, u32 val)
+{
 	iowrite32(val, mem + PCIE_LOCAL_BASE_ADDRESS + addr);
 }
 
@@ -268,7 +270,8 @@ static inline void ath10k_pci_reg_write32(void __iomem *mem, u32 addr, u32 val) 
 /* Wait up to this many Ms for a Diagnostic Access CE operation to complete */
 #define DIAG_ACCESS_CE_TIMEOUT_MS 10
 
-static inline void pci_write32_v1_workaround(struct ath10k *ar, u32 offset, u32 value)
+static inline void pci_write32_v1_workaround(struct ath10k *ar, u32 offset,
+					     u32 value)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *addr = ar_pci->mem;
@@ -283,7 +286,8 @@ static inline void pci_write32_v1_workaround(struct ath10k *ar, u32 offset, u32 
 		ioread32(addr+offset+4); /* 1st read prior to write */
 		iowrite32(value, addr+offset);
 
-		spin_unlock_irqrestore(&ar_pci->hw_v1_workaround_lock, irq_flags);
+		spin_unlock_irqrestore(&ar_pci->hw_v1_workaround_lock,
+				       irq_flags);
 	} else
 		iowrite32(value, addr+offset);
 }
@@ -317,20 +321,23 @@ static inline void pci_write32_v1_workaround(struct ath10k *ar, u32 offset, u32 
  *   directly accessible.  BEGIN/END is under a reference counter;
  *   multiple code paths may issue BEGIN/END on a single targid.
  */
-static inline void ath10k_pci_write32(struct ath10k *ar, u32 offset, u32 value) {
+static inline void ath10k_pci_write32(struct ath10k *ar, u32 offset,
+				      u32 value)
+{
 	pci_write32_v1_workaround(ar, offset, value);
 }
 
-static inline u32 ath10k_pci_read32(struct ath10k *ar, u32 offset) {
+static inline u32 ath10k_pci_read32(struct ath10k *ar, u32 offset)
+{
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 
 	return ioread32(ar_pci->mem + offset);
 }
 
 /*
- * FIXME: This function is a wrapper to workaround QCA988x_1.0 HW CE problem.
-          If we decide to drop this HW revision support in the future, we
-          may drop the function as well.
+ * FIXME: This function is a wrapper to workaround QCA988x_1.0 HW CE
+ * problem. If we decide to drop this HW revision support in the future, we
+ * may drop the function as well.
  */
 static inline void ath10k_set_source_ring_write_index(struct ath10k *ar,
 						      u32 ctrl_addr,

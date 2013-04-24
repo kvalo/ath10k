@@ -68,7 +68,7 @@ int ath10k_bmi_get_target_info(struct ath10k *ar,
 
 	if (resplen < sizeof(resp.get_target_info)) {
 		ath10k_warn("invalid get_target_info response length (%d)\n",
-				resplen);
+			    resplen);
 		return -EIO;
 	}
 
@@ -102,7 +102,8 @@ int ath10k_bmi_read_memory(struct ath10k *ar,
 		cmd.read_mem.addr = __cpu_to_le32(address);
 		cmd.read_mem.len  = __cpu_to_le32(rxlen);
 
-		ret = ath10k_hif_exchange_bmi_msg(ar, &cmd, cmdlen, &resp, &rxlen);
+		ret = ath10k_hif_exchange_bmi_msg(ar, &cmd, cmdlen,
+						  &resp, &rxlen);
 		if (ret) {
 			ath10k_warn("unable to read from the device\n");
 			return ret;
@@ -192,7 +193,7 @@ int ath10k_bmi_execute(struct ath10k *ar, u32 address, u32 *param)
 
 	if (resplen < sizeof(resp.execute)) {
 		ath10k_warn("invalid execute response length (%d)\n",
-				resplen);
+			    resplen);
 		return ret;
 	}
 

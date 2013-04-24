@@ -236,9 +236,11 @@ static ssize_t ath10k_read_fw_stats(struct file *file, char __user *user_buf,
 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
 			 "Sched self tiggers", fw_stats->self_triggers);
 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
-			 "Dropped due to SW retries", fw_stats->sw_retry_failure);
+			 "Dropped due to SW retries",
+			 fw_stats->sw_retry_failure);
 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
-			 "Illegal rate phy errors", fw_stats->illgl_rate_phy_err);
+			 "Illegal rate phy errors",
+			 fw_stats->illgl_rate_phy_err);
 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
 			 "Pdev continous xretry", fw_stats->pdev_cont_xretry);
 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
@@ -257,7 +259,8 @@ static ssize_t ath10k_read_fw_stats(struct file *file, char __user *user_buf,
 				 "=================");
 
 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
-			 "Mid PPDU route change", fw_stats->mid_ppdu_route_change);
+			 "Mid PPDU route change",
+			 fw_stats->mid_ppdu_route_change);
 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
 			 "Tot. number of statuses", fw_stats->status_rcvd);
 	len += scnprintf(buf + len, buf_len - len, "%30s %10d\n",
@@ -293,11 +296,13 @@ static ssize_t ath10k_read_fw_stats(struct file *file, char __user *user_buf,
 
 	for (i = 0; i < fw_stats->peers; i++) {
 		len += scnprintf(buf + len, buf_len - len, "%30s %pM\n",
-				 "Peer MAC address", fw_stats->peer_stat[i].peer_macaddr);
+				 "Peer MAC address",
+				 fw_stats->peer_stat[i].peer_macaddr);
 		len += scnprintf(buf + len, buf_len - len, "%30s %u\n",
 				 "Peer RSSI", fw_stats->peer_stat[i].peer_rssi);
 		len += scnprintf(buf + len, buf_len - len, "%30s %u\n",
-				 "Peer TX rate", fw_stats->peer_stat[i].peer_tx_rate);
+				 "Peer TX rate",
+				 fw_stats->peer_stat[i].peer_tx_rate);
 		len += scnprintf(buf + len, buf_len - len, "\n");
 	}
 
