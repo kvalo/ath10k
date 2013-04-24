@@ -552,7 +552,8 @@ void ath10k_ce_per_engine_service(struct ath10k *ar, unsigned int ce_id)
 							    &buf, &nbytes,
 							    &id, &flags) == 0) {
 			spin_unlock_bh(&ar_pci->ce_lock);
-			ce_state->recv_cb(ce_state, transfer_context, buf, nbytes, id, flags);
+			ce_state->recv_cb(ce_state, transfer_context, buf,
+					  nbytes, id, flags);
 			spin_lock_bh(&ar_pci->ce_lock);
 		}
 	}
@@ -568,7 +569,8 @@ void ath10k_ce_per_engine_service(struct ath10k *ar, unsigned int ce_id)
 							    &nbytes,
 							    &id) == 0) {
 			spin_unlock_bh(&ar_pci->ce_lock);
-			ce_state->send_cb(ce_state, transfer_context, buf, nbytes, id);
+			ce_state->send_cb(ce_state, transfer_context,
+					  buf, nbytes, id);
 			spin_lock_bh(&ar_pci->ce_lock);
 		}
 	}
@@ -626,7 +628,8 @@ static void ath10k_ce_per_engine_handler_adjust(struct ce_state *ce_state,
 
 	ath10k_pci_wake(ar);
 
-	if ((!disable_copy_compl_intr) && (ce_state->send_cb || ce_state->recv_cb))
+	if ((!disable_copy_compl_intr) &&
+	    (ce_state->send_cb || ce_state->recv_cb))
 		CE_COPY_COMPLETE_INTR_ENABLE(ar, ctrl_addr);
 	else
 		CE_COPY_COMPLETE_INTR_DISABLE(ar, ctrl_addr);
@@ -845,7 +848,8 @@ static int ath10k_ce_init_dest_ring(struct ath10k *ar,
 	}
 
 	ath10k_pci_wake(ar);
-	CE_DEST_RING_BASE_ADDR_SET(ar, ctrl_addr, dest_ring->base_addr_ce_space);
+	CE_DEST_RING_BASE_ADDR_SET(ar, ctrl_addr,
+				   dest_ring->base_addr_ce_space);
 	CE_DEST_RING_SZ_SET(ar, ctrl_addr, nentries);
 	CE_DEST_RING_BYTE_SWAP_SET(ar, ctrl_addr, 0);
 	CE_DEST_RING_LOWMARK_SET(ar, ctrl_addr, 0);
@@ -943,21 +947,21 @@ void ath10k_ce_deinit(struct ce_state *ce_state)
 	if (ce_state->src_ring) {
 		kfree(ce_state->src_ring->shadow_base_unaligned);
 		pci_free_consistent(ar_pci->pdev,
-				   (ce_state->src_ring->nentries *
-				    sizeof(struct ce_desc) +
-				    CE_DESC_RING_ALIGN),
-				   ce_state->src_ring->base_addr_owner_space,
-				   ce_state->src_ring->base_addr_ce_space);
+				    (ce_state->src_ring->nentries *
+				     sizeof(struct ce_desc) +
+				     CE_DESC_RING_ALIGN),
+				    ce_state->src_ring->base_addr_owner_space,
+				    ce_state->src_ring->base_addr_ce_space);
 		kfree(ce_state->src_ring);
 	}
 
 	if (ce_state->dest_ring) {
 		pci_free_consistent(ar_pci->pdev,
-				   (ce_state->dest_ring->nentries *
-				    sizeof(struct ce_desc) +
-				    CE_DESC_RING_ALIGN),
-				   ce_state->dest_ring->base_addr_owner_space,
-				   ce_state->dest_ring->base_addr_ce_space);
+				    (ce_state->dest_ring->nentries *
+				     sizeof(struct ce_desc) +
+				     CE_DESC_RING_ALIGN),
+				    ce_state->dest_ring->base_addr_owner_space,
+				    ce_state->dest_ring->base_addr_ce_space);
 		kfree(ce_state->dest_ring);
 	}
 	kfree(ce_state);

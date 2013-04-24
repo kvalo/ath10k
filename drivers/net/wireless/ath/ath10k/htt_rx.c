@@ -126,7 +126,9 @@ static void ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
 		}
 
 		if (!IS_ALIGNED((unsigned long)skb->data, HTT_RX_DESC_ALIGN))
-			skb_pull(skb, PTR_ALIGN(skb->data, HTT_RX_DESC_ALIGN) - skb->data);
+			skb_pull(skb,
+				 PTR_ALIGN(skb->data, HTT_RX_DESC_ALIGN) -
+				 skb->data);
 
 		/* Clear rx_desc attention word before posting to Rx ring */
 		rx_desc = (struct htt_rx_desc *)skb->data;
@@ -353,7 +355,8 @@ static int ath10k_htt_rx_amsdu_pop(struct ath10k_htt *htt,
 					 DMA_FROM_DEVICE);
 
 			ath10k_dbg_dump(ATH10K_DBG_HTT_DUMP, NULL, "htt rx: ",
-					next->data, next->len + skb_tailroom(next));
+					next->data,
+					next->len + skb_tailroom(next));
 
 			skb_trim(next, 0);
 			skb_put(next, min(msdu_len, HTT_RX_BUF_SIZE));
@@ -366,11 +369,12 @@ static int ath10k_htt_rx_amsdu_pop(struct ath10k_htt *htt,
 
 		if (msdu_len > 0) {
 			/* This may suggest FW bug? */
-			ath10k_warn("htt rx msdu len not consumed (%d)\n", msdu_len);
+			ath10k_warn("htt rx msdu len not consumed (%d)\n",
+				    msdu_len);
 		}
 
 		last_msdu = __le32_to_cpu(rx_desc->msdu_end.info0) &
-							RX_MSDU_END_INFO0_LAST_MSDU;
+				RX_MSDU_END_INFO0_LAST_MSDU;
 
 		if (last_msdu) {
 			msdu->next = NULL;
@@ -754,7 +758,8 @@ static bool ath10k_htt_rx_has_fcs_err(struct sk_buff *skb)
 	return false;
 }
 
-static void ath10k_htt_rx_handler(struct ath10k_htt *htt, struct htt_rx_indication *rx)
+static void ath10k_htt_rx_handler(struct ath10k_htt *htt,
+				  struct htt_rx_indication *rx)
 {
 	struct htt_rx_info info;
 	struct htt_rx_indication_mpdu_range *mpdu_ranges;
@@ -975,7 +980,8 @@ void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb)
 	if ((((unsigned long)skb->data) & 0x3) != 0)
 		ath10k_warn("unaligned htt message, expect trouble\n");
 
-	ath10k_dbg(ATH10K_DBG_HTT, "HTT RX, msg_type: 0x%0X\n", resp->hdr.msg_type);
+	ath10k_dbg(ATH10K_DBG_HTT, "HTT RX, msg_type: 0x%0X\n",
+		   resp->hdr.msg_type);
 	switch (resp->hdr.msg_type) {
 	case HTT_T2H_MSG_TYPE_VERSION_CONF: {
 		htt->target_version_major = resp->ver_resp.major;
@@ -1024,7 +1030,8 @@ void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb)
 	}
 	case HTT_T2H_MSG_TYPE_TX_COMPL_IND: {
 		struct htt_tx_done tx_done = {};
-		int status = MS(resp->data_tx_completion.flags, HTT_DATA_TX_STATUS);
+		int status = MS(resp->data_tx_completion.flags,
+				HTT_DATA_TX_STATUS);
 		int i;
 
 		switch (status) {
@@ -1041,7 +1048,8 @@ void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb)
 			tx_done.discard = true;
 			break;
 		default:
-			ath10k_warn("unhandled tx completion status %d\n", status);
+			ath10k_warn("unhandled tx completion status %d\n",
+				    status);
 			tx_done.discard = true;
 			break;
 		}
@@ -1050,7 +1058,8 @@ void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb)
 			   resp->data_tx_completion.num_msdus);
 
 		for (i = 0; i < resp->data_tx_completion.num_msdus; i++) {
-			tx_done.msdu_id = __le16_to_cpu(resp->data_tx_completion.msdus[i]);
+			tx_done.msdu_id =
+				__le16_to_cpu(resp->data_tx_completion.msdus[i]);
 			ath10k_txrx_tx_completed(htt, &tx_done);
 		}
 		break;
