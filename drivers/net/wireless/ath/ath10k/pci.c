@@ -431,7 +431,6 @@ void ath10k_do_pci_wake(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *pci_addr = ar_pci->mem;
-	static int max_delay;
 	int tot_delay = 0;
 	int curr_delay = 5;
 
@@ -460,9 +459,6 @@ void ath10k_do_pci_wake(struct ath10k *ar)
 		if (curr_delay < 50)
 			curr_delay += 5;
 	}
-
-	if (tot_delay > max_delay)
-		max_delay = tot_delay;
 }
 
 void ath10k_do_pci_sleep(struct ath10k *ar)
