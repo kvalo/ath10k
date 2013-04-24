@@ -107,7 +107,7 @@ static inline int ath10k_skb_unmap(struct device *dev, struct sk_buff *skb)
 
 static inline u32 host_interest_item_address(u32 item_offset)
 {
-	return AR9888_HOST_INTEREST_ADDRESS + item_offset;
+	return QCA988X_HOST_INTEREST_ADDRESS + item_offset;
 }
 
 struct ath10k_bmi {

@@ -45,25 +45,25 @@ enum ath10k_file {
 
 static const struct ath10k_hw_params ath10k_hw_params_list[] = {
 	{
-		.id = AR9888_HW_1_0_VERSION,
+		.id = QCA988X_HW_1_0_VERSION,
 		.name = "qca988x hw1.0",
-		.patch_load_addr = AR9888_HW_1_0_PATCH_LOAD_ADDR,
+		.patch_load_addr = QCA988X_HW_1_0_PATCH_LOAD_ADDR,
 		.fw = {
-			.dir = AR9888_HW_1_0_FW_DIR,
-			.fw = AR9888_HW_1_0_FW_FILE,
-			.otp = AR9888_HW_1_0_OTP_FILE,
-			.board = AR9888_HW_1_0_BOARD_DATA_FILE,
+			.dir = QCA988X_HW_1_0_FW_DIR,
+			.fw = QCA988X_HW_1_0_FW_FILE,
+			.otp = QCA988X_HW_1_0_OTP_FILE,
+			.board = QCA988X_HW_1_0_BOARD_DATA_FILE,
 		},
 	},
 	{
-		.id = AR9888_HW_2_0_VERSION,
+		.id = QCA988X_HW_2_0_VERSION,
 		.name = "qca988x hw2.0",
-		.patch_load_addr = AR9888_HW_2_0_PATCH_LOAD_ADDR,
+		.patch_load_addr = QCA988X_HW_2_0_PATCH_LOAD_ADDR,
 		.fw = {
-			.dir = AR9888_HW_2_0_FW_DIR,
-			.fw = AR9888_HW_2_0_FW_FILE,
-			.otp = AR9888_HW_2_0_OTP_FILE,
-			.board = AR9888_HW_2_0_BOARD_DATA_FILE,
+			.dir = QCA988X_HW_2_0_FW_DIR,
+			.fw = QCA988X_HW_2_0_FW_FILE,
+			.otp = QCA988X_HW_2_0_OTP_FILE,
+			.board = QCA988X_HW_2_0_BOARD_DATA_FILE,
 		},
 	},
 };
@@ -261,10 +261,10 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 		 * Check whether the target has allocated memory for extended
 		 * board data and file contains extended board data
 		 */
-		if (board_ext_address && (fw_entry_size == (AR9888_BOARD_DATA_SZ + AR9888_BOARD_EXT_DATA_SZ))) {
+		if (board_ext_address && (fw_entry_size == (QCA988X_BOARD_DATA_SZ + QCA988X_BOARD_EXT_DATA_SZ))) {
 			status = ath10k_bmi_write_memory(ar, board_ext_address,
-							 (u8 *)(((unsigned long)temp_eeprom) + AR9888_BOARD_DATA_SZ),
-							 AR9888_BOARD_EXT_DATA_SZ);
+							 (u8 *)(((unsigned long)temp_eeprom) + QCA988X_BOARD_DATA_SZ),
+							 QCA988X_BOARD_EXT_DATA_SZ);
 
 			if (status != 0) {
 				ath10k_err("ath10k: BMI operation failed\n");
@@ -276,9 +276,9 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 			 * initialized
 			 */
 			ath10k_bmi_write32(ar, hi_board_ext_data_config,
-					   (AR9888_BOARD_EXT_DATA_SZ << 16) | 1);
+					   (QCA988X_BOARD_EXT_DATA_SZ << 16) | 1);
 
-			fw_entry_size = AR9888_BOARD_DATA_SZ;
+			fw_entry_size = QCA988X_BOARD_DATA_SZ;
 		}
 	}
 
@@ -356,7 +356,7 @@ static int ath10k_init_download_firmware(struct ath10k *ar)
 	}
 
 	if (uart_print) {
-		/* Configure GPIO AR9888 UART */
+		/* Configure GPIO QCA988X UART */
 		ath10k_bmi_write32(ar, hi_dbg_uart_txpin, 7);
 		ath10k_bmi_write32(ar, hi_serial_enable, 1);
 	} else {
@@ -614,5 +614,5 @@ int ath10k_core_target_resume(struct ath10k *ar)
 EXPORT_SYMBOL(ath10k_core_target_resume);
 
 MODULE_AUTHOR("Qualcomm Atheros");
-MODULE_DESCRIPTION("Core module for AR9888 PCIe devices.");
+MODULE_DESCRIPTION("Core module for QCA988X PCIe devices.");
 MODULE_LICENSE("Dual BSD/GPL");

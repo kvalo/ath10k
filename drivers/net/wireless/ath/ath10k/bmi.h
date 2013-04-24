@@ -27,8 +27,8 @@
  * to read memory, write memory, execute code, and to define an
  * application entry PC.
  *
- * It is used to download an application to AR9K, to provide
- * patches to code that is already resident on AR9K, and generally
+ * It is used to download an application to QCA988x, to provide
+ * patches to code that is already resident on QCA988x, and generally
  * to examine and modify state.  The Host has an opportunity to use
  * BMI only once during bootup.  Once the Host issues a BMI_DONE
  * command, this opportunity ends.

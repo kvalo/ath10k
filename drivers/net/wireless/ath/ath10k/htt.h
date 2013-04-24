@@ -962,7 +962,7 @@ static inline struct htt_stats_conf_item *htt_stats_conf_next_item(
  * MSDU_EXT/FRAG_DESC that will be used by the HTT to map MSDU DESC and
  * MSDU_EXT/FRAG_DESC.
  * HTT will use id in HTT descriptor instead sending the frag_desc_ptr.
- * For AR9888 HW the firmware will use fragment_desc_ptr but in WIFI2.0
+ * For QCA988X HW the firmware will use fragment_desc_ptr but in WIFI2.0
  * the hardware does the mapping/translation.
  *
  * Total banks that can be configured is configured to 16.

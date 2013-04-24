@@ -26,21 +26,21 @@
 #define SUPPORTED_FW_RELEASE	0
 #define SUPPORTED_FW_BUILD	614
 
-/* AR9888 1.0 definitions */
-#define AR9888_HW_1_0_VERSION		0x4000002c
-#define AR9888_HW_1_0_FW_DIR		"ath10k/AR9888/hw1.0"
-#define AR9888_HW_1_0_FW_FILE		"firmware.bin"
-#define AR9888_HW_1_0_OTP_FILE		"otp.bin"
-#define AR9888_HW_1_0_BOARD_DATA_FILE	"board.bin"
-#define AR9888_HW_1_0_PATCH_LOAD_ADDR	0x1234
+/* QCA988X 1.0 definitions */
+#define QCA988X_HW_1_0_VERSION		0x4000002c
+#define QCA988X_HW_1_0_FW_DIR		"ath10k/AR9888/hw1.0"
+#define QCA988X_HW_1_0_FW_FILE		"firmware.bin"
+#define QCA988X_HW_1_0_OTP_FILE		"otp.bin"
+#define QCA988X_HW_1_0_BOARD_DATA_FILE	"board.bin"
+#define QCA988X_HW_1_0_PATCH_LOAD_ADDR	0x1234
 
-/* AR9888 2.0 definitions */
-#define AR9888_HW_2_0_VERSION		0x4100016c
-#define AR9888_HW_2_0_FW_DIR		"ath10k/AR9888/hw2.0"
-#define AR9888_HW_2_0_FW_FILE		"firmware.bin"
-#define AR9888_HW_2_0_OTP_FILE		"otp.bin"
-#define AR9888_HW_2_0_BOARD_DATA_FILE	"board.bin"
-#define AR9888_HW_2_0_PATCH_LOAD_ADDR	0x1234
+/* QCA988X 2.0 definitions */
+#define QCA988X_HW_2_0_VERSION		0x4100016c
+#define QCA988X_HW_2_0_FW_DIR		"ath10k/AR9888/hw2.0"
+#define QCA988X_HW_2_0_FW_FILE		"firmware.bin"
+#define QCA988X_HW_2_0_OTP_FILE		"otp.bin"
+#define QCA988X_HW_2_0_BOARD_DATA_FILE	"board.bin"
+#define QCA988X_HW_2_0_PATCH_LOAD_ADDR	0x1234
 
 /* Known pecularities:
  *  - current FW doesn't support raw rx mode (last tested v599)
@@ -299,8 +299,8 @@ enum ath10k_mcast2ucast_mode {
 #define WINDOW_READ_ADDR_ADDRESS		MISSING
 #define WINDOW_WRITE_ADDR_ADDRESS		MISSING
 
-#define MY_TARGET_BOARD_DATA_SZ			AR9888_BOARD_DATA_SZ
-#define MY_TARGET_BOARD_EXT_DATA_SZ		AR9888_BOARD_EXT_DATA_SZ
+#define MY_TARGET_BOARD_DATA_SZ			QCA988X_BOARD_DATA_SZ
+#define MY_TARGET_BOARD_EXT_DATA_SZ		QCA988X_BOARD_EXT_DATA_SZ
 
 #define RTC_STATE_V_GET(x) (((x) & RTC_STATE_V_MASK) >> RTC_STATE_V_LSB)
 

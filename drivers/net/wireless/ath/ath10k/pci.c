@@ -36,12 +36,12 @@ unsigned int ath10k_target_ps;
 module_param(ath10k_target_ps, uint, 0644);
 MODULE_PARM_DESC(ath10k_target_ps, "Enable ath10k Target (SoC) PS option");
 
-#define AR9888_1_0_DEVICE_ID	(0xabcd)
-#define AR9888_2_0_DEVICE_ID	(0x003c)
+#define QCA988X_1_0_DEVICE_ID	(0xabcd)
+#define QCA988X_2_0_DEVICE_ID	(0x003c)
 
 static DEFINE_PCI_DEVICE_TABLE(ath10k_pci_id_table) = {
-	{ PCI_VDEVICE(ATHEROS, AR9888_1_0_DEVICE_ID) }, /* PCI-E AR9888 V1 */
-	{ PCI_VDEVICE(ATHEROS, AR9888_2_0_DEVICE_ID) }, /* PCI-E AR9888 V2 */
+	{ PCI_VDEVICE(ATHEROS, QCA988X_1_0_DEVICE_ID) }, /* PCI-E QCA988X V1 */
+	{ PCI_VDEVICE(ATHEROS, QCA988X_2_0_DEVICE_ID) }, /* PCI-E QCA988X V2 */
 	{0}
 };
 
@@ -686,7 +686,7 @@ static u16 ath10k_pci_hif_get_free_queue_number(struct ath10k *ar, u8 pipe)
 static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 {
 	u32 reg_dump_area = 0;
-	u32 reg_dump_values[REG_DUMP_COUNT_AR9888];
+	u32 reg_dump_values[REG_DUMP_COUNT_QCA988X];
 	u32 host_addr;
 	u32 i;
 
@@ -701,13 +701,13 @@ static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 
 	if (ath10k_pci_diag_read_mem(ar, reg_dump_area,
 				     (u8 *) &reg_dump_values[0],
-				     REG_DUMP_COUNT_AR9888 * sizeof(u32)) != 0) {
+				     REG_DUMP_COUNT_QCA988X * sizeof(u32)) != 0) {
 		ath10k_err("could not dump FW Dump Area\n");
 		return;
 	}
 
 	ath10k_err("target Register Dump\n");
-	for (i = 0; i < REG_DUMP_COUNT_AR9888; i++)
+	for (i = 0; i < REG_DUMP_COUNT_QCA988X; i++)
 		ath10k_err("[%02d]: 0x%08X\n", i, reg_dump_values[i]);
 
 }
@@ -2158,9 +2158,9 @@ retry:
 	ar_pci->dev = &pdev->dev;
 
 	switch (pci_dev->device) {
-	case AR9888_1_0_DEVICE_ID:
+	case QCA988X_1_0_DEVICE_ID:
 		break;
-	case AR9888_2_0_DEVICE_ID:
+	case QCA988X_2_0_DEVICE_ID:
 		set_bit(ATH10K_PCI_FEATURE_MSI_X, ar_pci->features);
 		break;
 	default:
@@ -2179,8 +2179,8 @@ retry:
 		goto err_ar_pci;
 	}
 
-	/* Enable AR9888 V1 HW workarounds */
-	if (pci_dev->device == AR9888_1_0_DEVICE_ID) {
+	/* Enable QCA988X_1.0 HW workarounds */
+	if (pci_dev->device == QCA988X_1_0_DEVICE_ID) {
 		ar_pci->hw_v1_workaround = true;
 		spin_lock_init(&ar_pci->hw_v1_workaround_lock);
 	}
@@ -2502,11 +2502,11 @@ static void __exit ath10k_pci_exit(void)
 module_exit(ath10k_pci_exit);
 
 MODULE_AUTHOR("Qualcomm Atheros");
-MODULE_DESCRIPTION("Driver support for Atheros AR9888 PCIe devices");
+MODULE_DESCRIPTION("Driver support for Atheros QCA988X PCIe devices");
 MODULE_LICENSE("Dual BSD/GPL");
-MODULE_FIRMWARE(AR9888_HW_1_0_FW_DIR "/" AR9888_HW_1_0_FW_FILE);
-MODULE_FIRMWARE(AR9888_HW_1_0_FW_DIR "/" AR9888_HW_1_0_OTP_FILE);
-MODULE_FIRMWARE(AR9888_HW_1_0_FW_DIR "/" AR9888_HW_1_0_BOARD_DATA_FILE);
-MODULE_FIRMWARE(AR9888_HW_2_0_FW_DIR "/" AR9888_HW_2_0_FW_FILE);
-MODULE_FIRMWARE(AR9888_HW_2_0_FW_DIR "/" AR9888_HW_2_0_OTP_FILE);
-MODULE_FIRMWARE(AR9888_HW_2_0_FW_DIR "/" AR9888_HW_2_0_BOARD_DATA_FILE);
+MODULE_FIRMWARE(QCA988X_HW_1_0_FW_DIR "/" QCA988X_HW_1_0_FW_FILE);
+MODULE_FIRMWARE(QCA988X_HW_1_0_FW_DIR "/" QCA988X_HW_1_0_OTP_FILE);
+MODULE_FIRMWARE(QCA988X_HW_1_0_FW_DIR "/" QCA988X_HW_1_0_BOARD_DATA_FILE);
+MODULE_FIRMWARE(QCA988X_HW_2_0_FW_DIR "/" QCA988X_HW_2_0_FW_FILE);
+MODULE_FIRMWARE(QCA988X_HW_2_0_FW_DIR "/" QCA988X_HW_2_0_OTP_FILE);
+MODULE_FIRMWARE(QCA988X_HW_2_0_FW_DIR "/" QCA988X_HW_2_0_BOARD_DATA_FILE);

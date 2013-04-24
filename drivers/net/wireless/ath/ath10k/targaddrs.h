@@ -31,7 +31,7 @@
  * write a single binary that works with all Target Types.
  * May be used in assembler code as well as C.
  */
-#define AR9888_HOST_INTEREST_ADDRESS    0x00400800
+#define QCA988X_HOST_INTEREST_ADDRESS    0x00400800
 #define HOST_INTEREST_MAX_SIZE          0x200
 
 /*
@@ -443,7 +443,7 @@ Fw Mode/SubMode Mask
 	((HOST_INTEREST->hi_smps_options & HI_SMPS_ALLOW_MASK))
 
 /* Reserve 1024 bytes for extended board data */
-#define AR9888_BOARD_DATA_SZ     7168
-#define AR9888_BOARD_EXT_DATA_SZ 0
+#define QCA988X_BOARD_DATA_SZ     7168
+#define QCA988X_BOARD_EXT_DATA_SZ 0
 
 #endif /* __TARGADDRS_H__ */
