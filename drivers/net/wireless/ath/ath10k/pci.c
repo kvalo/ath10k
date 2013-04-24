@@ -74,7 +74,7 @@ static const struct ce_attr host_ce_config_wlan[] = {
 };
 
 /* Target firmware's Copy Engine configuration. */
-static struct ce_pipe_config target_ce_config_wlan[] = {
+static const struct ce_pipe_config target_ce_config_wlan[] = {
 	/* host->target HTC control and raw streams */
 	{ /* CE0 */ 0, PIPEDIR_OUT, 32, 256, CE_ATTR_FLAGS, 0,},
 	/* target->host HTT + HTC control */
@@ -1344,7 +1344,7 @@ static void ath10k_pci_bmi_recv_data(struct ce_state *ce_state,
  * This table is derived from the CE_PCI TABLE, above.
  * It is passed to the Target at startup for use by firmware.
  */
-static struct service_to_pipe target_service_to_ce_map_wlan[] = {
+static const struct service_to_pipe target_service_to_ce_map_wlan[] = {
 	{
 		 ATH10K_HTC_SVC_ID_WMI_DATA_VO,
 		 PIPEDIR_OUT,		/* out = UL = host -> target */
