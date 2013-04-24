@@ -570,7 +570,8 @@ static int ath10k_htt_rx_amsdu(struct ath10k_htt *htt,
 			RX_MPDU_START_INFO0_ENCRYPT_TYPE);
 
 	/* FIXME: No idea what assumptions are safe here. Need logs */
-	if (fmt == RX_MSDU_DECAP_RAW && skb->next) {
+	if ((fmt == RX_MSDU_DECAP_RAW && skb->next) ||
+	    (fmt == RX_MSDU_DECAP_8023_SNAP_LLC)) {
 		ath10k_htt_rx_free_msdu_chain(skb->next);
 		skb->next = NULL;
 		return -ENOTSUPP;
