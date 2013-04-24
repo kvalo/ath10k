@@ -20,8 +20,6 @@
 
 #include "targaddrs.h"
 
-#define TARGET_TYPE_AR9888	7
-
 /* Supported FW version */
 #define SUPPORTED_FW_MAJOR	1
 #define SUPPORTED_FW_MINOR	0

@@ -690,10 +690,9 @@ static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 	u32 host_addr;
 	u32 i;
 
-	host_addr = host_interest_item_address(ar->target_type,
-					       HI_ITEM(hi_failure_state));
-	if (ath10k_pci_diag_read_mem(ar, host_addr, (u8 *) &reg_dump_area,
-				     sizeof(u32)) != 0) {
+	host_addr = host_interest_item_address(HI_ITEM(hi_failure_state));
+	if (ath10k_pci_diag_read_mem(ar, host_addr,
+				     (u8 *) &reg_dump_area, sizeof(u32)) != 0) {
 		ath10k_warn("could not read hi_failure_state\n");
 		return;
 	}
@@ -1474,8 +1473,7 @@ static int ath10k_pci_init_config(struct ath10k *ar)
 	int ret = 0;
 
 	/* Download to Target the CE Config and the service-to-CE map */
-	interconnect_targ_addr = host_interest_item_address(ar->target_type,
-						HI_ITEM(hi_interconnect_state));
+	interconnect_targ_addr = host_interest_item_address(HI_ITEM(hi_interconnect_state));
 
 	/* Supply Target-side CE configuration */
 	ret = ath10k_pci_diag_read_access(ar, interconnect_targ_addr,
@@ -1556,8 +1554,7 @@ static int ath10k_pci_init_config(struct ath10k *ar)
 	}
 
 	/* configure early allocation */
-	ealloc_targ_addr = host_interest_item_address(ar->target_type,
-						      HI_ITEM(hi_early_alloc));
+	ealloc_targ_addr = host_interest_item_address(HI_ITEM(hi_early_alloc));
 
 	ret = ath10k_pci_diag_read_access(ar, ealloc_targ_addr, &ealloc_value);
 	if (ret != 0) {
@@ -1578,8 +1575,7 @@ static int ath10k_pci_init_config(struct ath10k *ar)
 	}
 
 	/* Tell Target to proceed with initialization */
-	flag2_targ_addr = host_interest_item_address(ar->target_type,
-						     HI_ITEM(hi_option_flag2));
+	flag2_targ_addr = host_interest_item_address(HI_ITEM(hi_option_flag2));
 
 	ret = ath10k_pci_diag_read_access(ar, flag2_targ_addr, &flag2_value);
 	if (ret != 0) {
@@ -2149,7 +2145,6 @@ static int ath10k_pci_probe(struct pci_dev *pdev,
 	u32 fw_indicator;
 	u32 lcr_val;
 	int retries = 3;
-	u32 target_type;
 
 	ath10k_dbg(ATH10K_DBG_PCI, "%s\n", __func__);
 retry:
@@ -2164,10 +2159,8 @@ retry:
 
 	switch (pci_dev->device) {
 	case AR9888_1_0_DEVICE_ID:
-		target_type = TARGET_TYPE_AR9888;
 		break;
 	case AR9888_2_0_DEVICE_ID:
-		target_type = TARGET_TYPE_AR9888;
 		set_bit(ATH10K_PCI_FEATURE_MSI_X, ar_pci->features);
 		break;
 	default:
@@ -2179,7 +2172,7 @@ retry:
 	ath10k_pci_dump_features(ar_pci);
 
 	ar = ath10k_core_create(ar_pci, ar_pci->dev, ATH10K_BUS_PCI,
-				target_type, &ath10k_pci_hif_ops);
+				&ath10k_pci_hif_ops);
 	if (!ar) {
 		ath10k_err("ath10k_core_create failed!\n");
 		ret = -EINVAL;

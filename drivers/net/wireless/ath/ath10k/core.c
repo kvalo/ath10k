@@ -192,7 +192,6 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 	const struct firmware *fw_entry;
 	u32 fw_entry_size;
 	u8 *temp_eeprom = NULL, *fw_buf = NULL;
-	u32 board_data_size;
 
 	switch (file) {
 	default:
@@ -241,7 +240,6 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 
 	if (file == ATH10K_FILE_BOARD_DATA && fw_entry->data) {
 		u32 board_ext_address;
-		int32_t board_ext_data_size;
 
 		temp_eeprom = kmalloc(fw_entry_size, GFP_ATOMIC);
 		if (!temp_eeprom) {
@@ -251,16 +249,6 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 		}
 
 		memcpy(temp_eeprom, fw_buf, fw_entry_size);
-
-		switch (ar->target_type) {
-		default:
-			board_ext_data_size = 0;
-			break;
-		case TARGET_TYPE_AR9888:
-			board_data_size =  AR9888_BOARD_DATA_SZ;
-			board_ext_data_size = AR9888_BOARD_EXT_DATA_SZ;
-			break;
-		}
 
 		/* Determine where in Target RAM to write Board Data */
 		ath10k_bmi_read32(ar, hi_board_ext_data, &board_ext_address);
@@ -273,12 +261,10 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 		 * Check whether the target has allocated memory for extended
 		 * board data and file contains extended board data
 		 */
-		if (board_ext_address && (fw_entry_size == (board_data_size +
-						board_ext_data_size))) {
+		if (board_ext_address && (fw_entry_size == (AR9888_BOARD_DATA_SZ + AR9888_BOARD_EXT_DATA_SZ))) {
 			status = ath10k_bmi_write_memory(ar, board_ext_address,
-							 (u8 *)(((unsigned long)temp_eeprom) +
-							 board_data_size),
-							 board_ext_data_size);
+							 (u8 *)(((unsigned long)temp_eeprom) + AR9888_BOARD_DATA_SZ),
+							 AR9888_BOARD_EXT_DATA_SZ);
 
 			if (status != 0) {
 				ath10k_err("ath10k: BMI operation failed\n");
@@ -290,9 +276,9 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 			 * initialized
 			 */
 			ath10k_bmi_write32(ar, hi_board_ext_data_config,
-					   (board_ext_data_size << 16) | 1);
+					   (AR9888_BOARD_EXT_DATA_SZ << 16) | 1);
 
-			fw_entry_size = board_data_size;
+			fw_entry_size = AR9888_BOARD_DATA_SZ;
 		}
 	}
 
@@ -412,7 +398,7 @@ static int ath10k_init_hw_params(struct ath10k *ar)
 }
 
 struct ath10k *ath10k_core_create(void *hif_priv, struct device *dev,
-				  enum ath10k_bus bus, u32 target_type,
+				  enum ath10k_bus bus,
 				  const struct ath10k_hif_ops *hif_ops)
 {
 	struct ath10k *ar;
@@ -428,7 +414,6 @@ struct ath10k *ath10k_core_create(void *hif_priv, struct device *dev,
 
 	ar->p2p = !!ath10k_p2p;
 	ar->dev = dev;
-	ar->target_type = target_type;
 
 	ar->hif.priv = hif_priv;
 	ar->hif.ops = hif_ops;
@@ -489,7 +474,6 @@ int ath10k_core_register(struct ath10k *ar)
 	if (status)
 		goto err;
 
-	ar->target_type = target_info.type;
 	ar->target_version = target_info.version;
 	ar->hw->wiphy->hw_version = target_info.version;
 

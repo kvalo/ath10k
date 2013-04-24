@@ -105,14 +105,9 @@ static inline int ath10k_skb_unmap(struct device *dev, struct sk_buff *skb)
 	return 0;
 }
 
-static inline u32 host_interest_item_address(u32 target_type, u32 item_offset)
+static inline u32 host_interest_item_address(u32 item_offset)
 {
-	switch (target_type) {
-	default:
-		WARN_ON(1);
-	case TARGET_TYPE_AR9888:
-		return AR9888_HOST_INTEREST_ADDRESS + item_offset;
-	}
+	return AR9888_HOST_INTEREST_ADDRESS + item_offset;
 }
 
 struct ath10k_bmi {
@@ -266,7 +261,6 @@ struct ath10k {
 	struct device *dev;
 	u8 mac_addr[ETH_ALEN];
 
-	u32 target_type;
 	u32 target_version;
 	u8 fw_version_major;
 	u32 fw_version_minor;
@@ -370,7 +364,7 @@ static inline struct ath_common *ath10k_common(struct ath10k *ar)
 }
 
 struct ath10k *ath10k_core_create(void *hif_priv, struct device *dev,
-				  enum ath10k_bus bus, u32 target_type,
+				  enum ath10k_bus bus,
 				  const struct ath10k_hif_ops *hif_ops);
 void ath10k_core_destroy(struct ath10k *ar);
 
