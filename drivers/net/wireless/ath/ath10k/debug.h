@@ -54,66 +54,74 @@ static inline void ath10k_debug_read_target_stats(struct ath10k *ar,
 						  struct wmi_stats_event *ev)
 {
 	u8 *tmp = ev->data;
-	struct ath10k_target_stats *fw_stats;
+	struct ath10k_target_stats *stats;
 	int num_pdev_stats, num_vdev_stats, num_peer_stats;
+	struct wmi_pdev_stats *ps;
 	int i;
 
 	mutex_lock(&ar->conf_mutex);
 
-	fw_stats = &ar->debug.target_stats;
+	stats = &ar->debug.target_stats;
 
 	num_pdev_stats = __le32_to_cpu(ev->num_pdev_stats); /* 0 or 1 */
 	num_vdev_stats = __le32_to_cpu(ev->num_vdev_stats); /* 0 or max vdevs */
 	num_peer_stats = __le32_to_cpu(ev->num_peer_stats); /* 0 or max peers */
 
 	if (num_pdev_stats) {
-		struct wmi_pdev_stats *pdev_stats = (struct wmi_pdev_stats *)tmp;
+		ps = (struct wmi_pdev_stats *)tmp;
 
-		fw_stats->ch_noise_floor = __le32_to_cpu(pdev_stats->chan_nf);
-		fw_stats->tx_frame_count = __le32_to_cpu(pdev_stats->tx_frame_count);
-		fw_stats->rx_frame_count = __le32_to_cpu(pdev_stats->rx_frame_count);
-		fw_stats->rx_clear_count = __le32_to_cpu(pdev_stats->rx_clear_count);
-		fw_stats->cycle_count = __le32_to_cpu(pdev_stats->cycle_count);
-		fw_stats->phy_err_count = __le32_to_cpu(pdev_stats->phy_err_count);
-		fw_stats->chan_tx_power = __le32_to_cpu(pdev_stats->chan_tx_pwr);
+		stats->ch_noise_floor = __le32_to_cpu(ps->chan_nf);
+		stats->tx_frame_count = __le32_to_cpu(ps->tx_frame_count);
+		stats->rx_frame_count = __le32_to_cpu(ps->rx_frame_count);
+		stats->rx_clear_count = __le32_to_cpu(ps->rx_clear_count);
+		stats->cycle_count = __le32_to_cpu(ps->cycle_count);
+		stats->phy_err_count = __le32_to_cpu(ps->phy_err_count);
+		stats->chan_tx_power = __le32_to_cpu(ps->chan_tx_pwr);
 
-		fw_stats->comp_queued = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.comp_queued);
-		fw_stats->comp_delivered = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.comp_delivered);
-		fw_stats->msdu_enqued = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.msdu_enqued);
-		fw_stats->mpdu_enqued = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.mpdu_enqued);
-		fw_stats->wmm_drop = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.wmm_drop);
-		fw_stats->local_enqued = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.local_enqued);
-		fw_stats->local_freed = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.local_freed);
-		fw_stats->hw_queued = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.hw_queued);
-		fw_stats->hw_reaped = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.hw_reaped);
-		fw_stats->underrun = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.underrun);
-		fw_stats->tx_abort = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.tx_abort);
-		fw_stats->mpdus_requed = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.mpdus_requed);
-		fw_stats->tx_ko = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.tx_ko);
-		fw_stats->data_rc = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.data_rc);
-		fw_stats->self_triggers = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.self_triggers);
-		fw_stats->sw_retry_failure = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.sw_retry_failure);
-		fw_stats->illgl_rate_phy_err = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.illgl_rate_phy_err);
-		fw_stats->pdev_cont_xretry = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.pdev_cont_xretry);
-		fw_stats->pdev_tx_timeout = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.pdev_tx_timeout);
-		fw_stats->pdev_resets = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.pdev_resets);
-		fw_stats->phy_underrun = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.phy_underrun);
-		fw_stats->txop_ovf = __le32_to_cpu(pdev_stats->wal_pdev_stats.tx.txop_ovf);
+		stats->comp_queued = __le32_to_cpu(ps->wal.tx.comp_queued);
+		stats->comp_delivered =
+			__le32_to_cpu(ps->wal.tx.comp_delivered);
+		stats->msdu_enqued = __le32_to_cpu(ps->wal.tx.msdu_enqued);
+		stats->mpdu_enqued = __le32_to_cpu(ps->wal.tx.mpdu_enqued);
+		stats->wmm_drop = __le32_to_cpu(ps->wal.tx.wmm_drop);
+		stats->local_enqued = __le32_to_cpu(ps->wal.tx.local_enqued);
+		stats->local_freed = __le32_to_cpu(ps->wal.tx.local_freed);
+		stats->hw_queued = __le32_to_cpu(ps->wal.tx.hw_queued);
+		stats->hw_reaped = __le32_to_cpu(ps->wal.tx.hw_reaped);
+		stats->underrun = __le32_to_cpu(ps->wal.tx.underrun);
+		stats->tx_abort = __le32_to_cpu(ps->wal.tx.tx_abort);
+		stats->mpdus_requed = __le32_to_cpu(ps->wal.tx.mpdus_requed);
+		stats->tx_ko = __le32_to_cpu(ps->wal.tx.tx_ko);
+		stats->data_rc = __le32_to_cpu(ps->wal.tx.data_rc);
+		stats->self_triggers = __le32_to_cpu(ps->wal.tx.self_triggers);
+		stats->sw_retry_failure =
+			__le32_to_cpu(ps->wal.tx.sw_retry_failure);
+		stats->illgl_rate_phy_err =
+			__le32_to_cpu(ps->wal.tx.illgl_rate_phy_err);
+		stats->pdev_cont_xretry =
+			__le32_to_cpu(ps->wal.tx.pdev_cont_xretry);
+		stats->pdev_tx_timeout =
+			__le32_to_cpu(ps->wal.tx.pdev_tx_timeout);
+		stats->pdev_resets = __le32_to_cpu(ps->wal.tx.pdev_resets);
+		stats->phy_underrun = __le32_to_cpu(ps->wal.tx.phy_underrun);
+		stats->txop_ovf = __le32_to_cpu(ps->wal.tx.txop_ovf);
 
-		fw_stats->mid_ppdu_route_change = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.mid_ppdu_route_change);
-		fw_stats->status_rcvd = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.status_rcvd);
-		fw_stats->r0_frags = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.r0_frags);
-		fw_stats->r1_frags = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.r1_frags);
-		fw_stats->r2_frags = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.r2_frags);
-		fw_stats->r3_frags = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.r3_frags);
-		fw_stats->htt_msdus = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.htt_msdus);
-		fw_stats->htt_mpdus = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.htt_mpdus);
-		fw_stats->loc_msdus = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.loc_msdus);
-		fw_stats->loc_mpdus = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.loc_mpdus);
-		fw_stats->oversize_amsdu = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.oversize_amsdu);
-		fw_stats->phy_errs = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.phy_errs);
-		fw_stats->phy_err_drop = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.phy_err_drop);
-		fw_stats->mpdu_errs = __le32_to_cpu(pdev_stats->wal_pdev_stats.rx.mpdu_errs);
+		stats->mid_ppdu_route_change =
+			__le32_to_cpu(ps->wal.rx.mid_ppdu_route_change);
+		stats->status_rcvd = __le32_to_cpu(ps->wal.rx.status_rcvd);
+		stats->r0_frags = __le32_to_cpu(ps->wal.rx.r0_frags);
+		stats->r1_frags = __le32_to_cpu(ps->wal.rx.r1_frags);
+		stats->r2_frags = __le32_to_cpu(ps->wal.rx.r2_frags);
+		stats->r3_frags = __le32_to_cpu(ps->wal.rx.r3_frags);
+		stats->htt_msdus = __le32_to_cpu(ps->wal.rx.htt_msdus);
+		stats->htt_mpdus = __le32_to_cpu(ps->wal.rx.htt_mpdus);
+		stats->loc_msdus = __le32_to_cpu(ps->wal.rx.loc_msdus);
+		stats->loc_mpdus = __le32_to_cpu(ps->wal.rx.loc_mpdus);
+		stats->oversize_amsdu =
+			__le32_to_cpu(ps->wal.rx.oversize_amsdu);
+		stats->phy_errs = __le32_to_cpu(ps->wal.rx.phy_errs);
+		stats->phy_err_drop = __le32_to_cpu(ps->wal.rx.phy_err_drop);
+		stats->mpdu_errs = __le32_to_cpu(ps->wal.rx.mpdu_errs);
 
 		tmp += sizeof(struct wmi_pdev_stats);
 	}
@@ -131,16 +139,19 @@ static inline void ath10k_debug_read_target_stats(struct ath10k *ar,
 
 	if (num_peer_stats) {
 		struct wmi_peer_stats *peer_stats;
+		struct ath10k_peer_stat *s;
 
-		fw_stats->peers = num_peer_stats;
+		stats->peers = num_peer_stats;
 
 		for (i = 0; i < num_peer_stats; i++) {
 			peer_stats = (struct wmi_peer_stats *)tmp;
+			s = &stats->peer_stat[i];
 
 			WMI_MAC_ADDR_TO_CHAR_ARRAY(&peer_stats->peer_macaddr,
-						   fw_stats->peer_stat[i].peer_macaddr);
-			fw_stats->peer_stat[i].peer_rssi = __le32_to_cpu(peer_stats->peer_rssi);
-			fw_stats->peer_stat[i].peer_tx_rate = __le32_to_cpu(peer_stats->peer_tx_rate);
+						   s->peer_macaddr);
+			s->peer_rssi = __le32_to_cpu(peer_stats->peer_rssi);
+			s->peer_tx_rate =
+				__le32_to_cpu(peer_stats->peer_tx_rate);
 
 			tmp += sizeof(struct wmi_peer_stats);
 		}

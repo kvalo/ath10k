@@ -1760,7 +1760,7 @@ struct wmi_pdev_stats {
 	__le32 cycle_count;    /* cycle count */
 	__le32 phy_err_count;  /* Phy error count */
 	__le32 chan_tx_pwr;    /* channel tx power */
-	struct wal_dbg_stats wal_pdev_stats; /* WAL dbg stats */
+	struct wal_dbg_stats wal; /* WAL dbg stats */
 } __packed;
 
 /*
