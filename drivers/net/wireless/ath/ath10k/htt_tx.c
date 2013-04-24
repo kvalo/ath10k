@@ -27,7 +27,8 @@ int ath10k_htt_tx_alloc_msdu_id(struct ath10k_htt *htt)
 
 	lockdep_assert_held(&htt->tx_lock);
 
-	msdu_id = find_first_zero_bit(htt->used_msdu_ids, HTT_MAX_NUM_PENDING_TX);
+	msdu_id = find_first_zero_bit(htt->used_msdu_ids,
+				      HTT_MAX_NUM_PENDING_TX);
 	if (msdu_id == HTT_MAX_NUM_PENDING_TX)
 		return -ENOMEM;
 
@@ -192,24 +193,28 @@ int ath10k_htt_send_rx_ring_cfg_ll(struct ath10k_htt *htt)
 
 	fw_idx = __le32_to_cpu(*htt->rx_ring.alloc_idx.vaddr);
 
-	ring->fw_idx_shadow_reg_paddr = __cpu_to_le32(htt->rx_ring.alloc_idx.paddr);
-	ring->rx_ring_base_paddr      = __cpu_to_le32(htt->rx_ring.base_paddr);
-	ring->rx_ring_len             = __cpu_to_le16(htt->rx_ring.size);
-	ring->rx_ring_bufsize         = __cpu_to_le16(HTT_RX_BUF_SIZE);
-	ring->flags                   = __cpu_to_le16(flags);
-	ring->fw_idx_init_val         = __cpu_to_le16(fw_idx);
-#define rx_desc_offset(x) (offsetof(struct htt_rx_desc, x) / 4)
-	ring->mac80211_hdr_offset     = __cpu_to_le16(rx_desc_offset(rx_hdr_status));
-	ring->msdu_payload_offset     = __cpu_to_le16(rx_desc_offset(msdu_payload));
-	ring->ppdu_start_offset       = __cpu_to_le16(rx_desc_offset(ppdu_start));
-	ring->ppdu_end_offset         = __cpu_to_le16(rx_desc_offset(ppdu_end));
-	ring->mpdu_start_offset       = __cpu_to_le16(rx_desc_offset(mpdu_start));
-	ring->mpdu_end_offset         = __cpu_to_le16(rx_desc_offset(mpdu_end));
-	ring->msdu_start_offset       = __cpu_to_le16(rx_desc_offset(msdu_start));
-	ring->msdu_end_offset         = __cpu_to_le16(rx_desc_offset(msdu_end));
-	ring->rx_attention_offset     = __cpu_to_le16(rx_desc_offset(attention));
-	ring->frag_info_offset        = __cpu_to_le16(rx_desc_offset(frag_info));
-#undef rx_desc_offset
+	ring->fw_idx_shadow_reg_paddr =
+		__cpu_to_le32(htt->rx_ring.alloc_idx.paddr);
+	ring->rx_ring_base_paddr = __cpu_to_le32(htt->rx_ring.base_paddr);
+	ring->rx_ring_len = __cpu_to_le16(htt->rx_ring.size);
+	ring->rx_ring_bufsize = __cpu_to_le16(HTT_RX_BUF_SIZE);
+	ring->flags = __cpu_to_le16(flags);
+	ring->fw_idx_init_val = __cpu_to_le16(fw_idx);
+
+#define desc_offset(x) (offsetof(struct htt_rx_desc, x) / 4)
+
+	ring->mac80211_hdr_offset = __cpu_to_le16(desc_offset(rx_hdr_status));
+	ring->msdu_payload_offset = __cpu_to_le16(desc_offset(msdu_payload));
+	ring->ppdu_start_offset = __cpu_to_le16(desc_offset(ppdu_start));
+	ring->ppdu_end_offset = __cpu_to_le16(desc_offset(ppdu_end));
+	ring->mpdu_start_offset = __cpu_to_le16(desc_offset(mpdu_start));
+	ring->mpdu_end_offset = __cpu_to_le16(desc_offset(mpdu_end));
+	ring->msdu_start_offset = __cpu_to_le16(desc_offset(msdu_start));
+	ring->msdu_end_offset = __cpu_to_le16(desc_offset(msdu_end));
+	ring->rx_attention_offset = __cpu_to_le16(desc_offset(attention));
+	ring->frag_info_offset = __cpu_to_le16(desc_offset(frag_info));
+
+#undef desc_offset
 
 	ATH10K_SKB_CB(skb)->htt.is_conf = true;
 
@@ -379,7 +384,8 @@ int ath10k_htt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 	if (!ieee80211_has_protected(hdr->frame_control))
 		flags0 |= HTT_DATA_TX_DESC_FLAGS0_NO_ENCRYPT;
 	flags0 |= HTT_DATA_TX_DESC_FLAGS0_MAC_HDR_PRESENT;
-	flags0 |= SM(ATH10K_HW_TXRX_NATIVE_WIFI, HTT_DATA_TX_DESC_FLAGS0_PKT_TYPE);
+	flags0 |= SM(ATH10K_HW_TXRX_NATIVE_WIFI,
+		     HTT_DATA_TX_DESC_FLAGS0_PKT_TYPE);
 
 	flags1  = 0;
 	flags1 |= SM((u16)vdev_id, HTT_DATA_TX_DESC_FLAGS1_VDEV_ID);

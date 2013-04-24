@@ -132,7 +132,8 @@ static bool ath10k_htc_ep_need_credit_update(struct ath10k_htc_ep *ep)
 	if (ep->tx_credits >= ep->tx_credits_per_max_message)
 		return false;
 
-	ath10k_dbg(ATH10K_DBG_HTC, "HTC: endpoint %d needs credit update\n", ep->eid);
+	ath10k_dbg(ATH10K_DBG_HTC, "HTC: endpoint %d needs credit update\n",
+		   ep->eid);
 	return true;
 }
 
@@ -249,7 +250,8 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 
 	/* shouldn't happen, but print a warning just in case */
 	if (credits_required >= 1 << (8*sizeof(skb_cb->htc.credits_used)))
-		ath10k_warn("credits_required value overflow (%d)\n", credits_required);
+		ath10k_warn("credits_required value overflow (%d)\n",
+			    credits_required);
 
 	skb_cb->htc.credits_used = credits_required;
 	return skb;
@@ -524,7 +526,7 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 
 	if (payload_len + sizeof(*hdr) > ATH10K_HTC_MAX_LEN) {
 		ath10k_warn("HTC rx frame too long, len: %zu\n",
-			   payload_len + sizeof(*hdr));
+			    payload_len + sizeof(*hdr));
 		ath10k_dbg_dump(ATH10K_DBG_HTC, "htc bad rx pkt len", "",
 				hdr, sizeof(*hdr));
 		status = -EINVAL;
@@ -533,10 +535,10 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 
 	if (skb->len < payload_len) {
 		ath10k_dbg(ATH10K_DBG_HTC,
-			"HTC Rx: insufficient length, got %d, expected %d\n",
-			skb->len, payload_len);
+			   "HTC Rx: insufficient length, got %d, expected %d\n",
+			   skb->len, payload_len);
 		ath10k_dbg_dump(ATH10K_DBG_HTC, "htc bad rx pkt len",
-				 "", hdr, sizeof(*hdr));
+				"", hdr, sizeof(*hdr));
 		status = -EINVAL;
 		goto out;
 	}
@@ -550,7 +552,7 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 		if ((trailer_len < sizeof(struct ath10k_ath10k_htc_record_hdr)) ||
 		    (trailer_len > payload_len)) {
 			ath10k_warn("Invalid trailer length: %d\n",
-				   trailer_len);
+				    trailer_len);
 			status = -EPROTO;
 			goto out;
 		}
@@ -602,7 +604,8 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 		goto out;
 	}
 
-	ath10k_dbg(ATH10K_DBG_HTC, "htc rx completion ep %d skb %p\n", eid, skb);
+	ath10k_dbg(ATH10K_DBG_HTC, "htc rx completion ep %d skb %p\n",
+		   eid, skb);
 	ep->ep_ops.ep_rx_complete(ep->ep_ops.context, skb);
 
 	/* skb is now owned by the rx completion handler */
@@ -776,8 +779,7 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 		tx_alloc = ath10k_htc_get_credit_allocation(htc,
 							    conn_req->service_id);
 		if (!tx_alloc)
-			ath10k_warn("Service 0x%x does not"
-				    " allocate target credits\n",
+			ath10k_warn("Service 0x%x does not allocate target credits\n",
 				    conn_req->service_id);
 
 		skb = ath10k_htc_build_tx_ctrl_skb(htc->ar);
@@ -791,7 +793,8 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 		memset(skb->data, 0, length);
 
 		msg = (struct ath10k_htc_msg *)skb->data;
-		msg->hdr.message_id = __cpu_to_le16(ATH10K_HTC_MSG_CONNECT_SERVICE_ID);
+		msg->hdr.message_id =
+			__cpu_to_le16(ATH10K_HTC_MSG_CONNECT_SERVICE_ID);
 
 		flags |= SM(tx_alloc, ATH10K_HTC_CONN_FLAGS_RECV_ALLOC);
 
@@ -834,16 +837,15 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 			return -EPROTO;
 		}
 
-		ath10k_dbg(ATH10K_DBG_HTC, "Service 0x%x connect response"
-			   " from target: status: 0x%x, assigned ep: 0x%x\n",
+		ath10k_dbg(ATH10K_DBG_HTC,
+			   "Service 0x%x connect response from target: status: 0x%x, assigned ep: 0x%x\n",
 			   service_id, resp_msg->status, resp_msg->eid);
 
 		conn_resp->connect_resp_code = resp_msg->status;
 
 		/* check response status */
 		if (resp_msg->status != ATH10K_HTC_CONN_SVC_STATUS_SUCCESS) {
-			ath10k_err("Service 0x%x connect request failed"
-				   " with status: 0x%x)\n",
+			ath10k_err("Service 0x%x connect request failed with status: 0x%x)\n",
 				   service_id, resp_msg->status);
 			return -EPROTO;
 		}
@@ -892,16 +894,16 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 	if (status)
 		return status;
 
-	ath10k_dbg(ATH10K_DBG_HTC, "HTC service: 0x%x"
-		   " UL pipe: %d DL pipe: %d eid: %d ready\n",
+	ath10k_dbg(ATH10K_DBG_HTC,
+		   "HTC service: 0x%x UL pipe: %d DL pipe: %d eid: %d ready\n",
 		   ep->service_id, ep->ul_pipe_id,
 		   ep->dl_pipe_id, ep->eid);
 
 	if (disable_credit_flow_ctrl && ep->tx_credit_flow_enabled) {
 		ep->tx_credit_flow_enabled = false;
-		ath10k_dbg(ATH10K_DBG_HTC, "HTC service: 0x%x eid: %d"
-			" TX flow control disabled\n",
-			ep->service_id, assigned_eid);
+		ath10k_dbg(ATH10K_DBG_HTC,
+			   "HTC service: 0x%x eid: %d TX flow control disabled\n",
+			   ep->service_id, assigned_eid);
 	}
 
 	return status;
@@ -938,7 +940,8 @@ int ath10k_htc_start(struct ath10k_htc *htc)
 	memset(skb->data, 0, skb->len);
 
 	msg = (struct ath10k_htc_msg *)skb->data;
-	msg->hdr.message_id = __cpu_to_le16(ATH10K_HTC_MSG_SETUP_COMPLETE_EX_ID);
+	msg->hdr.message_id =
+		__cpu_to_le16(ATH10K_HTC_MSG_SETUP_COMPLETE_EX_ID);
 
 	ath10k_dbg(ATH10K_DBG_HTC, "HTC is using TX credit flow control\n");
 

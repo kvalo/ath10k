@@ -132,7 +132,8 @@ static int ath10k_init_configure_target(struct ath10k *ar)
 	int ret;
 
 	/* tell target which HTC version it is used*/
-	ret = ath10k_bmi_write32(ar, hi_app_host_interest, HTC_PROTOCOL_VERSION);
+	ret = ath10k_bmi_write32(ar, hi_app_host_interest,
+				 HTC_PROTOCOL_VERSION);
 	if (ret) {
 		ath10k_err("settings HTC version failed\n");
 		return ret;
@@ -285,7 +286,8 @@ static int ath10k_init_transfer_bin_file(struct ath10k *ar,
 			}
 
 			/*
-			 * Record the fact that extended board Data IS initialized
+			 * Record the fact that extended board Data IS
+			 * initialized
 			 */
 			ath10k_bmi_write32(ar, hi_board_ext_data_config,
 					   (board_ext_data_size << 16) | 1);
@@ -602,7 +604,8 @@ void ath10k_core_unregister(struct ath10k *ar)
 }
 EXPORT_SYMBOL(ath10k_core_unregister);
 
-int ath10k_core_target_suspend(struct ath10k *ar) {
+int ath10k_core_target_suspend(struct ath10k *ar)
+{
 	int ret;
 
 	ath10k_dbg(ATH10K_DBG_CORE, "%s: called", __func__);
@@ -613,7 +616,8 @@ int ath10k_core_target_suspend(struct ath10k *ar) {
 }
 EXPORT_SYMBOL(ath10k_core_target_suspend);
 
-int ath10k_core_target_resume(struct ath10k *ar) {
+int ath10k_core_target_resume(struct ath10k *ar)
+{
 
 	int ret;
 
