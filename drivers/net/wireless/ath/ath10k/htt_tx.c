@@ -53,8 +53,36 @@ void ath10k_htt_tx_attach(struct ath10k_htt *htt)
 	init_waitqueue_head(&htt->empty_tx_wq);
 }
 
+static void ath10k_htt_tx_cleanup_pending(struct ath10k_htt *htt)
+{
+	struct sk_buff *txdesc;
+	int msdu_id;
+
+	/* No locks needed. Called after communication with the device has
+	 * been stopped. */
+
+	for (msdu_id = 0; msdu_id < HTT_MAX_NUM_PENDING_TX; msdu_id++) {
+		if (!test_bit(msdu_id, htt->used_msdu_ids))
+			continue;
+
+		txdesc = htt->pending_tx[msdu_id];
+		if (!txdesc)
+			continue;
+
+		ath10k_dbg(ATH10K_DBG_HTT, "force cleanup msdu_id %hu\n",
+			   msdu_id);
+
+		if (ATH10K_SKB_CB(txdesc)->htt.refcount > 0)
+			ATH10K_SKB_CB(txdesc)->htt.refcount = 1;
+
+		ATH10K_SKB_CB(txdesc)->htt.discard = true;
+		ath10k_txrx_tx_unref(htt, txdesc);
+	}
+}
+
 void ath10k_htt_tx_detach(struct ath10k_htt *htt)
 {
+	ath10k_htt_tx_cleanup_pending(htt);
 	return;
 }
 
