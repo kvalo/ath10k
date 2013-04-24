@@ -688,7 +688,7 @@ void ath10k_ce_recv_cb_register(struct ce_state *ce_state,
 static int ath10k_ce_init_src_ring(struct ath10k *ar,
 				   unsigned int ce_id,
 				   struct ce_state *ce_state,
-				   struct ce_attr *attr)
+				   const struct ce_attr *attr)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct ce_ring_state *src_ring;
@@ -777,7 +777,7 @@ static int ath10k_ce_init_src_ring(struct ath10k *ar,
 static int ath10k_ce_init_dest_ring(struct ath10k *ar,
 				    unsigned int ce_id,
 				    struct ce_state *ce_state,
-				    struct ce_attr *attr)
+				    const struct ce_attr *attr)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct ce_ring_state *dest_ring;
@@ -857,7 +857,7 @@ static int ath10k_ce_init_dest_ring(struct ath10k *ar,
 
 static struct ce_state *ath10k_ce_init_state(struct ath10k *ar,
 				      unsigned int ce_id,
-				      struct ce_attr *attr)
+				      const struct ce_attr *attr)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct ce_state *ce_state = NULL;
@@ -896,7 +896,7 @@ static struct ce_state *ath10k_ce_init_state(struct ath10k *ar,
  */
 struct ce_state *ath10k_ce_init(struct ath10k *ar,
 				unsigned int ce_id,
-				struct ce_attr *attr)
+				const struct ce_attr *attr)
 {
 	struct ce_state *ce_state;
 	u32 ctrl_addr = CE_BASE_ADDRESS(ar, ce_id);

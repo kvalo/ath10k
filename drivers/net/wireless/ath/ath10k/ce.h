@@ -275,7 +275,7 @@ int ath10k_ce_completed_send_next(struct ce_state *ce_state,
 /* Initialize an instance of a CE */
 struct ce_state *ath10k_ce_init(struct ath10k *ar,
 				unsigned int ce_id,
-				struct ce_attr *attr);
+				const struct ce_attr *attr);
 
 /*==================CE Engine Shutdown=======================*/
 /*

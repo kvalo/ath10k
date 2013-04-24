@@ -52,7 +52,7 @@ static int ath10k_pci_post_recv_buffers(struct ath10k *ar);
 static int ath10k_pci_post_recv_buffers_pipe(struct hif_ce_pipe_info *pipe_info,
 					     int num);
 
-static struct ce_attr host_ce_config_wlan[] = {
+static const struct ce_attr host_ce_config_wlan[] = {
 	/* host->target HTC control and raw streams */
 	{ /* CE0 */ CE_ATTR_FLAGS, 0, 16, 256, 0, NULL,},
 	/* could be moved to share CE3 */
@@ -756,7 +756,7 @@ static void ath10k_pci_start_ce(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct ce_state *ce_diag = ar_pci->ce_diag;
-	struct ce_attr *attr;
+	const struct ce_attr *attr;
 	struct hif_ce_pipe_info *pipe_info;
 	struct hif_ce_completion_state *compl;
 	int i, pipe_num, completions;
@@ -1061,7 +1061,7 @@ static int ath10k_pci_post_recv_buffers(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct hif_ce_pipe_info *pipe_info;
-	struct ce_attr *attr;
+	const struct ce_attr *attr;
 	int pipe_num, ret = 0;
 
 	for (pipe_num = 0; pipe_num < ar_pci->ce_count; pipe_num++) {
@@ -1608,7 +1608,7 @@ static void ath10k_pci_ce_init(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct hif_ce_pipe_info *pipe_info;
-	struct ce_attr *attr;
+	const struct ce_attr *attr;
 	int pipe_num;
 
 	for (pipe_num = 0; pipe_num < ar_pci->ce_count; pipe_num++) {
