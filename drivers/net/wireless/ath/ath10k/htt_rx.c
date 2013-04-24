@@ -570,7 +570,7 @@ static int ath10k_htt_rx_amsdu(struct ath10k_htt *htt,
 			RX_MPDU_START_INFO0_ENCRYPT_TYPE);
 
 	/* FIXME: No idea what assumptions are safe here. Need logs */
-	if (fmt < RX_MSDU_DECAP_ETHERNET2_DIX && skb->next) {
+	if (fmt == RX_MSDU_DECAP_RAW && skb->next) {
 		ath10k_htt_rx_free_msdu_chain(skb->next);
 		skb->next = NULL;
 		return -ENOTSUPP;
@@ -628,6 +628,18 @@ static int ath10k_htt_rx_amsdu(struct ath10k_htt *htt,
 			 * subframe header. */
 			/* FIXME: Not all LLCs are 8 bytes long */
 			decap_len += 8;
+
+			memcpy(skb_put(amsdu, decap_len), decap_hdr, decap_len);
+		}
+
+		if (fmt == RX_MSDU_DECAP_NATIVE_WIFI) {
+			/* Native Wifi decap inserts regular 802.11 header
+			 * in place of A-MSDU subframe header. */
+			hdr = (struct ieee80211_hdr *)skb->data;
+			skb_pull(skb, ieee80211_hdrlen(hdr->frame_control));
+
+			/* A-MSDU subframe header length */
+			decap_len += 6 + 6 + 2;
 
 			memcpy(skb_put(amsdu, decap_len), decap_hdr, decap_len);
 		}
