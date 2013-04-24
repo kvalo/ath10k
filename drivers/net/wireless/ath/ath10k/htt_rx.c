@@ -595,41 +595,41 @@ static int ath10k_htt_rx_amsdu(struct ath10k_htt *htt,
 
 	first = skb;
 	while (skb) {
-		int llclen = 0;
+		void *decap_hdr;
+		int decap_len = 0;
 
 		rxd = (void *)skb->data - sizeof(*rxd);
 		fmt = MS(__le32_to_cpu(rxd->msdu_start.info1),
 				RX_MSDU_START_INFO1_DECAP_FORMAT);
-		hdr = (void *)rxd->rx_hdr_status;
+		decap_hdr = (void *)rxd->rx_hdr_status;
+
+		if (skb == first) {
+			/* We receive linked A-MSDU subframe skbuffs. The
+			 * first one contains the original 802.11 header (and
+			 * possible crypto param) in the RX descriptor. The
+			 * A-MSDU subframe header follows that. Each part is
+			 * aligned to 4 byte boundary. */
+
+			hdr = (void *)amsdu->data;
+			decap_hdr += roundup(ieee80211_hdrlen(hdr->frame_control), 4);
+			decap_hdr += roundup(ath10k_htt_rx_crypto_param_len(enctype), 4);
+		}
 
 		if (fmt == RX_MSDU_DECAP_ETHERNET2_DIX) {
-			void *llc = (void *)skb->data - RX_HTT_HDR_STATUS_LEN;
-
-			/* We get rid of the addr[6] + addr[6] + ethertype[2]
-			 * as we don't need that at all.
-			 * For 8023/llc/snap we keep the original header
-			 * (addr[6] + addr[6] + len[2] + llc info) in msdu
-			 * since it is integral part of an A-MSDU subframe. */
+			/* Ethernet2 decap inserts ethernet header in place of
+			 * A-MSDU subframe header. */
 			skb_pull(skb, 6 + 6 + 2);
 
-			/* Regular LLC/SNAP has 8 bytes.
-			 * However when A-MSDU takes place FW decaps complete
-			 * LLC headers along with addr[6], addr[6], len[2].
-			 * This makes sense only for eth2/dix decap format.
-			 * FIXME: if we get different type of LLC this will fail
-			 *        as not all LLCs have the 8 byte info */
-			llclen += 8;
+			/* A-MSDU subframe header length */
+			decap_len += 6 + 6 + 2;
 
-			/* addr[6] + addr[6] + len[2] */
-			llclen += 6 + 6 + 2;
+			/* Ethernet2 decap also strips the LLC/SNAP so we need
+			 * to re-insert it. The LLC/SNAP follows A-MSDU
+			 * subframe header. */
+			/* FIXME: Not all LLCs are 8 bytes long */
+			decap_len += 8;
 
-			if (skb == first) {
-				struct ieee80211_hdr *hdr = (void *)amsdu->data;
-				llc += roundup(ieee80211_hdrlen(hdr->frame_control), 4);
-				llc += roundup(ath10k_htt_rx_crypto_param_len(enctype), 4);
-			}
-
-			memcpy(skb_put(amsdu, llclen), llc, llclen);
+			memcpy(skb_put(amsdu, decap_len), decap_hdr, decap_len);
 		}
 
 		if (fmt == RX_MSDU_DECAP_RAW)
@@ -639,8 +639,8 @@ static int ath10k_htt_rx_amsdu(struct ath10k_htt *htt,
 
 		/* A-MSDU subframes are padded to 4bytes
 		 * but relative to first subframe, not the whole MPDU */
-		if (skb->next && ((llclen + skb->len) & 3)) {
-			int padlen = 4 - ((llclen + skb->len) & 3);
+		if (skb->next && ((decap_len + skb->len) & 3)) {
+			int padlen = 4 - ((decap_len + skb->len) & 3);
 			memset(skb_put(amsdu, padlen), 0, padlen);
 		}
 
