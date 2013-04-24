@@ -322,6 +322,10 @@ struct ath10k {
 		int vdev_id;
 	} scan;
 
+	struct {
+		struct ieee80211_supported_band sbands[IEEE80211_NUM_BANDS];
+	} mac;
+
 	/* should never be NULL; needed for regular htt rx */
 	struct ieee80211_channel __rcu *rx_channel;
 

@@ -2424,7 +2424,7 @@ static const struct ieee80211_ops ath10k_ops = {
 	.max_power		= 30, \
 }
 
-static struct ieee80211_channel ath10k_2ghz_channels[] = {
+static const struct ieee80211_channel ath10k_2ghz_channels[] = {
 	CHAN2G(1, 2412, 0),
 	CHAN2G(2, 2417, 0),
 	CHAN2G(3, 2422, 0),
@@ -2441,7 +2441,7 @@ static struct ieee80211_channel ath10k_2ghz_channels[] = {
 	CHAN2G(14, 2484, 0),
 };
 
-static struct ieee80211_channel ath10k_5ghz_channels[] = {
+static const struct ieee80211_channel ath10k_5ghz_channels[] = {
 	CHAN5G(36, 5180, 14),
 	CHAN5G(40, 5200, 15),
 	CHAN5G(44, 5220, 16),
@@ -2489,22 +2489,6 @@ static struct ieee80211_rate ath10k_rates[] = {
 #define ath10k_a_rates_size (ARRAY_SIZE(ath10k_rates) - 4)
 #define ath10k_g_rates (ath10k_rates + 0)
 #define ath10k_g_rates_size (ARRAY_SIZE(ath10k_rates))
-
-static struct ieee80211_supported_band ath10k_band_2ghz = {
-	.n_channels = ARRAY_SIZE(ath10k_2ghz_channels),
-	.channels = ath10k_2ghz_channels,
-	.n_bitrates = ath10k_g_rates_size,
-	.bitrates = ath10k_g_rates,
-	/* .ht_cap depends on FW capabilities */
-};
-
-static struct ieee80211_supported_band ath10k_band_5ghz = {
-	.n_channels = ARRAY_SIZE(ath10k_5ghz_channels),
-	.channels = ath10k_5ghz_channels,
-	.n_bitrates = ath10k_a_rates_size,
-	.bitrates = ath10k_a_rates,
-	/* .ht_cap depends on FW capabilities */
-};
 
 struct ath10k *ath10k_mac_create(void)
 {
@@ -2647,7 +2631,9 @@ struct ath10k_vif *ath10k_get_arvif(struct ath10k *ar, u32 vdev_id)
 int ath10k_mac_register(struct ath10k *ar)
 {
 	struct ath_common *common = ath10k_common(ar);
+	struct ieee80211_supported_band *band;
 	struct ieee80211_sta_ht_cap ht_cap;
+	void *channels;
 	int ret;
 
 	SET_IEEE80211_PERM_ADDR(ar->hw, ar->mac_addr);
@@ -2655,14 +2641,40 @@ int ath10k_mac_register(struct ath10k *ar)
 	SET_IEEE80211_DEV(ar->hw, ar->dev);
 
 	ht_cap = ath10k_get_ht_cap(ar);
-	ath10k_band_2ghz.ht_cap = ht_cap;
-	ath10k_band_5ghz.ht_cap = ht_cap;
 
-	if (ar->phy_capability & WHAL_WLAN_11G_CAPABILITY)
-		ar->hw->wiphy->bands[IEEE80211_BAND_2GHZ] = &ath10k_band_2ghz;
+	if (ar->phy_capability & WHAL_WLAN_11G_CAPABILITY) {
+		channels = kmemdup(ath10k_2ghz_channels,
+				   sizeof(ath10k_2ghz_channels),
+				   GFP_KERNEL);
+		if (!channels)
+			return -ENOMEM;
 
-	if (ar->phy_capability & WHAL_WLAN_11A_CAPABILITY)
-		ar->hw->wiphy->bands[IEEE80211_BAND_5GHZ] = &ath10k_band_5ghz;
+		band = &ar->mac.sbands[IEEE80211_BAND_2GHZ];
+		band->n_channels = ARRAY_SIZE(ath10k_2ghz_channels);
+		band->channels = channels;
+		band->n_bitrates = ath10k_g_rates_size;
+		band->bitrates = ath10k_g_rates;
+		band->ht_cap = ht_cap;
+		ar->hw->wiphy->bands[IEEE80211_BAND_2GHZ] = band;
+	}
+
+
+
+	if (ar->phy_capability & WHAL_WLAN_11A_CAPABILITY) {
+		channels = kmemdup(ath10k_5ghz_channels,
+				   sizeof(ath10k_5ghz_channels),
+				   GFP_KERNEL);
+		if (!channels)
+			return -ENOMEM;
+
+		band = &ar->mac.sbands[IEEE80211_BAND_2GHZ];
+		band->n_channels = ARRAY_SIZE(ath10k_5ghz_channels);
+		band->channels = channels;
+		band->n_bitrates = ath10k_a_rates_size;
+		band->bitrates = ath10k_a_rates;
+		band->ht_cap = ht_cap;
+		ar->hw->wiphy->bands[IEEE80211_BAND_5GHZ] = band;
+	}
 
 	ar->hw->wiphy->interface_modes =
 		BIT(NL80211_IFTYPE_STATION) |
@@ -2739,6 +2751,9 @@ exit:
 void ath10k_mac_unregister(struct ath10k *ar)
 {
 	ieee80211_unregister_hw(ar->hw);
+
+	kfree(ar->mac.sbands[IEEE80211_BAND_2GHZ].channels);
+	kfree(ar->mac.sbands[IEEE80211_BAND_5GHZ].channels);
 
 	SET_IEEE80211_DEV(ar->hw, NULL);
 }
