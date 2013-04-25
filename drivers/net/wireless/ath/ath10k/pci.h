@@ -328,48 +328,6 @@ static inline u32 ath10k_pci_read32(struct ath10k *ar, u32 offset)
 	return ioread32(ar_pci->mem + offset);
 }
 
-/*
- * FIXME: This function is a wrapper to workaround QCA988x_1.0 HW CE
- * problem. If we decide to drop this HW revision support in the future, we
- * may drop the function as well.
- */
-static inline void ath10k_set_source_ring_write_index(struct ath10k *ar,
-						      u32 ctrl_addr,
-						      unsigned int write_index)
-{
-	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	void __iomem *indicator_addr;
-
-	if (!test_bit(ATH10K_PCI_FEATURE_HW_1_0_WARKAROUND, ar_pci->features)) {
-		CE_SRC_RING_WRITE_IDX_SET(ar, ctrl_addr, write_index);
-		return;
-	}
-
-	/* workaround path starts from here */
-
-	indicator_addr = ar_pci->mem + ctrl_addr + DST_WATERMARK_ADDRESS;
-
-	if (ctrl_addr == ath10k_ce_base_address(CDC_WAR_DATA_CE)) {
-		iowrite32((CDC_WAR_MAGIC_STR | write_index), indicator_addr);
-	} else {
-		unsigned long irq_flags;
-		local_irq_save(irq_flags);
-		iowrite32(1, indicator_addr);
-
-		/*
-		 * PCIE write waits for ACK in IPQ8K, there is no
-		 * need to read back value.
-		 */
-		(void)ioread32(indicator_addr);
-		(void)ioread32(indicator_addr); /* conservative */
-
-		CE_SRC_RING_WRITE_IDX_SET(ar, ctrl_addr, write_index);
-
-		iowrite32(0, indicator_addr);
-		local_irq_restore(irq_flags);
-	}
-}
-
 extern unsigned int ath10k_target_ps;
 
 void ath10k_do_pci_wake(struct ath10k *ar);
