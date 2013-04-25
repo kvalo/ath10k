@@ -473,9 +473,9 @@ struct ce_attr {
 #define DST_WATERMARK_ADDRESS			0x0050
 
 
-#define CE_BASE_ADDRESS(ar, ce_id) \
-	(CE0_BASE_ADDRESS + \
-	(CE1_BASE_ADDRESS - CE0_BASE_ADDRESS)*(ce_id))
+static inline u32 ath10k_ce_base_address(unsigned int ce_id) {
+	return CE0_BASE_ADDRESS + (CE1_BASE_ADDRESS - CE0_BASE_ADDRESS) * ce_id;
+}
 
 #define CE_SRC_RING_WRITE_IDX_SET(ar, ce_ctrl_addr, n) \
 	ath10k_pci_write32((ar), (ce_ctrl_addr) + SR_WR_INDEX_ADDRESS, (n))

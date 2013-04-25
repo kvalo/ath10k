@@ -349,7 +349,7 @@ static inline void ath10k_set_source_ring_write_index(struct ath10k *ar,
 
 	indicator_addr = ar_pci->mem + ctrl_addr + DST_WATERMARK_ADDRESS;
 
-	if (ctrl_addr == CE_BASE_ADDRESS(ar, CDC_WAR_DATA_CE)) {
+	if (ctrl_addr == ath10k_ce_base_address(CDC_WAR_DATA_CE)) {
 		iowrite32((CDC_WAR_MAGIC_STR | write_index), indicator_addr);
 	} else {
 		unsigned long irq_flags;
