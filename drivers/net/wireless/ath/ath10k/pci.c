@@ -2038,31 +2038,6 @@ static int ath10k_pci_reset_target(struct ath10k *ar)
 	return 0;
 }
 
-static int ath10k_pci_configure(struct ath10k *ar)
-{
-	int ret = 0;
-
-	ret = ath10k_pci_start_intr(ar);
-	if (ret) {
-		ath10k_err("could not start interrupt handling (%d)\n", ret);
-		return ret;
-	}
-
-	ret = ath10k_pci_reset_target(ar);
-	if (ret) {
-		ath10k_pci_stop_intr(ar);
-		return ret;
-	}
-
-	if (ath10k_pci_probe_device(ar)) {
-		ath10k_err("Target probe failed\n");
-		ath10k_pci_stop_intr(ar);
-		return -EIO;
-	}
-
-	return 0;
-}
-
 static void ath10k_pci_device_reset(struct ath10k_pci *ar_pci)
 {
 	struct ath10k *ar = ar_pci->ar;
@@ -2282,18 +2257,32 @@ static int ath10k_pci_probe(struct pci_dev *pdev,
 		goto err_iomap;
 	}
 
-	ret = ath10k_pci_configure(ar);
-	if (ret)
+	ret = ath10k_pci_start_intr(ar);
+	if (ret) {
+		ath10k_err("could not start interrupt handling (%d)\n", ret);
 		goto err_iomap;
+	}
+
+	ret = ath10k_pci_reset_target(ar);
+	if (ret)
+		goto err_intr;
+
+	if (ath10k_pci_probe_device(ar)) {
+		ath10k_err("failed to probe target\n");
+		ret = -EIO;
+		goto err_intr;
+	}
 
 	ret = ath10k_core_register(ar);
 	if (ret) {
-		ath10k_pci_stop_intr(ar);
-		goto err_iomap;
+		ath10k_err("could not register driver core (%d)\n", ret);
+		goto err_intr;
 	}
 
 	return 0;
 
+err_intr:
+	ath10k_pci_stop_intr(ar);
 err_iomap:
 	pci_iounmap(pdev, mem);
 err_master:
