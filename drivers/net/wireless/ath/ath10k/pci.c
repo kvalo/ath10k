@@ -2058,7 +2058,6 @@ err_stalled:
 	ath10k_pci_nointrs(ar);
 err_intr:
 	pci_disable_msi(ar_pci->pdev);
-	pci_set_drvdata(ar_pci->pdev, NULL);
 
 	return ret;
 }
@@ -2069,7 +2068,6 @@ static void ath10k_pci_teardown(struct ath10k *ar)
 
 	ath10k_pci_nointrs(ar);
 	pci_disable_msi(ar_pci->pdev);
-	pci_set_drvdata(ar_pci->pdev, NULL);
 }
 
 static void ath10k_pci_device_reset(struct ath10k_pci *ar_pci)
@@ -2305,7 +2303,6 @@ retry:
 	return 0;
 
 err_tgtstate:
-	pci_set_drvdata(pdev, NULL);
 	ath10k_pci_device_reset(ar_pci);
 err_iomap:
 	pci_iounmap(pdev, mem);
@@ -2316,6 +2313,7 @@ err_region:
 err_device:
 	pci_disable_device(pdev);
 err_ar:
+	pci_set_drvdata(pdev, NULL);
 	ath10k_core_destroy(ar);
 err_ar_pci:
 	/* call HIF PCI free here */
