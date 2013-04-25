@@ -2062,40 +2062,6 @@ static void ath10k_pci_dump_features(struct ath10k_pci *ar_pci)
 	}
 }
 
-static int ath10k_pci_bring_up(struct ath10k *ar)
-{
-	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	u32 fw_indicator;
-
-	/*
-	 * Bring the target up cleanly.
-	 *
-	 * The target may be in an undefined state with an AUX-powered Target
-	 * and a Host in WoW mode. If the Host crashes, loses power, or is
-	 * restarted (without unloading the driver) then the Target is left
-	 * (aux) powered and running. On a subsequent driver load, the Target
-	 * is in an unexpected state. We try to catch that here in order to
-	 * reset the Target and retry the probe.
-	 */
-	ath10k_pci_device_reset(ar_pci);
-
-	iowrite32(PCIE_SOC_WAKE_V_MASK,
-		  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
-		  PCIE_SOC_WAKE_ADDRESS);
-
-	ath10k_pci_wait(ar);
-
-	fw_indicator = ioread32(ar_pci->mem + FW_INDICATOR_ADDRESS);
-	iowrite32(PCIE_SOC_WAKE_RESET,
-		  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
-		  PCIE_SOC_WAKE_ADDRESS);
-
-	if (fw_indicator & FW_IND_INITIALIZED)
-		return -EIO;
-
-	return 0;
-}
-
 static int ath10k_pci_probe(struct pci_dev *pdev,
 			    const struct pci_device_id *pci_dev)
 {
@@ -2213,17 +2179,23 @@ static int ath10k_pci_probe(struct pci_dev *pdev,
 
 	ar_pci->cacheline_sz = dma_get_cache_alignment();
 
-	ret = ath10k_pci_bring_up(ar);
-	if (ret) {
-		ath10k_err("could not bring up target\n");
-		goto err_iomap;
-	}
-
 	ret = ath10k_pci_start_intr(ar);
 	if (ret) {
 		ath10k_err("could not start interrupt handling (%d)\n", ret);
 		goto err_iomap;
 	}
+
+	/*
+	 * Bring the target up cleanly.
+	 *
+	 * The target may be in an undefined state with an AUX-powered Target
+	 * and a Host in WoW mode. If the Host crashes, loses power, or is
+	 * restarted (without unloading the driver) then the Target is left
+	 * (aux) powered and running. On a subsequent driver load, the Target
+	 * is in an unexpected state. We try to catch that here in order to
+	 * reset the Target and retry the probe.
+	 */
+	ath10k_pci_device_reset(ar_pci);
 
 	ret = ath10k_pci_reset_target(ar);
 	if (ret)
