@@ -2128,21 +2128,50 @@ static void ath10k_pci_dump_features(struct ath10k_pci *ar_pci)
 	}
 }
 
+static int ath10k_pci_bring_up(struct ath10k *ar)
+{
+	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+	u32 fw_indicator;
+
+	/*
+	 * Bring the target up cleanly.
+	 *
+	 * The target may be in an undefined state with an AUX-powered Target
+	 * and a Host in WoW mode. If the Host crashes, loses power, or is
+	 * restarted (without unloading the driver) then the Target is left
+	 * (aux) powered and running. On a subsequent driver load, the Target
+	 * is in an unexpected state. We try to catch that here in order to
+	 * reset the Target and retry the probe.
+	 */
+	ath10k_pci_device_reset(ar_pci);
+
+	iowrite32(PCIE_SOC_WAKE_V_MASK,
+		  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
+		  PCIE_SOC_WAKE_ADDRESS);
+
+	ath10k_pci_wait(ar);
+
+	fw_indicator = ioread32(ar_pci->mem + FW_INDICATOR_ADDRESS);
+	iowrite32(PCIE_SOC_WAKE_RESET,
+		  ar_pci->mem + PCIE_LOCAL_BASE_ADDRESS +
+		  PCIE_SOC_WAKE_ADDRESS);
+
+	if (fw_indicator & FW_IND_INITIALIZED)
+		return -EIO;
+
+	return 0;
+}
+
 static int ath10k_pci_probe(struct pci_dev *pdev,
 			    const struct pci_device_id *pci_dev)
 {
 	void __iomem *mem;
-	int ret;
-	int probe_again = 0;
+	int ret = 0;
 	struct ath10k *ar;
 	struct ath10k_pci *ar_pci;
-	u32 fw_indicator;
 	u32 lcr_val;
-	int retries = 3;
 
 	ath10k_dbg(ATH10K_DBG_PCI, "%s\n", __func__);
-retry:
-	ret = 0;
 
 	ar_pci = kzalloc(sizeof(*ar_pci), GFP_KERNEL);
 	if (ar_pci == NULL)
@@ -2247,41 +2276,11 @@ retry:
 
 	ar_pci->cacheline_sz = dma_get_cache_alignment();
 
-	/*
-	 * Verify that the Target was started cleanly.
-	 *
-	 * The case where this is most likely is with an AUX-powered
-	 * Target and a Host in WoW mode. If the Host crashes,
-	 * loses power, or is restarted (without unloading the driver)
-	 * then the Target is left (aux) powered and running.  On a
-	 * subsequent driver load, the Target is in an unexpected state.
-	 * We try to catch that here in order to reset the Target and
-	 * retry the probe.
-	 */
-	iowrite32(PCIE_SOC_WAKE_V_MASK,
-		  mem + PCIE_LOCAL_BASE_ADDRESS +
-		  PCIE_SOC_WAKE_ADDRESS);
-	ath10k_pci_wait(ar);
-
-	fw_indicator = ioread32(mem + FW_INDICATOR_ADDRESS);
-	iowrite32(PCIE_SOC_WAKE_RESET,
-		  mem + PCIE_LOCAL_BASE_ADDRESS +
-		  PCIE_SOC_WAKE_ADDRESS);
-
-	if (fw_indicator & FW_IND_INITIALIZED) {
-		probe_again++;
-		ath10k_err("target is in an unknown state. "
-			   "resetting (attempt %d).\n", probe_again);
-		/* ath10k_pci_device_reset, below, will reset the target */
-		ret = -EIO;
-		goto err_tgtstate;
+	ret = ath10k_pci_bring_up(ar);
+	if (ret) {
+		ath10k_err("could not bring up target\n");
+		goto err_iomap;
 	}
-
-	/*
-	 * retries are meant for early hw setup;
-	 * beyond this point it makes no sense to retry
-	 */
-	retries = 0;
 
 	ret = ath10k_pci_configure(ar);
 	if (ret)
@@ -2295,8 +2294,6 @@ retry:
 
 	return 0;
 
-err_tgtstate:
-	ath10k_pci_device_reset(ar_pci);
 err_iomap:
 	pci_iounmap(pdev, mem);
 err_master:
@@ -2311,12 +2308,6 @@ err_ar:
 err_ar_pci:
 	/* call HIF PCI free here */
 	kfree(ar_pci);
-
-	/*
-	 * FIXME: Get rid of this hack as soon as HW is mature enough.
-	 */
-	if (ret && retries--)
-		goto retry;
 
 	return ret;
 }
@@ -2340,7 +2331,6 @@ static void ath10k_pci_remove(struct pci_dev *pdev)
 
 	ath10k_core_unregister(ar);
 	ath10k_pci_stop_intr(ar);
-	ath10k_pci_device_reset(ar_pci);
 
 	pci_set_drvdata(pdev, NULL);
 	pci_iounmap(pdev, ar_pci->mem);
