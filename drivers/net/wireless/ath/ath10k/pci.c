@@ -1642,47 +1642,6 @@ static void ath10k_pci_ce_init(struct ath10k *ar)
 				   ath10k_pci_bmi_recv_data);
 }
 
-/*
- * Called from PCI layer whenever a new PCI device is probed.
- * Initializes per-device HIF state.
- */
-static int ath10k_pci_probe_device(struct ath10k *ar)
-{
-	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	int ret;
-
-	atomic_set(&ar_pci->keep_awake_count, 0);
-	ar_pci->fw_indicator_address = FW_INDICATOR_ADDRESS;
-
-	if (ath10k_target_ps)
-		ath10k_dbg(ATH10K_DBG_PCI, "on-chip power save enabled\n");
-	else {
-		/* Force AWAKE forever */
-		ath10k_dbg(ATH10K_DBG_PCI, "on-chip power save disabled\n");
-		ath10k_do_pci_wake(ar);
-	}
-
-	ath10k_pci_ce_init(ar);
-
-	ret = ath10k_pci_init_config(ar);
-	if (ret) {
-		ath10k_pci_ce_deinit(ar);
-		goto ce_deinit;
-	}
-
-	ret = ath10k_pci_wake_target_cpu(ar);
-	if (ret) {
-		ath10k_err("Unable to wakeup target CPU\n");
-		goto ce_deinit;
-	}
-
-	return 0;
-
-ce_deinit:
-	ath10k_pci_ce_deinit(ar);
-	return ret;
-}
-
 static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
@@ -2183,6 +2142,9 @@ static int ath10k_pci_probe(struct pci_dev *pdev,
 		spin_lock_init(&ar_pci->hw_v1_workaround_lock);
 
 	ar_pci->ar = ar;
+	ar_pci->fw_indicator_address = FW_INDICATOR_ADDRESS;
+	atomic_set(&ar_pci->keep_awake_count, 0);
+
 	pci_set_drvdata(pdev, ar);
 
 	/*
@@ -2267,20 +2229,36 @@ static int ath10k_pci_probe(struct pci_dev *pdev,
 	if (ret)
 		goto err_intr;
 
-	if (ath10k_pci_probe_device(ar)) {
-		ath10k_err("failed to probe target\n");
-		ret = -EIO;
-		goto err_intr;
+	if (ath10k_target_ps)
+		ath10k_dbg(ATH10K_DBG_PCI, "on-chip power save enabled\n");
+	else {
+		/* Force AWAKE forever */
+		ath10k_dbg(ATH10K_DBG_PCI, "on-chip power save disabled\n");
+		ath10k_do_pci_wake(ar);
+	}
+
+	ath10k_pci_ce_init(ar);
+
+	ret = ath10k_pci_init_config(ar);
+	if (ret)
+		goto err_ce;
+
+	ret = ath10k_pci_wake_target_cpu(ar);
+	if (ret) {
+		ath10k_err("could not wake up target CPU (%d)\n", ret);
+		goto err_ce;
 	}
 
 	ret = ath10k_core_register(ar);
 	if (ret) {
 		ath10k_err("could not register driver core (%d)\n", ret);
-		goto err_intr;
+		goto err_ce;
 	}
 
 	return 0;
 
+err_ce:
+	ath10k_pci_ce_deinit(ar);
 err_intr:
 	ath10k_pci_stop_intr(ar);
 err_iomap:
