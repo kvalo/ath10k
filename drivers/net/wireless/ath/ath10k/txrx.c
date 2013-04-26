@@ -238,13 +238,18 @@ void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info)
 {
 	struct ieee80211_rx_status *status;
 	struct ieee80211_channel *ch;
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)info->skb->data;
 
 	status = IEEE80211_SKB_RXCB(info->skb);
 	memset(status, 0, sizeof(*status));
 
-	if (info->encrypt_type != HTT_RX_MPDU_ENCRYPT_NONE)
+	if (info->encrypt_type != HTT_RX_MPDU_ENCRYPT_NONE) {
 		status->flag |= RX_FLAG_DECRYPTED | RX_FLAG_IV_STRIPPED |
 				RX_FLAG_MMIC_STRIPPED;
+		hdr->frame_control = __cpu_to_le16(
+				__le16_to_cpu(hdr->frame_control) &
+				~IEEE80211_FCTL_PROTECTED);
+	}
 
 	if (info->status == HTT_RX_IND_MPDU_STATUS_TKIP_MIC_ERR)
 		status->flag |= RX_FLAG_MMIC_ERROR;
