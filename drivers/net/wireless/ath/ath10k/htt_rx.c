@@ -877,7 +877,7 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 	struct sk_buff *msdu_head, *msdu_tail;
 	struct htt_rx_desc *rxd;
 	enum rx_msdu_decap_format fmt;
-	struct htt_rx_info info;
+	struct htt_rx_info info = {};
 	int msdu_chaining;
 	bool tkip_mic_err;
 	bool decrypt_err;
