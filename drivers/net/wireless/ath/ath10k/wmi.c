@@ -313,7 +313,7 @@ static inline u8 get_rate_idx(u32 rate, enum ieee80211_band band)
 
 static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct wmi_mgmt_rx_event *event = (void *)skb->data;
+	struct wmi_mgmt_rx_event *event = (struct wmi_mgmt_rx_event *)skb->data;
 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
 	struct ieee80211_hdr *hdr;
 	u32 rx_status;
@@ -396,7 +396,7 @@ static void ath10k_wmi_event_debug_mesg(struct ath10k *ar, struct sk_buff *skb)
 
 static void ath10k_wmi_event_update_stats(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct wmi_stats_event *ev = (void *)skb->data;
+	struct wmi_stats_event *ev = (struct wmi_stats_event *)skb->data;
 
 	ath10k_dbg(ATH10K_DBG_WMI, "WMI_UPDATE_STATS_EVENTID\n");
 
@@ -405,7 +405,7 @@ static void ath10k_wmi_event_update_stats(struct ath10k *ar, struct sk_buff *skb
 
 static void ath10k_wmi_event_vdev_start_resp(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct wmi_vdev_start_response_event *ev = (void *)skb->data;
+	struct wmi_vdev_start_response_event *ev = (struct wmi_vdev_start_response_event *)skb->data;
 
 	ath10k_dbg(ATH10K_DBG_WMI, "WMI_VDEV_START_RESP_EVENTID\n");
 
@@ -463,7 +463,7 @@ static void ath10k_wmi_event_peer_sta_kickout(struct ath10k *ar, struct sk_buff 
 static void ath10k_wmi_update_tim(struct ath10k *ar, struct ath10k_vif *arvif,
 				  struct sk_buff *bcn, struct wmi_bcn_info *bcn_info)
 {
-	struct ieee80211_hdr *hdr = (void *)bcn->data;
+	struct ieee80211_hdr *hdr = (struct ieee80211_hdr *)bcn->data;
 	struct ieee80211_tim_ie *tim;
 	u8 *ies, *ie;
 	u8 ie_len, pvm_len;
@@ -646,7 +646,7 @@ cleanup:
 
 static void ath10k_wmi_event_host_swba(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct wmi_host_swba_event *ev = (void *)skb->data;
+	struct wmi_host_swba_event *ev = (struct wmi_host_swba_event *)skb->data;
 	u32 map = __le32_to_cpu(ev->vdev_map);
 	int i = -1;
 	struct wmi_bcn_info *bcn_info;
@@ -883,7 +883,7 @@ static void ath10k_wmi_service_ready_event_rx(struct ath10k *ar, struct sk_buff 
 
 static int ath10k_wmi_ready_event_rx(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct wmi_ready_event *ev = (void *)skb->data;
+	struct wmi_ready_event *ev = (struct wmi_ready_event *)skb->data;
 
 	if (WARN_ON(skb->len < sizeof(*ev)))
 		return -EINVAL;
@@ -1138,7 +1138,7 @@ int ath10k_wmi_pdev_set_regdomain(struct ath10k *ar)
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_pdev_set_regdomain_cmd *)skb->data;
 
 	/* FIXME: do not use hardcoded values */
 	/* TODO: provide correct values for reg domain */
@@ -1163,7 +1163,7 @@ int ath10k_wmi_pdev_set_channel(struct ath10k *ar, const struct wmi_channel_arg 
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_set_channel_cmd *)skb->data;
 	cmd->chan.mhz               = __cpu_to_le32(arg->freq);
 	cmd->chan.band_center_freq1 = __cpu_to_le32(arg->freq);
 	cmd->chan.mode              = arg->mode;
@@ -1189,7 +1189,7 @@ int ath10k_wmi_pdev_suspend_target(struct ath10k *ar)
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_pdev_suspend_cmd *)skb->data;
 	cmd->suspend_opt = WMI_PDEV_SUSPEND;
 
 	return ath10k_wmi_cmd_send(ar, skb, WMI_PDEV_SUSPEND_CMDID);
@@ -1218,7 +1218,7 @@ int ath10k_wmi_pdev_set_param(struct ath10k *ar, enum wmi_pdev_param id,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_pdev_set_param_cmd *)skb->data;
 	cmd->param_id    = __cpu_to_le32(id);
 	cmd->param_value = __cpu_to_le32(value);
 
@@ -1354,7 +1354,7 @@ int ath10k_wmi_start_scan(struct ath10k *ar,
 	scan_req_id  = WMI_HOST_SCAN_REQUESTOR_ID_PREFIX;
 	scan_req_id |= arg->scan_req_id;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_start_scan_cmd *)skb->data;
 	cmd->scan_id            = __cpu_to_le32(scan_id);
 	cmd->scan_req_id        = __cpu_to_le32(scan_req_id);
 	cmd->vdev_id            = __cpu_to_le32(arg->vdev_id);
@@ -1503,7 +1503,7 @@ int ath10k_wmi_vdev_create(struct ath10k *ar, u32 vdev_id,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_vdev_create_cmd *)skb->data;
 	cmd->vdev_id      = __cpu_to_le32(vdev_id);
 	cmd->vdev_type    = __cpu_to_le32(type);
 	cmd->vdev_subtype = __cpu_to_le32(subtype);
@@ -1525,7 +1525,7 @@ int ath10k_wmi_vdev_delete(struct ath10k *ar, u32 vdev_id)
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_vdev_delete_cmd *)skb->data;
 	cmd->vdev_id = __cpu_to_le32(vdev_id);
 
 	ath10k_dbg(ATH10K_DBG_WMI,
@@ -1705,7 +1705,7 @@ int ath10k_wmi_vdev_install_key(struct ath10k *ar,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_vdev_install_key_cmd *)skb->data;
 	cmd->vdev_id       = __cpu_to_le32(arg->vdev_id);
 	cmd->key_idx       = __cpu_to_le32(arg->key_idx);
 	cmd->key_flags     = __cpu_to_le32(arg->key_flags);
@@ -1732,7 +1732,7 @@ int ath10k_wmi_peer_create(struct ath10k *ar, u32 vdev_id,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_peer_create_cmd *)skb->data;
 	cmd->vdev_id = __cpu_to_le32(vdev_id);
 	memcpy(cmd->peer_macaddr.addr, peer_addr, ETH_ALEN);
 
@@ -1752,7 +1752,7 @@ int ath10k_wmi_peer_delete(struct ath10k *ar, u32 vdev_id,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_peer_delete_cmd *)skb->data;
 	cmd->vdev_id = __cpu_to_le32(vdev_id);
 	memcpy(cmd->peer_macaddr.addr, peer_addr, ETH_ALEN);
 
@@ -1772,7 +1772,7 @@ int ath10k_wmi_peer_flush(struct ath10k *ar, u32 vdev_id,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_peer_flush_tids_cmd *)skb->data;
 	cmd->vdev_id         = __cpu_to_le32(vdev_id);
 	cmd->peer_tid_bitmap = __cpu_to_le32(tid_bitmap);
 	memcpy(cmd->peer_macaddr.addr, peer_addr, ETH_ALEN);
@@ -1866,7 +1866,7 @@ int ath10k_wmi_scan_chan_list(struct ath10k *ar,
 	if (!skb)
 		return -EINVAL;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_scan_chan_list_cmd *)skb->data;
 	cmd->num_scan_chans = __cpu_to_le32(arg->n_channels);
 
 	for (i = 0; i < arg->n_channels; i++) {
@@ -1918,7 +1918,7 @@ int ath10k_wmi_peer_assoc(struct ath10k *ar,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_peer_assoc_complete_cmd *)skb->data;
 	cmd->vdev_id            = __cpu_to_le32(arg->vdev_id);
 	cmd->peer_new_assoc     = __cpu_to_le32(arg->peer_reassoc ? 0 : 1);
 	cmd->peer_associd       = __cpu_to_le32(arg->peer_aid);
@@ -1988,7 +1988,7 @@ int ath10k_wmi_pdev_set_wmm_params(struct ath10k *ar,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_pdev_set_wmm_params *)skb->data;
 	ath10k_wmi_pdev_set_wmm_param(&cmd->ac_be, &arg->ac_be);
 	ath10k_wmi_pdev_set_wmm_param(&cmd->ac_bk, &arg->ac_bk);
 	ath10k_wmi_pdev_set_wmm_param(&cmd->ac_vi, &arg->ac_vi);
@@ -2007,7 +2007,7 @@ int ath10k_wmi_request_stats(struct ath10k *ar, enum wmi_stats_id stats_id)
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (void *)skb->data;
+	cmd = (struct wmi_request_stats_cmd *)skb->data;
 	cmd->stats_id = __cpu_to_le32(stats_id);
 
 	ath10k_dbg(ATH10K_DBG_WMI, "wmi request stats %d\n", (int)stats_id);
