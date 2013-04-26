@@ -895,6 +895,11 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 
 	ath10k_dbg(ATH10K_DBG_HTT_DUMP, "htt rx frag ahead\n");
 
+	if (!msdu_head) {
+		ath10k_warn("htt rx frag no data\n");
+		return;
+	}
+
 	if (msdu_chaining || msdu_head != msdu_tail) {
 		ath10k_warn("aggregation with fragmentation?!\n");
 		ath10k_htt_rx_free_msdu_chain(msdu_head);
