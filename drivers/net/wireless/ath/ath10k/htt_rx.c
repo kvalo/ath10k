@@ -518,9 +518,8 @@ static int ath10k_htt_rx_crypto_tail_len(enum htt_rx_mpdu_encrypt_type type)
 	case HTT_RX_MPDU_ENCRYPT_WAPI:
 		return 0;
 	case HTT_RX_MPDU_ENCRYPT_TKIP_WITHOUT_MIC:
-		return 4;
 	case HTT_RX_MPDU_ENCRYPT_TKIP_WPA:
-		return 4 + 8;
+		return 4;
 	case HTT_RX_MPDU_ENCRYPT_AES_CCM_WPA2:
 		return 8;
 	}
@@ -878,6 +877,7 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 	struct htt_rx_desc *rxd;
 	enum rx_msdu_decap_format fmt;
 	struct htt_rx_info info = {};
+	struct ieee80211_hdr *hdr;
 	int msdu_chaining;
 	bool tkip_mic_err;
 	bool decrypt_err;
@@ -908,6 +908,7 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 
 	/* FIXME: implement signal strength */
 
+	hdr = (struct ieee80211_hdr *)msdu_head->data;
 	rxd = (void *)msdu_head->data - sizeof(*rxd);
 	tkip_mic_err = !!(__le32_to_cpu(rxd->attention.flags) &
 				RX_ATTENTION_FLAGS_TKIP_MIC_ERR);
@@ -939,7 +940,6 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 	}
 
 	if (info.encrypt_type != HTT_RX_MPDU_ENCRYPT_NONE) {
-		struct ieee80211_hdr *hdr = (void *)info.skb->data;
 		int hdrlen = ieee80211_hdrlen(hdr->frame_control);
 		int paramlen = ath10k_htt_rx_crypto_param_len(info.encrypt_type);
 
@@ -948,12 +948,19 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 			(void *)info.skb->data,
 			hdrlen);
 		skb_pull(info.skb, paramlen);
+		hdr = (struct ieee80211_hdr *)info.skb->data;
 	}
 
 	/* remove trailing FCS */
 	trim  = 4;
-	/* remove crypto trailer; we use rx desc for mic failure */
+
+	/* remove crypto trailer */
 	trim += ath10k_htt_rx_crypto_tail_len(info.encrypt_type);
+
+	/* last fragment of TKIP frags has MIC */
+	if (!ieee80211_has_morefrags(hdr->frame_control) &&
+	    info.encrypt_type == HTT_RX_MPDU_ENCRYPT_TKIP_WPA)
+		trim += 8;
 
 	if (trim > info.skb->len) {
 		ath10k_warn("htt rx fragment: trailer longer than the frame itself? drop\n");
