@@ -37,12 +37,6 @@ MODULE_PARM_DESC(debug_mask, "Debugging mask");
 MODULE_PARM_DESC(uart_print, "Uart target debugging");
 MODULE_PARM_DESC(ath10k_p2p, "Enable ath10k P2P support");
 
-enum ath10k_file {
-	ATH10K_FILE_OTP,
-	ATH10K_FILE_FIRMWARE,
-	ATH10K_FILE_BOARD_DATA,
-};
-
 static const struct ath10k_hw_params ath10k_hw_params_list[] = {
 	{
 		.id = QCA988X_HW_1_0_VERSION,
@@ -183,188 +177,213 @@ static int ath10k_init_configure_target(struct ath10k *ar)
 	return 0;
 }
 
-static int ath10k_init_transfer_bin_file(struct ath10k *ar,
-					 enum ath10k_file file,
-					 u32 address, bool compressed)
+static const struct firmware *ath10k_fetch_fw_file(struct ath10k *ar,
+						   const char *dir,
+						   const char *file)
 {
-	int status = 0;
 	char filename[100];
-	const struct firmware *fw_entry;
-	u32 fw_entry_size;
-	u8 *temp_eeprom = NULL, *fw_buf = NULL;
+	const struct firmware *fw;
+	int ret;
 
-	switch (file) {
-	default:
-		ath10k_err("%s: unknown file type\n", __func__);
-		return -1;
+	if (file == NULL)
+		return ERR_PTR(-ENOENT);
 
-	case ATH10K_FILE_OTP:
-		if (!ar->hw_params.fw.otp) {
-			ath10k_err("%s: OTP file not defined\n", __func__);
-			return -ENOENT;
-		}
-		snprintf(filename, sizeof(filename), "%s/%s",
-			 ar->hw_params.fw.dir, ar->hw_params.fw.otp);
-		break;
+	if (dir == NULL)
+		dir = ".";
 
-	case ATH10K_FILE_FIRMWARE:
-		if (!ar->hw_params.fw.fw) {
-			ath10k_err("%s: FW file not defined\n", __func__);
-			return -ENOENT;
-		}
-		snprintf(filename, sizeof(filename), "%s/%s",
-			 ar->hw_params.fw.dir, ar->hw_params.fw.fw);
-		break;
+	snprintf(filename, sizeof(filename), "%s/%s", dir, file);
+	ret = request_firmware(&fw, filename, ar->dev);
+	if (ret)
+		return ERR_PTR(ret);
 
-	case ATH10K_FILE_BOARD_DATA:
-		if (!ar->hw_params.fw.board) {
-			ath10k_err("%s: board file not defined\n", __func__);
-			return -ENOENT;
-		}
-		snprintf(filename, sizeof(filename), "%s/%s",
-			 ar->hw_params.fw.dir, ar->hw_params.fw.board);
-		break;
+	return fw;
+}
 
+static int ath10k_push_board_ext_data(struct ath10k *ar,
+				      const struct firmware *fw)
+{
+	u32 board_data_size = QCA988X_BOARD_DATA_SZ;
+	u32 board_ext_data_size = QCA988X_BOARD_EXT_DATA_SZ;
+	u32 board_ext_data_addr;
+	int ret;
+
+	ret = ath10k_bmi_read32(ar, hi_board_ext_data, &board_ext_data_addr);
+	if (ret) {
+		ath10k_err("could not read board ext data addr (%d)\n", ret);
+		return ret;
 	}
 
-	if (request_firmware(&fw_entry, filename, ar->dev) != 0) {
-		if (file == ATH10K_FILE_OTP)
-			return -ENOENT;
+	ath10k_dbg(ATH10K_DBG_CORE,
+		   "ath10k: Board extended Data download addr: 0x%x\n",
+		   board_ext_data_addr);
 
-		ath10k_err("%s: failed to get %s\n", __func__, filename);
-		return -1;
+	if (board_ext_data_addr == 0)
+		return 0;
+
+	if (fw->size != (board_data_size + board_ext_data_size)) {
+		ath10k_err("invalid board (ext) data sizes %lu != %d+%d\n",
+			   fw->size, board_data_size, board_ext_data_size);
+		return -EINVAL;
 	}
 
-	fw_entry_size = fw_entry->size;
-	fw_buf = (u8 *)fw_entry->data;
-
-	if (file == ATH10K_FILE_BOARD_DATA && fw_entry->data) {
-		u32 board_ext_address;
-
-		temp_eeprom = kmalloc(fw_entry_size, GFP_ATOMIC);
-		if (!temp_eeprom) {
-			ath10k_err("%s: memory allocation failed\n", __func__);
-			status = -ENOMEM;
-			goto exit_fw;
-		}
-
-		memcpy(temp_eeprom, fw_buf, fw_entry_size);
-
-		/* Determine where in Target RAM to write Board Data */
-		ath10k_bmi_read32(ar, hi_board_ext_data, &board_ext_address);
-
-		ath10k_dbg(ATH10K_DBG_CORE,
-			   "ath10k: Board extended Data download addr: 0x%x\n",
-			   board_ext_address);
-
-		/*
-		 * Check whether the target has allocated memory for extended
-		 * board data and file contains extended board data
-		 */
-		if (board_ext_address && (fw_entry_size == (QCA988X_BOARD_DATA_SZ + QCA988X_BOARD_EXT_DATA_SZ))) {
-			status = ath10k_bmi_write_memory(ar, board_ext_address,
-							 (u8 *)(((unsigned long)temp_eeprom) + QCA988X_BOARD_DATA_SZ),
-							 QCA988X_BOARD_EXT_DATA_SZ);
-
-			if (status != 0) {
-				ath10k_err("ath10k: BMI operation failed\n");
-				goto exit_buf;
-			}
-
-			/*
-			 * Record the fact that extended board Data IS
-			 * initialized
-			 */
-			ath10k_bmi_write32(ar, hi_board_ext_data_config,
-					   (QCA988X_BOARD_EXT_DATA_SZ << 16) | 1);
-
-			fw_entry_size = QCA988X_BOARD_DATA_SZ;
-		}
+	ret = ath10k_bmi_write_memory(ar, board_ext_data_addr,
+				      fw->data + board_data_size,
+				      board_ext_data_size);
+	if (ret) {
+		ath10k_err("could not write board ext data (%d)\n", ret);
+		return ret;
 	}
 
-	if (compressed)
-		status = ath10k_bmi_fast_download(ar, address,
-						  fw_buf, fw_entry_size);
-	else {
-		if (file == ATH10K_FILE_BOARD_DATA && fw_entry->data)
-			status = ath10k_bmi_write_memory(ar, address,
-							 temp_eeprom,
-							 fw_entry_size);
-		else
-			status = ath10k_bmi_write_memory(ar, address,
-							 fw_buf,
-							 fw_entry_size);
+	ret = ath10k_bmi_write32(ar, hi_board_ext_data_config,
+				 (board_ext_data_size << 16) | 1);
+	if (ret) {
+		ath10k_err("could not write board ext data bit (%d)\n", ret);
+		return ret;
 	}
 
-exit_buf:
-	kfree(temp_eeprom);
+	return 0;
+}
 
-	if (status != 0)
-		ath10k_err("BMI operation failed: %d\n", __LINE__);
-exit_fw:
-	release_firmware(fw_entry);
-	return status;
+static int ath10k_download_board_data(struct ath10k *ar)
+{
+	u32 board_data_size = QCA988X_BOARD_DATA_SZ;
+	u32 address;
+	const struct firmware *fw;
+	int ret;
+
+	fw = ath10k_fetch_fw_file(ar, ar->hw_params.fw.dir,
+				  ar->hw_params.fw.board);
+	if (IS_ERR(fw)) {
+		ath10k_err("could not fetch board data fw file (%ld)\n", PTR_ERR(fw));
+		return PTR_ERR(fw);
+	}
+
+	ret = ath10k_push_board_ext_data(ar, fw);
+	if (ret) {
+		ath10k_err("could not push board ext data (%d)\n", ret);
+		goto exit;
+	}
+
+	ret = ath10k_bmi_read32(ar, hi_board_data, &address);
+	if (ret) {
+		ath10k_err("could not read board data addr (%d)\n", ret);
+		goto exit;
+	}
+
+	ret = ath10k_bmi_write_memory(ar, address, fw->data,
+				      min_t(u32, board_data_size, fw->size));
+	if (ret) {
+		ath10k_err("could not write board data (%d)\n", ret);
+		goto exit;
+	}
+
+	ret = ath10k_bmi_write32(ar, hi_board_data_initialized, 1);
+	if (ret) {
+		ath10k_err("could not write board data bit (%d)\n", ret);
+		goto exit;
+	}
+
+exit:
+	release_firmware(fw);
+	return ret;
+}
+
+static int ath10k_download_and_run_otp(struct ath10k *ar)
+{
+	const struct firmware *fw;
+	u32 address;
+	u32 exec_param;
+	int ret;
+
+	/* OTP is optional */
+
+	if (ar->hw_params.fw.otp == NULL) {
+		ath10k_info("otp file not defined\n");
+		return 0;
+	}
+
+	address = ar->hw_params.patch_load_addr;
+
+	fw = ath10k_fetch_fw_file(ar, ar->hw_params.fw.dir, ar->hw_params.fw.otp);
+	if (IS_ERR(fw)) {
+		ath10k_warn("could not fetch otp (%ld)\n", PTR_ERR(fw));
+		return 0;
+	}
+
+	ret = ath10k_bmi_fast_download(ar, address, fw->data, fw->size);
+	if (ret) {
+		ath10k_err("could not write otp (%d)\n", ret);
+		goto exit;
+	}
+
+	exec_param = 0;
+	ret = ath10k_bmi_execute(ar, address, &exec_param);
+	if (ret) {
+		ath10k_err("could not execute otp (%d)\n", ret);
+		goto exit;
+	}
+
+exit:
+	release_firmware(fw);
+	return ret;
+}
+
+static int ath10k_download_fw(struct ath10k *ar)
+{
+	const struct firmware *fw;
+	u32 address;
+	int ret;
+
+	if (ar->hw_params.fw.fw == NULL)
+		return -EINVAL;
+
+	address = ar->hw_params.patch_load_addr;
+
+	fw = ath10k_fetch_fw_file(ar, ar->hw_params.fw.dir, ar->hw_params.fw.fw);
+	if (IS_ERR(fw)) {
+		ath10k_err("could not fetch fw (%ld)\n", PTR_ERR(fw));
+		return PTR_ERR(fw);
+	}
+
+	ret = ath10k_bmi_fast_download(ar, address, fw->data, fw->size);
+	if (ret) {
+		ath10k_err("could not write fw (%d)\n", ret);
+		goto exit;
+	}
+
+exit:
+	release_firmware(fw);
+	return ret;
 }
 
 static int ath10k_init_download_firmware(struct ath10k *ar)
 {
-	u32 param_host, address = 0;
-	int status;
+	int ret;
 
-	/* Transfer Board Data from Target EEPROM to Target RAM */
-	/* Determine where in Target RAM to write Board Data */
-	ath10k_bmi_read32(ar, hi_board_data, &address);
+	ret = ath10k_download_board_data(ar);
+	if (ret)
+		return ret;
 
-	if (!address) {
-		ath10k_err("Target address not known!\n");
-		return -1;
-	}
+	ret = ath10k_download_and_run_otp(ar);
+	if (ret)
+		return ret;
 
-	/* Write EEPROM data to Target RAM */
-	status = ath10k_init_transfer_bin_file(ar, ATH10K_FILE_BOARD_DATA,
-				      address, false);
-	if (status) {
-		ath10k_err("boardData file upload failed!\n");
-		return status;
-	}
+	ret = ath10k_download_fw(ar);
+	if (ret)
+		return ret;
 
-	/* Record the fact that Board Data is initialized */
-	ath10k_bmi_write32(ar, hi_board_data_initialized, 1);
-
-	/* Transfer One Time Programmable data */
-	address = ar->hw_params.patch_load_addr;
-	ath10k_dbg(ATH10K_DBG_CORE,
-		   "Using 0x%x for the remainder of init\n", address);
-
-	status = ath10k_init_transfer_bin_file(ar, ATH10K_FILE_OTP,
-					       address, true);
-	if (status == 0) {
-		/* Execute the OTP code only if entry found and downloaded */
-		param_host = 0;
-		ath10k_bmi_execute(ar, address, &param_host);
-	} else if (status == -1)
-		return status;
-
-	/*
-	 * Download Target firmware
-	 */
-	status = ath10k_init_transfer_bin_file(ar, ATH10K_FILE_FIRMWARE,
-					       address, true);
-	if (status) {
-		ath10k_err("firmware upload failed\n");
-		return status;
-	}
-
-	ath10k_dbg(ATH10K_DBG_CORE, "Firmware downloaded\n");
-	return 0;
+	ath10k_info("firmware downloaded\n");
+	return ret;
 }
 
 static int ath10k_init_uart(struct ath10k *ar)
 {
 	int ret;
 
-	/* Explicitly setting UART prints to zero as target turns it on
-	 * based on scratch registers. */
+	/*
+	 * Explicitly setting UART prints to zero as target turns it on
+	 * based on scratch registers.
+	 */
 	ret = ath10k_bmi_write32(ar, hi_serial_enable, 0);
 	if (ret) {
 		ath10k_warn("could not disable UART prints (%d)\n", ret);
@@ -507,10 +526,13 @@ int ath10k_core_register(struct ath10k *ar)
 		goto err;
 	}
 
-	if (ath10k_init_download_firmware(ar)) {
-		status = -EIO;
+	status = ath10k_init_download_firmware(ar);
+	if (status)
 		goto err;
-	}
+
+	status = ath10k_init_uart(ar);
+	if (status)
+		goto err;
 
 	status = ath10k_init_uart(ar);
 	if (status)
