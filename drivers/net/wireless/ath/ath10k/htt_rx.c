@@ -235,6 +235,17 @@ static inline struct sk_buff *ath10k_htt_rx_netbuf_pop(struct ath10k_htt *htt)
 	return msdu;
 }
 
+static void ath10k_htt_rx_free_msdu_chain(struct sk_buff *skb)
+{
+	struct sk_buff *next;
+
+	while (skb) {
+		next = skb->next;
+		dev_kfree_skb_any(skb);
+		skb = next;
+	}
+}
+
 static int ath10k_htt_rx_amsdu_pop(struct ath10k_htt *htt,
 				   u8 **fw_desc, int *fw_desc_len,
 				   struct sk_buff **head_msdu,
@@ -543,17 +554,6 @@ static bool ath10k_htt_rx_hdr_is_amsdu(struct ieee80211_hdr *hdr)
 			return true;
 	}
 	return false;
-}
-
-static void ath10k_htt_rx_free_msdu_chain(struct sk_buff *skb)
-{
-	struct sk_buff *next;
-
-	while (skb) {
-		next = skb->next;
-		dev_kfree_skb_any(skb);
-		skb = next;
-	}
 }
 
 static int ath10k_htt_rx_amsdu(struct ath10k_htt *htt,
