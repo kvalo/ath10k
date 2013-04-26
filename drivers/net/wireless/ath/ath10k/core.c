@@ -355,19 +355,40 @@ static int ath10k_init_download_firmware(struct ath10k *ar)
 		return status;
 	}
 
-	if (uart_print) {
-		/* Configure GPIO QCA988X UART */
-		ath10k_bmi_write32(ar, hi_dbg_uart_txpin, 7);
-		ath10k_bmi_write32(ar, hi_serial_enable, 1);
-	} else {
-		/*
-		 * Explicitly setting UART prints to zero as target turns it on
-		 * based on scratch registers.
-		 */
-		ath10k_bmi_write32(ar, hi_serial_enable, 0);
+	ath10k_dbg(ATH10K_DBG_CORE, "Firmware downloaded\n");
+	return 0;
+}
+
+static int ath10k_init_uart(struct ath10k *ar)
+{
+	int ret;
+
+	/* Explicitly setting UART prints to zero as target turns it on
+	 * based on scratch registers. */
+	ret = ath10k_bmi_write32(ar, hi_serial_enable, 0);
+	if (ret) {
+		ath10k_warn("could not disable UART prints (%d)\n", ret);
+		return ret;
 	}
 
-	ath10k_dbg(ATH10K_DBG_CORE, "Firmware downloaded\n");
+	if (!uart_print) {
+		ath10k_info("UART prints disabled\n");
+		return 0;
+	}
+
+	ret = ath10k_bmi_write32(ar, hi_dbg_uart_txpin, 7);
+	if (ret) {
+		ath10k_warn("could not enable UART prints (%d)\n", ret);
+		return ret;
+	}
+
+	ret = ath10k_bmi_write32(ar, hi_serial_enable, 1);
+	if (ret) {
+		ath10k_warn("could not enable UART prints (%d)\n", ret);
+		return ret;
+	}
+
+	ath10k_info("UART prints enabled\n");
 	return 0;
 }
 
@@ -490,6 +511,10 @@ int ath10k_core_register(struct ath10k *ar)
 		status = -EIO;
 		goto err;
 	}
+
+	status = ath10k_init_uart(ar);
+	if (status)
+		goto err;
 
 	htc_ops.target_send_suspend_complete = ath10k_send_suspend_complete;
 
