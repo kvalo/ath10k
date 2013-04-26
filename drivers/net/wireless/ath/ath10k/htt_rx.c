@@ -292,9 +292,9 @@ static int ath10k_htt_rx_amsdu_pop(struct ath10k_htt *htt,
 		 */
 		if (!(__le32_to_cpu(rx_desc->attention.flags)
 				& RX_ATTENTION_FLAGS_MSDU_DONE)) {
-			if (*head_msdu == msdu)
-				*head_msdu = NULL;
-			dev_kfree_skb_any(msdu);
+			ath10k_htt_rx_free_msdu_chain(*head_msdu);
+			*head_msdu = NULL;
+			msdu = NULL;
 			ath10k_err("htt rx stopped. cannot recover\n");
 			htt->rx_confused = true;
 			break;
