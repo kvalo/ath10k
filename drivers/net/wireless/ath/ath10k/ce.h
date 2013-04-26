@@ -111,7 +111,7 @@ struct ce_ring_state {
 	 * Start of shadow copy of descriptors, within regular memory.
 	 * Aligned to descriptor-size boundary.
 	 */
-	char *shadow_base_unaligned;
+	void *shadow_base_unaligned;
 	struct ce_desc *shadow_base;
 
 	void **per_transfer_context;
