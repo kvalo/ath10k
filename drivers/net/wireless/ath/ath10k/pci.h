@@ -190,7 +190,7 @@ struct ath10k_pci {
 	void __iomem *mem;
 	int cacheline_sz;
 
-	unsigned long features[ATH10K_PCI_FEATURE_COUNT / sizeof(unsigned long)];
+	DECLARE_BITMAP(features, ATH10K_PCI_FEATURE_COUNT);
 
 	/*
 	 * Number of MSI interrupts granted, 0 --> using legacy PCI line
