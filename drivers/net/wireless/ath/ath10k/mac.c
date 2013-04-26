@@ -368,15 +368,15 @@ static int ath10k_vdev_start(struct ath10k_vif *arvif)
 {
 	struct ath10k *ar = arvif->ar;
 	struct ieee80211_conf *conf = &ar->hw->conf;
-	struct ieee80211_channel *channel = conf->channel;
+	struct ieee80211_channel *channel = conf->chandef.chan;
 	struct wmi_vdev_start_request_arg arg = {
 		.vdev_id = arvif->vdev_id,
 		.channel = {
 			.freq = channel->center_freq,
-			.band_center_freq1 = band_center_freq(conf->channel,
-							      conf->channel_type),
-			.mode = chan_to_phymode(conf->channel,
-						conf->channel_type),
+			.band_center_freq1 = band_center_freq(channel,
+							      cfg80211_get_chandef_type(&conf->chandef)),
+			.mode = chan_to_phymode(channel,
+						cfg80211_get_chandef_type(&conf->chandef)),
 			.min_power = channel->max_power * 3,
 			.max_power = channel->max_power * 4,
 			.max_reg_power = channel->max_reg_power * 4,
@@ -442,18 +442,17 @@ static int ath10k_vdev_stop(struct ath10k_vif *arvif)
 
 static int ath10k_monitor_start(struct ath10k *ar, int vdev_id)
 {
-	struct ieee80211_channel *channel = ar->hw->conf.channel;
-	struct ieee80211_conf *conf = &ar->hw->conf;
+	struct ieee80211_channel *channel = ar->hw->conf.chandef.chan;
 	struct wmi_vdev_start_request_arg arg = {
 		.vdev_id = vdev_id,
 		.channel = {
 			.freq = channel->center_freq,
-			.band_center_freq1 = band_center_freq(conf->channel,
-							      conf->channel_type),
+			.band_center_freq1 = band_center_freq(channel,
+							      cfg80211_get_chandef_type(&ar->hw->conf.chandef)),
 			/* TODO setup this dynamically, what in case we
 			   don't have any vifs? */
-			.mode = chan_to_phymode(conf->channel,
-						conf->channel_type),
+			.mode = chan_to_phymode(channel,
+						cfg80211_get_chandef_type(&ar->hw->conf.chandef)),
 			.min_power = channel->max_power * 3,
 			.max_power = channel->max_power * 4,
 			.max_reg_power = channel->max_reg_power * 4,
@@ -744,7 +743,7 @@ static void ath10k_peer_assoc_h_crypto(struct ath10k *ar,
 	const u8 *rsnie = NULL;
 	const u8 *wpaie = NULL;
 
-	bss = cfg80211_get_bss(ar->hw->wiphy, ar->hw->conf.channel,
+	bss = cfg80211_get_bss(ar->hw->wiphy, ar->hw->conf.chandef.chan,
 			       info->bssid, NULL, 0, 0, 0);
 	if (bss) {
 		const struct cfg80211_bss_ies *ies;
@@ -784,8 +783,8 @@ static void ath10k_peer_assoc_h_rates(struct ath10k *ar,
 	u32 ratemask;
 	int i;
 
-	sband = ar->hw->wiphy->bands[ar->hw->conf.channel->band];
-	ratemask = sta->supp_rates[ar->hw->conf.channel->band];
+	sband = ar->hw->wiphy->bands[ar->hw->conf.chandef.chan->band];
+	ratemask = sta->supp_rates[ar->hw->conf.chandef.chan->band];
 	rates = sband->bitrates;
 
 	rateset->num_rates = 0;
@@ -898,7 +897,7 @@ static void ath10k_peer_assoc_h_phymode(struct ath10k *ar,
 {
 	enum wmi_phy_mode phymode = MODE_UNKNOWN;
 
-	switch (ar->hw->conf.channel->band) {
+	switch (ar->hw->conf.chandef.chan->band) {
 	case IEEE80211_BAND_2GHZ:
 		if (sta->ht_cap.ht_supported) {
 			if (sta->bandwidth == IEEE80211_STA_RX_BW_40)
@@ -1553,8 +1552,8 @@ static int ath10k_config(struct ieee80211_hw *hw, u32 changed)
 
 	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
 		ath10k_dbg(ATH10K_DBG_MAC, "Config channel %d mhz\n",
-			   conf->channel->center_freq);
-		rcu_assign_pointer(ar->rx_channel, conf->channel);
+			   conf->chandef.chan->center_freq);
+		rcu_assign_pointer(ar->rx_channel, conf->chandef.chan);
 	}
 
 	if (changed & IEEE80211_CONF_CHANGE_PS) {
