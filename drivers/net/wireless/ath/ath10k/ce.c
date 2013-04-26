@@ -946,24 +946,14 @@ static int ath10k_ce_init_src_ring(struct ath10k *ar,
 		pci_alloc_consistent(ar_pci->pdev,
 		     (nentries * sizeof(struct ce_desc) + CE_DESC_RING_ALIGN),
 		     &base_addr);
-
 	src_ring->base_addr_ce_space_unaligned = base_addr;
 
-	if (src_ring->base_addr_ce_space_unaligned &
-	    (CE_DESC_RING_ALIGN - 1)) {
-		src_ring->base_addr_ce_space =
-			(src_ring->base_addr_ce_space_unaligned +
-			 CE_DESC_RING_ALIGN - 1) & ~(CE_DESC_RING_ALIGN - 1);
-
-		src_ring->base_addr_owner_space =
-		(void *)(((size_t) src_ring->base_addr_owner_space_unaligned +
-			  CE_DESC_RING_ALIGN - 1) & ~(CE_DESC_RING_ALIGN - 1));
-	} else {
-		src_ring->base_addr_ce_space =
-			src_ring->base_addr_ce_space_unaligned;
-		src_ring->base_addr_owner_space =
-			src_ring->base_addr_owner_space_unaligned;
-	}
+	src_ring->base_addr_owner_space = PTR_ALIGN(
+			src_ring->base_addr_owner_space_unaligned,
+			CE_DESC_RING_ALIGN);
+	src_ring->base_addr_ce_space = ALIGN(
+			src_ring->base_addr_ce_space_unaligned,
+			CE_DESC_RING_ALIGN);
 
 	/*
 	 * Also allocate a shadow src ring in regular
@@ -972,9 +962,10 @@ static int ath10k_ce_init_src_ring(struct ath10k *ar,
 	src_ring->shadow_base_unaligned =
 		kmalloc((nentries * sizeof(struct ce_desc) +
 			 CE_DESC_RING_ALIGN), GFP_KERNEL);
-	src_ring->shadow_base = (struct ce_desc *)
-		(((size_t) src_ring->shadow_base_unaligned +
-		  CE_DESC_RING_ALIGN - 1) & ~(CE_DESC_RING_ALIGN - 1));
+
+	src_ring->shadow_base = PTR_ALIGN(
+			src_ring->shadow_base_unaligned,
+			CE_DESC_RING_ALIGN);
 
 	ath10k_pci_wake(ar);
 	ath10k_ce_src_ring_base_addr_set(ar, ctrl_addr, src_ring->base_addr_ce_space);
@@ -1042,21 +1033,12 @@ static int ath10k_ce_init_dest_ring(struct ath10k *ar,
 	memset(dest_ring->base_addr_owner_space_unaligned, 0,
 	       nentries * sizeof(struct ce_desc) + CE_DESC_RING_ALIGN);
 
-	if (dest_ring->base_addr_ce_space_unaligned &
-	    (CE_DESC_RING_ALIGN - 1)) {
-		dest_ring->base_addr_ce_space =
-			(dest_ring->base_addr_ce_space_unaligned +
-			 CE_DESC_RING_ALIGN - 1) & ~(CE_DESC_RING_ALIGN - 1);
-
-		dest_ring->base_addr_owner_space =
-		(void *)(((size_t) dest_ring->base_addr_owner_space_unaligned +
-			  CE_DESC_RING_ALIGN - 1) & ~(CE_DESC_RING_ALIGN - 1));
-	} else {
-		dest_ring->base_addr_ce_space =
-			dest_ring->base_addr_ce_space_unaligned;
-		dest_ring->base_addr_owner_space =
-			dest_ring->base_addr_owner_space_unaligned;
-	}
+	dest_ring->base_addr_owner_space = PTR_ALIGN(
+			dest_ring->base_addr_owner_space_unaligned,
+			CE_DESC_RING_ALIGN);
+	dest_ring->base_addr_ce_space = ALIGN(
+			dest_ring->base_addr_ce_space_unaligned,
+			CE_DESC_RING_ALIGN);
 
 	ath10k_pci_wake(ar);
 	ath10k_ce_dest_ring_base_addr_set(ar, ctrl_addr,
