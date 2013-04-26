@@ -888,7 +888,6 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 	fw_desc_len = __le16_to_cpu(frag->fw_rx_desc_bytes);
 	fw_desc = (u8 *)frag->fw_msdu_rx_desc;
 
-more:
 	msdu_head = NULL;
 	msdu_tail = NULL;
 	msdu_chaining = ath10k_htt_rx_amsdu_pop(htt, &fw_desc, &fw_desc_len,
@@ -966,8 +965,7 @@ more:
 end:
 	if (fw_desc_len > 0) {
 		ath10k_dbg(ATH10K_DBG_HTT,
-			   "expecting more fragmented rx in one indication\n");
-		goto more;
+			   "expecting more fragmented rx in one indication %d\n", fw_desc_len);
 	}
 }
 
