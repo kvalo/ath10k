@@ -396,9 +396,8 @@ static int ath10k_vdev_start(struct ath10k_vif *arvif)
 		arg.ssid_len = arvif->u.ap.ssid_len;
 		arg.hidden_ssid = arvif->u.ap.hidden_ssid;
 	} else if (arvif->vdev_type == WMI_VDEV_TYPE_IBSS) {
-		/* TODO: IBSS ssid and ssid_len is needed from mac80211
-		 * small patch in mac80211 is needed
-		 */
+		arg.ssid = arvif->vif->bss_conf.ssid;
+		arg.ssid_len = arvif->vif->bss_conf.ssid_len;
 	}
 
 	ret = ath10k_wmi_vdev_start(ar, &arg);
@@ -1823,7 +1822,8 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 				   arvif->dtim_period, arvif->vdev_id);
 	}
 
-	if (changed & BSS_CHANGED_SSID) {
+	if (changed & BSS_CHANGED_SSID &&
+	    vif->type == NL80211_IFTYPE_AP) {
 		arvif->u.ap.ssid_len = info->ssid_len;
 		if (info->ssid_len)
 			memcpy(arvif->u.ap.ssid, info->ssid, info->ssid_len);
