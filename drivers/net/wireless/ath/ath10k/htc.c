@@ -214,8 +214,6 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 		return NULL;
 
 	skb_cb = ATH10K_SKB_CB(skb);
-	ath10k_htc_recalc_queue(ep, -1);
-
 	transfer_len = skb->len;
 
 	if (transfer_len <= htc->target_credit_size)
