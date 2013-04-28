@@ -155,7 +155,7 @@ int ath10k_htt_send_rx_ring_cfg_ll(struct ath10k_htt *htt)
 	 * the HW expects the buffer to be an integral number of 4-byte
 	 * "words"
 	 */
-	BUILD_BUG_ON((HTT_RX_BUF_SIZE & 0x3) != 0);
+	BUILD_BUG_ON(!IS_ALIGNED(HTT_RX_BUF_SIZE, 4));
 	BUILD_BUG_ON((HTT_RX_BUF_SIZE & HTT_MAX_CACHE_LINE_SIZE_MASK) != 0);
 
 	len = sizeof(cmd->hdr) + sizeof(cmd->rx_setup.hdr)
@@ -332,7 +332,7 @@ int ath10k_htt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 		goto err;
 	}
 
-	if ((unsigned long)txdesc->data & 0x3) {
+	if (!IS_ALIGNED((unsigned long)txdesc->data, 4)) {
 		ath10k_warn("htt alignment check failed. dropping packet.\n");
 		res = -EIO;
 		goto err;

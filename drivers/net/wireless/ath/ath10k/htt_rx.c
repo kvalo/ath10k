@@ -987,7 +987,7 @@ void ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 	struct htt_resp *resp = (struct htt_resp *)skb->data;
 
 	/* confirm alignment */
-	if ((((unsigned long)skb->data) & 0x3) != 0)
+	if (!IS_ALIGNED((unsigned long)skb->data, 4))
 		ath10k_warn("unaligned htt message, expect trouble\n");
 
 	ath10k_dbg(ATH10K_DBG_HTT, "HTT RX, msg_type: 0x%0X\n",

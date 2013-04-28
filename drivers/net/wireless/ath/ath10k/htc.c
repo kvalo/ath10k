@@ -936,7 +936,9 @@ struct sk_buff *ath10k_htc_alloc_skb(int size)
 	skb_reserve(skb, sizeof(struct ath10k_htc_hdr));
 
 	/* FW/HTC requires 4-byte aligned streams */
-	WARN_ONCE((unsigned long)skb->data & 0x3, "unaligned skb");
+	if (!IS_ALIGNED((unsigned long)skb->data, 4))
+		ath10k_warn("Unaligned HTC tx skb\n");
+
 	return skb;
 }
 

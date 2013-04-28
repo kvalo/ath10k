@@ -66,7 +66,8 @@ static struct sk_buff *ath10k_wmi_alloc_skb(u32 len)
 		return NULL;
 
 	skb_reserve(skb, WMI_SKB_HEADROOM);
-	WARN_ONCE((unsigned long)skb->data & 0x3, "unaligned skb");
+	if (!IS_ALIGNED((unsigned long)skb->data, 4))
+		ath10k_warn("Unaligned WMI skb\n");
 
 	skb_put(skb, round_len);
 	memset(skb->data, 0, round_len);

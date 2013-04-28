@@ -120,7 +120,8 @@ static int ath10k_pci_diag_read_mem(struct ath10k *ar, u32 address, u8 *data,
 	 * this fn
 	 */
 	if (address < DRAM_BASE_ADDRESS) {
-		if ((address & 0x3) || ((dma_addr_t)data & 0x3))
+		if (!IS_ALIGNED(address, 4) ||
+		    !IS_ALIGNED((unsigned long)data, 4))
 			return -EIO;
 
 		while ((nbytes >= 4) &&  ((ret = ath10k_pci_diag_read_access(
