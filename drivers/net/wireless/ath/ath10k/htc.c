@@ -209,7 +209,7 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 	int remainder;
 	unsigned int transfer_len;
 
-	skb = skb_dequeue(&ep->tx_queue);
+	skb = __skb_dequeue(&ep->tx_queue);
 	if (!skb)
 		return NULL;
 
@@ -240,7 +240,7 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 		credits_required = 0;
 	else {
 		if (ep->tx_credits < credits_required) {
-			skb_queue_head(&ep->tx_queue, skb);
+			__skb_queue_head(&ep->tx_queue, skb);
 			ath10k_htc_recalc_queue(ep, 1);
 			return NULL;
 		}
@@ -268,7 +268,7 @@ static struct sk_buff *ath10k_htc_get_skb(struct ath10k_htc *htc,
 	if (!resources)
 		return NULL;
 
-	skb = skb_dequeue(&ep->tx_queue);
+	skb = __skb_dequeue(&ep->tx_queue);
 	if (!skb)
 		return NULL;
 
@@ -325,7 +325,7 @@ int ath10k_htc_send(struct ath10k_htc *htc,
 	skb_push(skb, sizeof(struct ath10k_htc_hdr));
 
 	spin_lock_bh(&htc->tx_lock);
-	skb_queue_tail(&ep->tx_queue, skb);
+	__skb_queue_tail(&ep->tx_queue, skb);
 	ath10k_htc_recalc_queue(ep, 1);
 	spin_unlock_bh(&htc->tx_lock);
 
@@ -369,7 +369,7 @@ static void ath10k_htc_flush_endpoint_tx(struct ath10k_htc *htc,
 
 	spin_lock_bh(&htc->tx_lock);
 	for (;;) {
-		skb = skb_dequeue(&ep->tx_queue);
+		skb = __skb_dequeue(&ep->tx_queue);
 		if (!skb)
 			break;
 
