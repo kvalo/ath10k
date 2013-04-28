@@ -606,6 +606,36 @@ static void ath10k_htc_control_rx_complete(struct ath10k *ar, struct sk_buff *sk
 /* Init/Deinit */
 /***************/
 
+static const char *htc_service_name(enum ath10k_htc_svc_id id)
+{
+	switch(id) {
+	case ATH10K_HTC_SVC_ID_RESERVED:
+		return "Reserved";
+	case ATH10K_HTC_SVC_ID_RSVD_CTRL:
+		return "Control";
+	case ATH10K_HTC_SVC_ID_WMI_CONTROL:
+		return "WMI";
+	case ATH10K_HTC_SVC_ID_WMI_DATA_BE:
+		return "DATA BE";
+	case ATH10K_HTC_SVC_ID_WMI_DATA_BK:
+		return "DATA BK";
+	case ATH10K_HTC_SVC_ID_WMI_DATA_VI:
+		return "DATA VI";
+	case ATH10K_HTC_SVC_ID_WMI_DATA_VO:
+		return "DATA VO";
+	case ATH10K_HTC_SVC_ID_NMI_CONTROL:
+		return "NMI Control";
+	case ATH10K_HTC_SVC_ID_NMI_DATA:
+		return "NMI Data";
+	case ATH10K_HTC_SVC_ID_HTT_DATA_MSG:
+		return "HTT Data";
+	case ATH10K_HTC_SVC_ID_TEST_RAW_STREAMS:
+		return "RAW";
+	}
+
+	return "Unknown";
+}
+
 static void ath10k_htc_reset_endpoint_states(struct ath10k_htc *htc)
 {
 	struct ath10k_htc_ep *ep;
@@ -759,8 +789,8 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 		tx_alloc = ath10k_htc_get_credit_allocation(htc,
 							    conn_req->service_id);
 		if (!tx_alloc)
-			ath10k_warn("Service 0x%x does not allocate target credits\n",
-				    conn_req->service_id);
+			ath10k_warn("HTC Service %s does not allocate target credits\n",
+				    htc_service_name(conn_req->service_id));
 
 		skb = ath10k_htc_build_tx_ctrl_skb(htc->ar);
 		if (!skb) {
@@ -818,15 +848,15 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 		}
 
 		ath10k_dbg(ATH10K_DBG_HTC,
-			   "Service 0x%x connect response from target: status: 0x%x, assigned ep: 0x%x\n",
-			   service_id, resp_msg->status, resp_msg->eid);
+			   "HTC Service %s connect response: status: 0x%x, assigned ep: 0x%x\n",
+			   htc_service_name(service_id), resp_msg->status, resp_msg->eid);
 
 		conn_resp->connect_resp_code = resp_msg->status;
 
 		/* check response status */
 		if (resp_msg->status != ATH10K_HTC_CONN_SVC_STATUS_SUCCESS) {
-			ath10k_err("Service 0x%x connect request failed with status: 0x%x)\n",
-				   service_id, resp_msg->status);
+			ath10k_err("HTC Service %s connect request failed: 0x%x)\n",
+				   htc_service_name(service_id), resp_msg->status);
 			return -EPROTO;
 		}
 
@@ -875,15 +905,19 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 		return status;
 
 	ath10k_dbg(ATH10K_DBG_HTC,
-		   "HTC service: 0x%x UL pipe: %d DL pipe: %d eid: %d ready\n",
-		   ep->service_id, ep->ul_pipe_id,
+		   "HTC service: %s UL pipe: %d DL pipe: %d eid: %d ready\n",
+		   htc_service_name(ep->service_id), ep->ul_pipe_id,
 		   ep->dl_pipe_id, ep->eid);
+
+	ath10k_dbg(ATH10K_DBG_HTC,
+		   "EP %d UL polled: %d, DL polled: %d\n",
+		   ep->eid, ep->ul_is_polled, ep->dl_is_polled);
 
 	if (disable_credit_flow_ctrl && ep->tx_credit_flow_enabled) {
 		ep->tx_credit_flow_enabled = false;
 		ath10k_dbg(ATH10K_DBG_HTC,
-			   "HTC service: 0x%x eid: %d TX flow control disabled\n",
-			   ep->service_id, assigned_eid);
+			   "HTC service: %s eid: %d TX flow control disabled\n",
+			   htc_service_name(ep->service_id), assigned_eid);
 	}
 
 	return status;
