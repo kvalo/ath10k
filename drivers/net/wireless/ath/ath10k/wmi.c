@@ -1080,7 +1080,6 @@ static void ath10k_wmi_process_rx(void *ptr, struct sk_buff *skb)
 /* WMI Initialization functions */
 int ath10k_wmi_attach(struct ath10k *ar)
 {
-	ar->wmi.ar = ar;
 	init_completion(&ar->wmi.service_ready);
 	init_completion(&ar->wmi.unified_ready);
 	init_waitqueue_head(&ar->wmi.wq);

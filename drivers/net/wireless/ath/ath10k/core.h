@@ -115,8 +115,6 @@ struct ath10k_bmi {
 };
 
 struct ath10k_wmi {
-	struct ath10k *ar;
-
 	enum ath10k_htc_ep_id eid;
 	struct completion service_ready;
 	struct completion unified_ready;
