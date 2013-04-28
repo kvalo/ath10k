@@ -1101,38 +1101,35 @@ struct htt_rx_info {
 	bool fcs_err;
 };
 
+#define HTT_MAX_NUM_PENDING_TX 512 /* FIXME: find proper value? */
+
 struct ath10k_htt {
 	struct ath10k *ar;
 	enum ath10k_htc_ep_id eid;
 
-	struct {
-		int max_throughput_mbps;
-	} cfg;
-
+	int max_throughput_mbps;
 	u8 target_version_major;
 	u8 target_version_minor;
 	struct completion target_version_received;
 
 	struct {
-		struct {
-			/*
-			 * Ring of network buffer objects - This ring is
-			 * used exclusively by the host SW. This ring
-			 * mirrors the dev_addrs_ring that is shared
-			 * between the host SW and the MAC HW. The host SW
-			 * uses this netbufs ring to locate the network
-			 * buffer objects whose data buffers the HW has
-			 * filled.
-			 */
-			struct sk_buff **netbufs_ring;
-			/*
-			 * Ring of buffer addresses -
-			 * This ring holds the "physical" device address of the
-			 * rx buffers the host SW provides for the MAC HW to
-			 * fill.
-			 */
-			__le32 *paddrs_ring;
-		} buf;
+		/*
+		 * Ring of network buffer objects - This ring is
+		 * used exclusively by the host SW. This ring
+		 * mirrors the dev_addrs_ring that is shared
+		 * between the host SW and the MAC HW. The host SW
+		 * uses this netbufs ring to locate the network
+		 * buffer objects whose data buffers the HW has
+		 * filled.
+		 */
+		struct sk_buff **netbufs_ring;
+		/*
+		 * Ring of buffer addresses -
+		 * This ring holds the "physical" device address of the
+		 * rx buffers the host SW provides for the MAC HW to
+		 * fill.
+		 */
+		__le32 *paddrs_ring;
 
 		/*
 		 * Base address of ring, as a "physical" device address
@@ -1179,11 +1176,6 @@ struct ath10k_htt {
 
 	unsigned int prefetch_len;
 
-	struct {
-		int htc_err_cnt;
-	} stats;
-
-#define HTT_MAX_NUM_PENDING_TX 512 /* FIXME: find proper value? */
 	spinlock_t tx_lock;
 	struct sk_buff *pending_tx[HTT_MAX_NUM_PENDING_TX];
 	DECLARE_BITMAP(used_msdu_ids, HTT_MAX_NUM_PENDING_TX);

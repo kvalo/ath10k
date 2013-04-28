@@ -65,7 +65,7 @@ static int ath10k_htt_rx_ring_size(struct ath10k_htt *htt)
 
 	/* 1e6 bps/mbps / 1e3 ms per sec = 1000 */
 	size =
-	    htt->cfg.max_throughput_mbps +
+	    htt->max_throughput_mbps +
 	    1000  /
 	    (8 * HTT_RX_AVG_FRM_BYTES) * HTT_RX_HOST_LATENCY_MAX_MS;
 
@@ -86,7 +86,7 @@ static int ath10k_htt_rx_ring_fill_level(struct ath10k_htt *htt)
 
 	/* 1e6 bps/mbps / 1e3 ms per sec = 1000 */
 	size =
-	    htt->cfg.max_throughput_mbps *
+	    htt->max_throughput_mbps *
 	    1000  /
 	    (8 * HTT_RX_AVG_FRM_BYTES) * HTT_RX_HOST_LATENCY_WORST_LIKELY_MS;
 
@@ -144,8 +144,8 @@ static void ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
 		}
 
 		ATH10K_SKB_CB(skb)->paddr = paddr;
-		htt->rx_ring.buf.netbufs_ring[idx] = skb;
-		htt->rx_ring.buf.paddrs_ring[idx] = __cpu_to_le32(paddr);
+		htt->rx_ring.netbufs_ring[idx] = skb;
+		htt->rx_ring.paddrs_ring[idx] = __cpu_to_le32(paddr);
 		htt->rx_ring.fill_cnt++;
 
 		num--;
@@ -188,21 +188,21 @@ void ath10k_htt_rx_detach(struct ath10k_htt *htt)
 
 	while (sw_rd_idx != __le32_to_cpu(*(htt->rx_ring.alloc_idx.vaddr))) {
 		struct sk_buff *skb =
-				htt->rx_ring.buf.netbufs_ring[sw_rd_idx];
+				htt->rx_ring.netbufs_ring[sw_rd_idx];
 		struct ath10k_skb_cb *cb = ATH10K_SKB_CB(skb);
 
 		dma_unmap_single(htt->ar->dev, cb->paddr,
 				 skb->len + skb_tailroom(skb),
 				 DMA_FROM_DEVICE);
-		dev_kfree_skb_any(htt->rx_ring.buf.netbufs_ring[sw_rd_idx]);
+		dev_kfree_skb_any(htt->rx_ring.netbufs_ring[sw_rd_idx]);
 		sw_rd_idx++;
 		sw_rd_idx &= htt->rx_ring.size_mask;
 	}
 
 	dma_free_coherent(htt->ar->dev,
 			  (htt->rx_ring.size *
-			   sizeof(htt->rx_ring.buf.paddrs_ring)),
-			  htt->rx_ring.buf.paddrs_ring,
+			   sizeof(htt->rx_ring.paddrs_ring)),
+			  htt->rx_ring.paddrs_ring,
 			  htt->rx_ring.base_paddr);
 
 	dma_free_coherent(htt->ar->dev,
@@ -210,7 +210,7 @@ void ath10k_htt_rx_detach(struct ath10k_htt *htt)
 			  htt->rx_ring.alloc_idx.vaddr,
 			  htt->rx_ring.alloc_idx.paddr);
 
-	kfree(htt->rx_ring.buf.netbufs_ring);
+	kfree(htt->rx_ring.netbufs_ring);
 }
 
 static inline struct sk_buff *ath10k_htt_rx_netbuf_pop(struct ath10k_htt *htt)
@@ -224,7 +224,7 @@ static inline struct sk_buff *ath10k_htt_rx_netbuf_pop(struct ath10k_htt *htt)
 		ath10k_warn("htt rx ring is empty!\n");
 
 	idx = htt->rx_ring.sw_rd_idx.msdu_payld;
-	msdu = htt->rx_ring.buf.netbufs_ring[idx];
+	msdu = htt->rx_ring.netbufs_ring[idx];
 
 	idx++;
 	idx &= htt->rx_ring.size_mask;
@@ -439,19 +439,19 @@ int ath10k_htt_rx_attach(struct ath10k_htt *htt)
 	 */
 	htt->rx_ring.fill_level = ath10k_htt_rx_ring_fill_level(htt);
 
-	htt->rx_ring.buf.netbufs_ring =
+	htt->rx_ring.netbufs_ring =
 		kmalloc(htt->rx_ring.size * sizeof(struct sk_buff *),
 			GFP_KERNEL);
-	if (!htt->rx_ring.buf.netbufs_ring)
+	if (!htt->rx_ring.netbufs_ring)
 		goto fail1;
 
 	vaddr = dma_alloc_coherent(htt->ar->dev,
-		   (htt->rx_ring.size * sizeof(htt->rx_ring.buf.paddrs_ring)),
+		   (htt->rx_ring.size * sizeof(htt->rx_ring.paddrs_ring)),
 		   &paddr, GFP_DMA);
 	if (!vaddr)
 		goto fail2;
 
-	htt->rx_ring.buf.paddrs_ring = vaddr;
+	htt->rx_ring.paddrs_ring = vaddr;
 	htt->rx_ring.base_paddr = paddr;
 
 	vaddr = dma_alloc_coherent(htt->ar->dev,
@@ -474,16 +474,17 @@ int ath10k_htt_rx_attach(struct ath10k_htt *htt)
 	ath10k_htt_rx_ring_fill_n(htt, htt->rx_ring.fill_level);
 	spin_unlock_bh(&htt->rx_ring.lock);
 
+	ath10k_dbg(ATH10K_DBG_HTT, "HTT RX ring size: %d, fill_level: %d\n",
+		   htt->rx_ring.size, htt->rx_ring.fill_level);
 	return 0;
-
 fail3:
 	dma_free_coherent(htt->ar->dev,
 			  (htt->rx_ring.size *
-			   sizeof(htt->rx_ring.buf.paddrs_ring)),
-			  htt->rx_ring.buf.paddrs_ring,
+			   sizeof(htt->rx_ring.paddrs_ring)),
+			  htt->rx_ring.paddrs_ring,
 			  htt->rx_ring.base_paddr);
 fail2:
-	kfree(htt->rx_ring.buf.netbufs_ring);
+	kfree(htt->rx_ring.netbufs_ring);
 fail1:
 	return -ENOMEM;
 }

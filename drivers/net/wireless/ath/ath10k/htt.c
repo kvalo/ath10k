@@ -73,7 +73,7 @@ struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar)
 		return NULL;
 
 	htt->ar = ar;
-	htt->cfg.max_throughput_mbps = 800;
+	htt->max_throughput_mbps = 800;
 
 	/*
 	 * Connect to HTC service.
