@@ -29,7 +29,7 @@ static inline void ath10k_htc_stop_queue(struct ath10k_htc_ep *ep)
 		return;
 
 	if (ep->ep_ops.stop_queue)
-		ep->ep_ops.stop_queue(ep->ep_ops.context);
+		ep->ep_ops.stop_queue(ep->htc->ar);
 
 	ath10k_dbg(ATH10K_DBG_HTC, "ep %d stop\n", ep->eid);
 	ep->tx_queue_stopped = true;
@@ -41,7 +41,7 @@ static inline void ath10k_htc_wake_queue(struct ath10k_htc_ep *ep)
 		return;
 
 	if (ep->ep_ops.wake_queue)
-		ep->ep_ops.wake_queue(ep->ep_ops.context);
+		ep->ep_ops.wake_queue(ep->htc->ar);
 
 	ath10k_dbg(ATH10K_DBG_HTC, "ep %d wake\n", ep->eid);
 	ep->tx_queue_stopped = false;
@@ -74,7 +74,7 @@ static inline void ath10k_htc_send_complete_check(struct ath10k_htc_ep *ep,
 	ath10k_hif_send_complete_check(ep->htc->ar, ep->ul_pipe_id, force);
 }
 
-static void ath10k_htc_control_tx_complete(void *context, struct sk_buff *skb)
+static void ath10k_htc_control_tx_complete(struct ath10k *ar, struct sk_buff *skb)
 {
 	kfree_skb(skb);
 }
@@ -121,7 +121,7 @@ static void ath10k_htc_notify_tx_completion(struct ath10k_htc_ep *ep,
 		return;
 	}
 
-	ep->ep_ops.ep_tx_complete(ep->ep_ops.context, skb);
+	ep->ep_ops.ep_tx_complete(ep->htc->ar, skb);
 }
 
 /* assumes tx_lock is held */
@@ -606,7 +606,7 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 
 	ath10k_dbg(ATH10K_DBG_HTC, "htc rx completion ep %d skb %p\n",
 		   eid, skb);
-	ep->ep_ops.ep_rx_complete(ep->ep_ops.context, skb);
+	ep->ep_ops.ep_rx_complete(ar, skb);
 
 	/* skb is now owned by the rx completion handler */
 	skb = NULL;
@@ -616,7 +616,7 @@ out:
 	return status;
 }
 
-static void ath10k_htc_control_rx_complete(void *context, struct sk_buff *skb)
+static void ath10k_htc_control_rx_complete(struct ath10k *ar, struct sk_buff *skb)
 {
 	/* TODO, can't receive HTC control messages yet */
 	ath10k_dbg(ATH10K_DBG_HTC, "Invalid call to %s\n", __func__);
@@ -740,7 +740,6 @@ int ath10k_htc_wait_target(struct ath10k_htc *htc)
 	/* setup our pseudo HTC control endpoint connection */
 	memset(&conn_req, 0, sizeof(conn_req));
 	memset(&conn_resp, 0, sizeof(conn_resp));
-	conn_req.ep_ops.context = htc;
 	conn_req.ep_ops.ep_tx_complete = ath10k_htc_control_tx_complete;
 	conn_req.ep_ops.ep_rx_complete = ath10k_htc_control_rx_complete;
 	conn_req.max_send_queue_depth = ATH10K_NUM_CONTROL_TX_BUFFERS;

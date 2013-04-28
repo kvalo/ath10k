@@ -274,11 +274,10 @@ struct ath10k_htc_ops {
 };
 
 struct ath10k_htc_ep_ops {
-	void *context;
-	void (*ep_tx_complete)(void *context, struct sk_buff *);
-	void (*ep_rx_complete)(void *context, struct sk_buff *);
-	void (*stop_queue)(void *context);
-	void (*wake_queue)(void *context);
+	void (*ep_tx_complete)(struct ath10k *, struct sk_buff *);
+	void (*ep_rx_complete)(struct ath10k *, struct sk_buff *);
+	void (*stop_queue)(struct ath10k *);
+	void (*wake_queue)(struct ath10k *);
 };
 
 /* service connection information */

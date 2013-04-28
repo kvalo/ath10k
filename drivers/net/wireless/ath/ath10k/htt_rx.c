@@ -981,9 +981,9 @@ end:
 	}
 }
 
-void ath10k_htt_t2h_msg_handler(void *context, struct sk_buff *skb)
+void ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct ath10k_htt *htt = (struct ath10k_htt *)context;
+	struct ath10k_htt *htt = ar->htt;
 	struct htt_resp *resp = (struct htt_resp *)skb->data;
 
 	/* confirm alignment */

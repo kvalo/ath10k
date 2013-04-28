@@ -21,16 +21,14 @@
 #include "core.h"
 #include "debug.h"
 
-static void ath10k_htt_stop_queue(void *context)
+static void ath10k_htt_stop_queue(struct ath10k *ar)
 {
-	struct ath10k_htt *htt = context;
-	ieee80211_stop_queues(htt->ar->hw);
+	ieee80211_stop_queues(ar->hw);
 }
 
-static void ath10k_htt_wake_queue(void *context)
+static void ath10k_htt_wake_queue(struct ath10k *ar)
 {
-	struct ath10k_htt *htt = context;
-	ieee80211_wake_queues(htt->ar->hw);
+	ieee80211_wake_queues(ar->hw);
 }
 
 static int ath10k_htt_htc_attach(struct ath10k_htt *htt)
@@ -42,7 +40,6 @@ static int ath10k_htt_htc_attach(struct ath10k_htt *htt)
 	memset(&conn_req, 0, sizeof(conn_req));
 	memset(&conn_resp, 0, sizeof(conn_resp));
 
-	conn_req.ep_ops.context = htt;
 	conn_req.ep_ops.ep_tx_complete = ath10k_htt_htc_tx_complete;
 	conn_req.ep_ops.ep_rx_complete = ath10k_htt_t2h_msg_handler;
 	conn_req.ep_ops.stop_queue = ath10k_htt_stop_queue;

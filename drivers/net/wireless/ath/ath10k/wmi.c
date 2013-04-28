@@ -74,10 +74,8 @@ static struct sk_buff *ath10k_wmi_alloc_skb(u32 len)
 	return skb;
 }
 
-static void ath10k_wmi_htc_tx_complete(void *context, struct sk_buff *skb)
+static void ath10k_wmi_htc_tx_complete(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct ath10k *ar = context;
-
 	dev_kfree_skb(skb);
 
 	if (atomic_sub_return(1, &ar->wmi.pending_tx_count) == 0)
@@ -1049,9 +1047,8 @@ static void ath10k_wmi_event_work(struct work_struct *work)
 	}
 }
 
-static void ath10k_wmi_process_rx(void *ptr, struct sk_buff *skb)
+static void ath10k_wmi_process_rx(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct ath10k *ar = ptr;
 	struct wmi_cmd_hdr *cmd_hdr = (struct wmi_cmd_hdr *)skb->data;
 	enum wmi_event_id event_id;
 
@@ -1110,7 +1107,6 @@ int ath10k_wmi_connect_htc_service(struct ath10k *ar)
 	memset(&conn_resp, 0, sizeof(conn_resp));
 
 	/* these fields are the same for all service endpoints */
-	conn_req.ep_ops.context = ar;
 	conn_req.ep_ops.ep_tx_complete = ath10k_wmi_htc_tx_complete;
 	conn_req.ep_ops.ep_rx_complete = ath10k_wmi_process_rx;
 
