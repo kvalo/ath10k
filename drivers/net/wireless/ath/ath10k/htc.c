@@ -161,7 +161,8 @@ static int ath10k_htc_prepare_tx_skb(struct ath10k_htc_ep *ep,
 
 static int ath10k_htc_issue_skb(struct ath10k_htc *htc,
 				struct ath10k_htc_ep *ep,
-				struct sk_buff *skb)
+				struct sk_buff *skb,
+				u8 credits)
 {
 	struct ath10k_skb_cb *skb_cb = ATH10K_SKB_CB(skb);
 	int ret;
@@ -190,7 +191,7 @@ err:
 	ath10k_warn("HTC issue failed: %d\n", ret);
 
 	spin_lock_bh(&htc->tx_lock);
-	ep->tx_credits += skb_cb->htc.credits_used;
+	ep->tx_credits += credits;
 	spin_unlock_bh(&htc->tx_lock);
 
 	skb_cb->is_aborted = true;
@@ -201,7 +202,8 @@ err:
 
 /* assumes tx_lock is held */
 static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
-						       struct ath10k_htc_ep *ep)
+						       struct ath10k_htc_ep *ep,
+						       u8 *credits)
 {
 	struct sk_buff *skb;
 	struct ath10k_skb_cb *skb_cb;
@@ -234,9 +236,9 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 	 * EP 0 is special, it always has a credit and does not require
 	 * credit based flow control.
 	 */
-	if (ep->eid == ATH10K_HTC_EP_0)
+	if (ep->eid == ATH10K_HTC_EP_0) {
 		credits_required = 0;
-	else {
+	} else {
 		if (ep->tx_credits < credits_required) {
 			__skb_queue_head(&ep->tx_queue, skb);
 			ath10k_htc_recalc_queue(ep, 1);
@@ -246,12 +248,7 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 		ep->tx_credits -= credits_required;
 	}
 
-	/* shouldn't happen, but print a warning just in case */
-	if (credits_required >= 1 << (8*sizeof(skb_cb->htc.credits_used)))
-		ath10k_warn("credits_required value overflow (%d)\n",
-			    credits_required);
-
-	skb_cb->htc.credits_used = credits_required;
+	*credits = credits_required;
 	return skb;
 }
 
@@ -273,7 +270,6 @@ static struct sk_buff *ath10k_htc_get_skb(struct ath10k_htc *htc,
 	skb_cb = ATH10K_SKB_CB(skb);
 	ath10k_htc_recalc_queue(ep, -1);
 
-	skb_cb->htc.credits_used = 0;
 	return skb;
 }
 
@@ -284,6 +280,7 @@ static void ath10k_htc_send_work(struct work_struct *work)
 	struct ath10k_htc *htc = ep->htc;
 	struct sk_buff *skb;
 	int tx_resources = 0;
+	u8 credits = 0;
 
 	while (true) {
 		if (!ep->tx_credit_flow_enabled)
@@ -296,7 +293,8 @@ static void ath10k_htc_send_work(struct work_struct *work)
 		spin_lock_bh(&htc->tx_lock);
 
 		if (ep->tx_credit_flow_enabled)
-			skb = ath10k_htc_get_skb_credit_based(htc, ep);
+			skb = ath10k_htc_get_skb_credit_based(htc, ep,
+							      &credits);
 		else
 			skb = ath10k_htc_get_skb(htc, ep, tx_resources);
 
@@ -305,7 +303,7 @@ static void ath10k_htc_send_work(struct work_struct *work)
 		if (!skb)
 			break; /* tx_queue empty or out of resources */
 
-		ath10k_htc_issue_skb(htc, ep, skb);
+		ath10k_htc_issue_skb(htc, ep, skb, credits);
 	}
 }
 

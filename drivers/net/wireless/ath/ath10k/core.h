@@ -65,10 +65,6 @@ struct ath10k_skb_cb {
 		struct sk_buff *msdu;
 	} __packed htt;
 
-	struct {
-		u8 credits_used;
-	} __packed htc;
-
 	/* 4 bytes left on 64bit arch */
 } __packed;
 
