@@ -534,10 +534,6 @@ int ath10k_core_register(struct ath10k *ar)
 	if (status)
 		goto err;
 
-	status = ath10k_init_uart(ar);
-	if (status)
-		goto err;
-
 	htc_ops.target_send_suspend_complete = ath10k_send_suspend_complete;
 
 	ar->htc = ath10k_htc_create(ar, &htc_ops);
