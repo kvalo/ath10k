@@ -232,22 +232,13 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 	ath10k_dbg(ATH10K_DBG_HTC, "%s: creds required %d got %d\n",
 		   __func__, credits_required, ep->tx_credits);
 
-	/*
-	 * EP 0 is special, it always has a credit and does not require
-	 * credit based flow control.
-	 */
-	if (ep->eid == ATH10K_HTC_EP_0) {
-		credits_required = 0;
-	} else {
-		if (ep->tx_credits < credits_required) {
-			__skb_queue_head(&ep->tx_queue, skb);
-			ath10k_htc_recalc_queue(ep, 1);
-			return NULL;
-		}
-
-		ep->tx_credits -= credits_required;
+	if (ep->tx_credits < credits_required) {
+		__skb_queue_head(&ep->tx_queue, skb);
+		ath10k_htc_recalc_queue(ep, 1);
+		return NULL;
 	}
 
+	ep->tx_credits -= credits_required;
 	*credits = credits_required;
 	return skb;
 }
@@ -767,6 +758,7 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 
 	/* special case for HTC pseudo control service */
 	if (conn_req->service_id == ATH10K_HTC_SVC_ID_RSVD_CTRL) {
+		disable_credit_flow_ctrl = true;
 		assigned_eid = ATH10K_HTC_EP_0;
 		max_msg_size = ATH10K_HTC_MAX_CTRL_MSG_LEN;
 		memset(&resp_msg_dummy, 0, sizeof(resp_msg_dummy));
