@@ -1679,7 +1679,7 @@ static const struct ath10k_hif_ops ath10k_pci_hif_ops = {
 	.map_service_to_pipe	= ath10k_pci_hif_map_service_to_pipe,
 	.get_default_pipe	= ath10k_pci_hif_get_default_pipe,
 	.send_complete_check	= ath10k_pci_hif_send_complete_check,
-	.post_init		= ath10k_pci_hif_post_init,
+	.init			= ath10k_pci_hif_post_init,
 	.get_free_queue_number	= ath10k_pci_hif_get_free_queue_number,
 };
 
