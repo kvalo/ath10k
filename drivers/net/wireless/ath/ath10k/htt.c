@@ -57,7 +57,7 @@ static int ath10k_htt_htc_attach(struct ath10k_htt *htt)
 	/* connect to control service */
 	conn_req.service_id = ATH10K_HTC_SVC_ID_HTT_DATA_MSG;
 
-	status = ath10k_htc_connect_service(htt->htc, &conn_req, &conn_resp);
+	status = ath10k_htc_connect_service(htt->ar->htc, &conn_req, &conn_resp);
 
 	if (status)
 		return status;
@@ -67,7 +67,7 @@ static int ath10k_htt_htc_attach(struct ath10k_htt *htt)
 	return 0;
 }
 
-struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc)
+struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar)
 {
 	struct ath10k_htt *htt;
 
@@ -76,7 +76,6 @@ struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc)
 		return NULL;
 
 	htt->ar = ar;
-	htt->htc = htc;
 	htt->cfg.max_throughput_mbps = 800;
 
 	/*

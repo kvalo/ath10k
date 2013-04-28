@@ -556,7 +556,7 @@ int ath10k_core_register(struct ath10k *ar)
 	if (status)
 		goto err_wmi_detach;
 
-	ar->htt = ath10k_htt_attach(ar, ar->htc);
+	ar->htt = ath10k_htt_attach(ar);
 	if (!ar->htt) {
 		status = -ENOMEM;
 		goto err_wmi_detach;

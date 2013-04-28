@@ -1103,8 +1103,6 @@ struct htt_rx_info {
 
 struct ath10k_htt {
 	struct ath10k *ar;
-	struct ath10k_htc *htc;
-
 	enum ath10k_htc_ep_id eid;
 
 	struct {
@@ -1259,7 +1257,7 @@ struct htt_rx_desc {
 
 /* FIXME: add htt_tx_desc_init() */
 
-struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar, struct ath10k_htc *htc);
+struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar);
 int ath10k_htt_attach_target(struct ath10k_htt *htt);
 void ath10k_htt_detach(struct ath10k_htt *htt);
 
