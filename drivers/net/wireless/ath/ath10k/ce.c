@@ -244,8 +244,8 @@ static inline void ath10k_ce_copy_complete_intr_disable(struct ath10k *ar,
 			   host_ie_addr & ~HOST_IE_COPY_COMPLETE_MASK);
 }
 
-static inline void ath10k_ce_watermark_intr_diable(struct ath10k *ar,
-						   u32 ce_ctrl_addr)
+static inline void ath10k_ce_watermark_intr_disable(struct ath10k *ar,
+						    u32 ce_ctrl_addr)
 {
 	u32 host_ie_addr = ath10k_pci_read32(ar, ce_ctrl_addr + HOST_IE_ADDRESS);
 
@@ -845,7 +845,7 @@ static void ath10k_ce_per_engine_handler_adjust(struct ce_state *ce_state,
 	else
 		ath10k_ce_copy_complete_intr_disable(ar, ctrl_addr);
 
-	ath10k_ce_watermark_intr_diable(ar, ctrl_addr);
+	ath10k_ce_watermark_intr_disable(ar, ctrl_addr);
 
 	ath10k_pci_sleep(ar);
 }
