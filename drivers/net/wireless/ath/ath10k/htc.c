@@ -218,9 +218,9 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 	skb_cb = ATH10K_SKB_CB(skb);
 	transfer_len = skb->len;
 
-	if (transfer_len <= htc->target_credit_size)
+	if (likely(transfer_len <= htc->target_credit_size)) {
 		credits_required = 1;
-	else {
+	} else {
 		/* figure out how many credits this message requires */
 		credits_required = transfer_len / htc->target_credit_size;
 		remainder = transfer_len % htc->target_credit_size;
@@ -229,8 +229,8 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 			credits_required++;
 	}
 
-	ath10k_dbg(ATH10K_DBG_HTC, "%s: creds required %d got %d\n",
-		   __func__, credits_required, ep->tx_credits);
+	ath10k_dbg(ATH10K_DBG_HTC, "Credits required %d got %d\n",
+		   credits_required, ep->tx_credits);
 
 	if (ep->tx_credits < credits_required) {
 		__skb_queue_head(&ep->tx_queue, skb);
