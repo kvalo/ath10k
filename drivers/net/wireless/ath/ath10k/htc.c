@@ -379,9 +379,7 @@ static void ath10k_htc_process_credit_report(struct ath10k_htc *htc,
 					     enum ath10k_htc_ep_id eid)
 {
 	struct ath10k_htc_ep *ep;
-	int total_credits = 0;
-	int n_reports;
-	int i;
+	int i, n_reports;
 
 	if (len % sizeof(*report))
 		ath10k_warn("Uneven credit report len %d", len);
@@ -401,13 +399,8 @@ static void ath10k_htc_process_credit_report(struct ath10k_htc *htc,
 
 		if (ep->tx_credits && !skb_queue_empty(&ep->tx_queue))
 			queue_work(htc->ar->workqueue, &ep->send_work);
-
-		total_credits += report->credits;
 	}
 	spin_unlock_bh(&htc->tx_lock);
-
-	ath10k_dbg(ATH10K_DBG_HTC, "report indicated %d credits total\n",
-		   total_credits);
 }
 
 static int ath10k_htc_process_trailer(struct ath10k_htc *htc,
