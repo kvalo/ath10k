@@ -2472,14 +2472,6 @@ struct wmi_tim_info {
 	__le32 tim_num_ps_pending;
 } __packed;
 
-struct wmi_quiet_info {
-	__le32 is_enabled;
-	__le32 tbttcount;
-	__le32 period;
-	__le32 duration;
-	__le32 offset;
-} __packed;
-
 /* Maximum number of NOA Descriptors supported */
 #define WMI_P2P_MAX_NOA_DESCRIPTORS 4
 #define WMI_P2P_OPPPS_ENABLE_BIT	BIT(0)
@@ -2503,7 +2495,6 @@ struct wmi_p2p_noa_info {
 
 struct wmi_bcn_info {
 	struct wmi_tim_info tim_info;
-	struct wmi_quiet_info quiet_info;
 	struct wmi_p2p_noa_info p2p_noa_info;
 } __packed;
 
