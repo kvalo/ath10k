@@ -2830,24 +2830,6 @@ struct wmi_add_bcn_filter_cmd {
 /* By default disable power save for IBSS */
 #define ATH10K_DEFAULT_ATIM 0
 
-
-/* TODO to be removed when cfg80211 changes will be merged:
-   cfg80211: add P2P Notice of Absence attribute */
-struct ath10k_p2p_noa_desc {
-	u8 count;
-	__le32 duration;
-	__le32 interval;
-	__le32 start_time;
-} __packed;
-
-struct ath10k_p2p_noa_attr {
-	u8 index;
-	u8 oppps_ctwindow;
-	struct ath10k_p2p_noa_desc desc[4];
-} __packed;
-
-#define ATH10K_P2P_OPPPS_ENABLE_BIT	BIT(7)
-
 struct ath10k;
 struct ath10k_vif;
 

@@ -546,7 +546,7 @@ static void ath10k_wmi_update_tim(struct ath10k *ar,
 static void ath10k_p2p_fill_noa_ie(u8 *data, u32 len,
 				   struct wmi_p2p_noa_info *noa)
 {
-	struct ath10k_p2p_noa_attr *noa_attr;
+	struct ieee80211_p2p_noa_attr *noa_attr;
 	u8  ctwindow_oppps = noa->ctwindow_oppps;
 	u8 ctwindow = ctwindow_oppps >> WMI_P2P_OPPPS_CTWINDOW_OFFSET;
 	bool oppps = !!(ctwindow_oppps & WMI_P2P_OPPPS_ENABLE_BIT);
@@ -566,12 +566,12 @@ static void ath10k_p2p_fill_noa_ie(u8 *data, u32 len,
 	/* NOA ATTR */
 	data[6] = IEEE80211_P2P_ATTR_ABSENCE_NOTICE;
 	noa_attr_len = (__le16 *) &data[7]; /* 2 bytes */
-	noa_attr = (struct ath10k_p2p_noa_attr *) &data[9];
+	noa_attr = (struct ieee80211_p2p_noa_attr *) &data[9];
 
 	noa_attr->index = noa->index;
 	noa_attr->oppps_ctwindow = ctwindow;
 	if (oppps)
-		noa_attr->oppps_ctwindow |= ATH10K_P2P_OPPPS_ENABLE_BIT;
+		noa_attr->oppps_ctwindow |= IEEE80211_P2P_OPPPS_ENABLE_BIT;
 
 	for (i = 0; i < noa_descriptors; i++) {
 		noa_attr->desc[i].count =
@@ -583,7 +583,7 @@ static void ath10k_p2p_fill_noa_ie(u8 *data, u32 len,
 	}
 
 	attr_len = 2; /* index + oppps_ctwindow */
-	attr_len += noa_descriptors * sizeof(struct ath10k_p2p_noa_desc);
+	attr_len += noa_descriptors * sizeof(struct ieee80211_p2p_noa_desc);
 	*noa_attr_len = __cpu_to_le16(attr_len);
 }
 
@@ -601,7 +601,7 @@ static u32 ath10k_p2p_calc_noa_ie_len(struct wmi_p2p_noa_info *noa)
 	len += 1 + 1 + 4; /* EID + len + OUI */
 	len += 1 + 2; /* noa attr  + attr len */
 	len += 1 + 1; /* index + oppps_ctwindow */
-	len += noa_descriptors * sizeof(struct ath10k_p2p_noa_desc);
+	len += noa_descriptors * sizeof(struct ieee80211_p2p_noa_desc);
 
 	return len;
 }
