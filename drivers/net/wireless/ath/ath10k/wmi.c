@@ -1257,6 +1257,7 @@ int ath10k_wmi_cmd_init(struct ath10k *ar)
 	struct wmi_init_cmd *cmd;
 	struct sk_buff *buf;
 	struct wmi_resource_config config = {};
+	u32 val;
 
 	config.num_vdevs = __cpu_to_le32(TARGET_NUM_VDEVS);
 	config.num_peers = __cpu_to_le32(TARGET_NUM_PEERS + TARGET_NUM_VDEVS);
@@ -1298,8 +1299,8 @@ int ath10k_wmi_cmd_init(struct ath10k *ar)
 	config.dma_burst_size = __cpu_to_le32(TARGET_DMA_BURST_SIZE);
 	config.mac_aggr_delim = __cpu_to_le32(TARGET_MAC_AGGR_DELIM);
 
-	config.rx_skip_defrag_timeout_dup_detection_check =
-		__cpu_to_le32(TARGET_RX_SKIP_DEFRAG_TIMEOUT_DUP_DETECTION_CHECK);
+	val = TARGET_RX_SKIP_DEFRAG_TIMEOUT_DUP_DETECTION_CHECK;
+	config.rx_skip_defrag_timeout_dup_detection_check = __cpu_to_le32(val);
 
 	config.vow_config = __cpu_to_le32(TARGET_VOW_CONFIG);
 
@@ -1634,14 +1635,17 @@ static int ath10k_wmi_vdev_start_restart(struct ath10k *ar,
 		memcpy(cmd->ssid.ssid, arg->ssid, arg->ssid_len);
 	}
 
-	cmd->chan.mhz               = __cpu_to_le32(arg->channel.freq);
-	cmd->chan.band_center_freq1 = __cpu_to_le32(arg->channel.band_center_freq1);
-	cmd->chan.mode              = arg->channel.mode;
-	cmd->chan.min_power         = arg->channel.min_power;
-	cmd->chan.max_power         = arg->channel.max_power;
-	cmd->chan.reg_power         = arg->channel.max_reg_power;
-	cmd->chan.reg_classid       = arg->channel.reg_class_id;
-	cmd->chan.antenna_max       = arg->channel.max_antenna_gain;
+	cmd->chan.mhz = __cpu_to_le32(arg->channel.freq);
+
+	cmd->chan.band_center_freq1 =
+		__cpu_to_le32(arg->channel.band_center_freq1);
+
+	cmd->chan.mode = arg->channel.mode;
+	cmd->chan.min_power = arg->channel.min_power;
+	cmd->chan.max_power = arg->channel.max_power;
+	cmd->chan.reg_power = arg->channel.max_reg_power;
+	cmd->chan.reg_classid = arg->channel.reg_class_id;
+	cmd->chan.antenna_max = arg->channel.max_antenna_gain;
 
 	ath10k_dbg(ATH10K_DBG_WMI,
 		   "wmi vdev %s id 0x%x freq %d, mode %d, ch_flags: 0x%0X,"
@@ -2032,7 +2036,7 @@ static void ath10k_wmi_pdev_set_wmm_param(struct wmi_wmm_params *params,
 }
 
 int ath10k_wmi_pdev_set_wmm_params(struct ath10k *ar,
-				   const struct wmi_pdev_set_wmm_params_arg *arg)
+			const struct wmi_pdev_set_wmm_params_arg *arg)
 {
 	struct wmi_pdev_set_wmm_params *cmd;
 	struct sk_buff *skb;
