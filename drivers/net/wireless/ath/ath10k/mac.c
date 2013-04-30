@@ -448,25 +448,26 @@ static int ath10k_vdev_stop(struct ath10k_vif *arvif)
 static int ath10k_monitor_start(struct ath10k *ar, int vdev_id)
 {
 	struct ieee80211_channel *channel = ar->hw->conf.chandef.chan;
-	struct wmi_vdev_start_request_arg arg = {
-		.vdev_id = vdev_id,
-		.channel = {
-			.freq = channel->center_freq,
-			.band_center_freq1 = band_center_freq(channel,
-							      cfg80211_get_chandef_type(&ar->hw->conf.chandef)),
-			/* TODO setup this dynamically, what in case we
-			   don't have any vifs? */
-			.mode = chan_to_phymode(channel,
-						cfg80211_get_chandef_type(&ar->hw->conf.chandef)),
-			.min_power = channel->max_power * 3,
-			.max_power = channel->max_power * 4,
-			.max_reg_power = channel->max_reg_power * 4,
-			.max_antenna_gain = channel->max_antenna_gain,
-		},
-	};
+	struct wmi_vdev_start_request_arg arg = {};
+	enum nl80211_channel_type type;
 	int ret = 0;
 
 	lockdep_assert_held(&ar->conf_mutex);
+
+	type = cfg80211_get_chandef_type(&ar->hw->conf.chandef);
+
+	arg.vdev_id = vdev_id;
+	arg.channel.freq = channel->center_freq;
+	arg.channel.band_center_freq1 = band_center_freq(channel, type);
+
+	/* TODO setup this dynamically, what in case we
+	   don't have any vifs? */
+	arg.channel.mode = chan_to_phymode(channel,type);
+
+	arg.channel.min_power = channel->max_power * 3;
+	arg.channel.max_power = channel->max_power * 4;
+	arg.channel.max_reg_power = channel->max_reg_power * 4;
+	arg.channel.max_antenna_gain = channel->max_antenna_gain;
 
 	ret = ath10k_wmi_vdev_start(ar, &arg);
 	if (ret) {
