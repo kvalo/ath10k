@@ -407,9 +407,11 @@ static void ath10k_wmi_event_update_stats(struct ath10k *ar,
 static void ath10k_wmi_event_vdev_start_resp(struct ath10k *ar,
 					     struct sk_buff *skb)
 {
-	struct wmi_vdev_start_response_event *ev = (struct wmi_vdev_start_response_event *)skb->data;
+	struct wmi_vdev_start_response_event *ev;
 
 	ath10k_dbg(ATH10K_DBG_WMI, "WMI_VDEV_START_RESP_EVENTID\n");
+
+	ev = (struct wmi_vdev_start_response_event *)skb->data;
 
 	if (WARN_ON(__le32_to_cpu(ev->status)))
 		return;
@@ -485,7 +487,8 @@ static void ath10k_wmi_update_tim(struct ath10k *ar,
 			     sizeof(bcn_info->tim_info.tim_bitmap));
 
 		for (i = 0; i < sizeof(arvif->u.ap.tim_bitmap); i++) {
-			u32 v = __le32_to_cpu(bcn_info->tim_info.tim_bitmap[i / 4]);
+			__le32 t = bcn_info->tim_info.tim_bitmap[i / 4];
+			u32 v = __le32_to_cpu(t);
 			arvif->u.ap.tim_bitmap[i] = (v >> ((i % 4) * 8)) & 0xFF;
 		}
 
@@ -653,8 +656,8 @@ cleanup:
 
 static void ath10k_wmi_event_host_swba(struct ath10k *ar, struct sk_buff *skb)
 {
-	struct wmi_host_swba_event *ev = (struct wmi_host_swba_event *)skb->data;
-	u32 map = __le32_to_cpu(ev->vdev_map);
+	struct wmi_host_swba_event *ev;
+	u32 map;
 	int i = -1;
 	struct wmi_bcn_info *bcn_info;
 	struct ath10k_vif *arvif;
@@ -664,6 +667,9 @@ static void ath10k_wmi_event_host_swba(struct ath10k *ar, struct sk_buff *skb)
 	int ret;
 
 	ath10k_dbg(ATH10K_DBG_BEACON, "WMI_HOST_SWBA_EVENTID\n");
+
+	ev = (struct wmi_host_swba_event *)skb->data;
+	map = __le32_to_cpu(ev->vdev_map);
 
 	ath10k_dbg(ATH10K_DBG_BEACON, "host swba:\n"
 		   "-vdev map 0x%x\n",
@@ -1560,8 +1566,8 @@ int ath10k_wmi_vdev_delete(struct ath10k *ar, u32 vdev_id)
 }
 
 static int ath10k_wmi_vdev_start_restart(struct ath10k *ar,
-					 const struct wmi_vdev_start_request_arg *arg,
-					 enum wmi_cmd_id cmd_id)
+				const struct wmi_vdev_start_request_arg *arg,
+				enum wmi_cmd_id cmd_id)
 {
 	struct wmi_vdev_start_request_cmd *cmd;
 	struct sk_buff *skb;
