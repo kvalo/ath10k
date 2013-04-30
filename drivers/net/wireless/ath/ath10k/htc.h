@@ -339,6 +339,7 @@ struct ath10k_htc {
 	struct ath10k *ar;
 	struct ath10k_htc_ep endpoint[ATH10K_HTC_EP_COUNT];
 
+	/* protects endpoint and stopping fields */
 	spinlock_t tx_lock;
 
 	struct ath10k_htc_ops htc_ops;

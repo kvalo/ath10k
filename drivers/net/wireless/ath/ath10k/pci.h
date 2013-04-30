@@ -171,6 +171,7 @@ struct hif_ce_pipe_info {
 
 	size_t buf_sz;
 
+	/* protects compl_free and num_send_allowed */
 	spinlock_t pipe_lock;
 
 	/* List of free CE completion slots */
@@ -211,7 +212,10 @@ struct ath10k_pci {
 
 	/* List of CE completions to be processed */
 	struct list_head compl_process;
+
+	/* protects compl_processing and compl_process */
 	spinlock_t compl_lock;
+
 	bool compl_processing;
 
 	struct hif_ce_pipe_info pipe_info[CE_COUNT_MAX];
@@ -224,11 +228,13 @@ struct ath10k_pci {
 	/* Copy Engine used for Diagnostic Accesses */
 	struct ce_state *ce_diag;
 
+	/* FIXME: document what this really protects */
 	spinlock_t ce_lock;
 
 	/* Map CE id to ce_state */
 	struct ce_state *ce_id_to_state[CE_COUNT_MAX];
 
+	/* makes sure that dummy reads are atomic */
 	spinlock_t hw_v1_workaround_lock;
 };
 
