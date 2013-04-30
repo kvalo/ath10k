@@ -194,11 +194,10 @@ static inline void ath10k_ce_src_ring_highmark_set(struct ath10k *ar,
 						   u32 ce_ctrl_addr,
 						   unsigned int n)
 {
-	u32 watermark_addr = ath10k_pci_read32(ar,
-					       ce_ctrl_addr + SRC_WATERMARK_ADDRESS);
+	u32 addr = ath10k_pci_read32(ar, ce_ctrl_addr + SRC_WATERMARK_ADDRESS);
 
 	ath10k_pci_write32(ar, ce_ctrl_addr + SRC_WATERMARK_ADDRESS,
-			   (watermark_addr & ~SRC_WATERMARK_HIGH_MASK) |
+			   (addr & ~SRC_WATERMARK_HIGH_MASK) |
 			   SRC_WATERMARK_HIGH_SET(n));
 }
 
@@ -206,11 +205,10 @@ static inline void ath10k_ce_src_ring_lowmark_set(struct ath10k *ar,
 						  u32 ce_ctrl_addr,
 						  unsigned int n)
 {
-	u32 watermark_addr = ath10k_pci_read32(ar,
-					       ce_ctrl_addr + SRC_WATERMARK_ADDRESS);
+	u32 addr = ath10k_pci_read32(ar, ce_ctrl_addr + SRC_WATERMARK_ADDRESS);
 
 	ath10k_pci_write32(ar, ce_ctrl_addr + SRC_WATERMARK_ADDRESS,
-			   (watermark_addr & ~SRC_WATERMARK_LOW_MASK) |
+			   (addr & ~SRC_WATERMARK_LOW_MASK) |
 			   SRC_WATERMARK_LOW_SET(n));
 }
 
@@ -218,11 +216,10 @@ static inline void ath10k_ce_dest_ring_highmark_set(struct ath10k *ar,
 						    u32 ce_ctrl_addr,
 						    unsigned int n)
 {
-	u32 watermark_addr = ath10k_pci_read32(ar,
-					       ce_ctrl_addr + DST_WATERMARK_ADDRESS);
+	u32 addr = ath10k_pci_read32(ar, ce_ctrl_addr + DST_WATERMARK_ADDRESS);
 
 	ath10k_pci_write32(ar, ce_ctrl_addr + DST_WATERMARK_ADDRESS,
-			   (watermark_addr & ~DST_WATERMARK_HIGH_MASK) |
+			   (addr & ~DST_WATERMARK_HIGH_MASK) |
 			   DST_WATERMARK_HIGH_SET(n));
 }
 
@@ -230,11 +227,10 @@ static inline void ath10k_ce_dest_ring_lowmark_set(struct ath10k *ar,
 						   u32 ce_ctrl_addr,
 						   unsigned int n)
 {
-	u32 watermark_addr = ath10k_pci_read32(ar,
-					       ce_ctrl_addr + DST_WATERMARK_ADDRESS);
+	u32 addr = ath10k_pci_read32(ar, ce_ctrl_addr + DST_WATERMARK_ADDRESS);
 
 	ath10k_pci_write32(ar, ce_ctrl_addr + DST_WATERMARK_ADDRESS,
-			   (watermark_addr & ~DST_WATERMARK_LOW_MASK) |
+			   (addr & ~DST_WATERMARK_LOW_MASK) |
 			   DST_WATERMARK_LOW_SET(n));
 }
 
@@ -397,14 +393,16 @@ int ath10k_ce_sendlist_send(struct ce_state *ce_state,
 	unsigned int num_items = sendlist->num_items;
 	unsigned int sw_index;
 	unsigned int write_index;
-	int i, ret = -ENOMEM;
+	int i, delta, ret = -ENOMEM;
 
 	spin_lock_bh(&ar_pci->ce_lock);
 
 	sw_index = src_ring->sw_index;
 	write_index = src_ring->write_index;
 
-	if (CE_RING_DELTA(nentries_mask, write_index, sw_index - 1) >= num_items) {
+	delta = CE_RING_DELTA(nentries_mask, write_index, sw_index - 1);
+
+	if (delta >= num_items) {
 		/*
 		 * Handle all but the last item uniformly.
 		 */
@@ -887,7 +885,7 @@ void ath10k_ce_disable_interrupts(struct ath10k *ar)
 
 void ath10k_ce_send_cb_register(struct ce_state *ce_state,
 				void (*send_cb) (struct ce_state *ce_state,
-						 void *per_transfer_send_context,
+						 void *transfer_context,
 						 u32 buffer,
 						 unsigned int nbytes,
 						 unsigned int transfer_id),
@@ -904,7 +902,7 @@ void ath10k_ce_send_cb_register(struct ce_state *ce_state,
 
 void ath10k_ce_recv_cb_register(struct ce_state *ce_state,
 				void (*recv_cb) (struct ce_state *ce_state,
-						 void *per_transfer_recv_context,
+						 void *transfer_context,
 						 u32 buffer,
 						 unsigned int nbytes,
 						 unsigned int transfer_id,
