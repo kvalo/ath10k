@@ -125,7 +125,6 @@ static ssize_t ath10k_read_wmi_services(struct file *file,
 	len += scnprintf(buf + len, buf_len - len, "%30s\n\n",
 				 "=================");
 	for (i = 0; i < WMI_SERVICE_LAST; i++) {
-
 		if (WMI_SERVICE_IS_ENABLED(ar->debug.wmi_service_bitmap, i))
 			status = "enabled";
 		else

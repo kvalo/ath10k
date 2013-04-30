@@ -308,7 +308,6 @@ static inline void ath10k_pci_reg_write32(void __iomem *mem, u32 addr, u32 val)
 static inline void ath10k_pci_write32(struct ath10k *ar, u32 offset,
 				      u32 value)
 {
-
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	void __iomem *addr = ar_pci->mem;
 

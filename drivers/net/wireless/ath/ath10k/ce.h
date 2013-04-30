@@ -59,7 +59,6 @@ struct ce_desc {
 
 /* Copy Engine Ring internal state */
 struct ce_ring_state {
-
 	/* Number of entries in this ring; must be power of 2 */
 	unsigned int nentries;
 	unsigned int nentries_mask;

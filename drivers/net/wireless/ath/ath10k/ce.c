@@ -106,7 +106,6 @@ static inline void ath10k_ce_src_ring_write_index_set(struct ath10k *ar,
 		iowrite32(0, indicator_addr);
 		local_irq_restore(irq_flags);
 	}
-
 }
 
 static inline u32 ath10k_ce_src_ring_write_index_get(struct ath10k *ar,
@@ -151,7 +150,6 @@ static inline void ath10k_ce_src_ring_byte_swap_set(struct ath10k *ar,
 						    u32 ce_ctrl_addr,
 						    unsigned int n)
 {
-
 	u32 ctrl1_addr = ath10k_pci_read32(ar, ce_ctrl_addr + CE_CTRL1_ADDRESS);
 
 	ath10k_pci_write32(ar, ce_ctrl_addr + CE_CTRL1_ADDRESS,

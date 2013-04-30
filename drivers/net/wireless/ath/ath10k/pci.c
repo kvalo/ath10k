@@ -718,7 +718,6 @@ static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 	ath10k_err("target Register Dump\n");
 	for (i = 0; i < REG_DUMP_COUNT_QCA988X; i++)
 		ath10k_err("[%02d]: 0x%08X\n", i, reg_dump_values[i]);
-
 }
 
 static void ath10k_pci_hif_send_complete_check(struct ath10k *ar, u8 pipe,
@@ -1201,7 +1200,6 @@ static void ath10k_pci_buffer_cleanup(struct ath10k *ar)
 
 static void ath10k_pci_ce_deinit(struct ath10k *ar)
 {
-
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct hif_ce_pipe_info *pipe_info;
 	int pipe_num;
@@ -1995,7 +1993,6 @@ static int ath10k_pci_reset_target(struct ath10k *ar)
 	while (wait_limit-- &&
 	       !(ioread32(ar_pci->mem + FW_INDICATOR_ADDRESS) &
 		 FW_IND_INITIALIZED)) {
-
 		if (ar_pci->num_msi_intrs == 0)
 			/* Fix potential race by repeating CORE_BASE writes */
 			iowrite32(PCIE_INTR_FIRMWARE_MASK |

@@ -648,7 +648,6 @@ EXPORT_SYMBOL(ath10k_core_target_suspend);
 
 int ath10k_core_target_resume(struct ath10k *ar)
 {
-
 	int ret;
 
 	ath10k_dbg(ATH10K_DBG_CORE, "%s: called", __func__);

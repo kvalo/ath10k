@@ -588,7 +588,6 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 			break;
 		case ATH10K_HTC_MSG_SEND_SUSPEND_COMPLETE:
 			htc->htc_ops.target_send_suspend_complete(ar);
-
 		}
 		goto out;
 	}
@@ -662,7 +661,6 @@ static void ath10k_htc_reset_endpoint_states(struct ath10k_htc *htc)
 		ep->htc = htc;
 		ep->tx_credit_flow_enabled = true;
 		INIT_WORK(&ep->send_work, ath10k_htc_send_work);
-
 	}
 }
 

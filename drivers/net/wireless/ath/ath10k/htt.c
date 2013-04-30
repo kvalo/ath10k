@@ -155,7 +155,6 @@ int ath10k_htt_attach_target(struct ath10k_htt *htt)
 		return status;
 
 	return ath10k_htt_send_rx_ring_cfg_ll(htt);
-
 }
 
 void ath10k_htt_detach(struct ath10k_htt *htt)

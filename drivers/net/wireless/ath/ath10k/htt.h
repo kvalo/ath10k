@@ -778,7 +778,6 @@ struct htt_dbg_stats_rx_reorder_stats {
 };
 
 struct htt_dbg_stats_wal_tx_stats {
-
 	/* Num HTT cookies queued to dispatch list */
 	__le32 comp_queued;
 
