@@ -258,8 +258,8 @@ static int ath10k_pci_diag_read_access(struct ath10k *ar, u32 address, u32 *data
 	}
 }
 
-static int ath10k_pci_diag_write_mem(struct ath10k *ar, u32 address, u8 *data,
-				     int nbytes)
+static int ath10k_pci_diag_write_mem(struct ath10k *ar, u32 address,
+				     const void *data, int nbytes)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	int ret = 0;
@@ -396,8 +396,8 @@ static int ath10k_pci_diag_write_access(struct ath10k *ar, u32 address,
 	/* Assume range doesn't cross this boundary */
 	if (address >= DRAM_BASE_ADDRESS) {
 		u32 data_buf = data;
-		return ath10k_pci_diag_write_mem(ar, address, (u8 *) &data_buf,
-					  sizeof(u32));
+		return ath10k_pci_diag_write_mem(ar, address, &data_buf,
+						 sizeof(u32));
 	} else {
 		ath10k_pci_wake(ar);
 		ath10k_pci_write32(ar, address, data);
@@ -1504,7 +1504,7 @@ static int ath10k_pci_init_config(struct ath10k *ar)
 	}
 
 	ret = ath10k_pci_diag_write_mem(ar, pipe_cfg_targ_addr,
-				 (u8 *) target_ce_config_wlan,
+				 target_ce_config_wlan,
 				 sizeof(target_ce_config_wlan));
 
 	if (ret != 0) {
@@ -1527,7 +1527,7 @@ static int ath10k_pci_init_config(struct ath10k *ar)
 	}
 
 	ret = ath10k_pci_diag_write_mem(ar, svc_to_pipe_map,
-				 (u8 *) target_service_to_ce_map_wlan,
+				 target_service_to_ce_map_wlan,
 				 sizeof(target_service_to_ce_map_wlan));
 	if (ret != 0) {
 		ath10k_err("Failed to write svc/pipe map: %d\n", ret);
@@ -1546,7 +1546,7 @@ static int ath10k_pci_init_config(struct ath10k *ar)
 
 	ret = ath10k_pci_diag_write_mem(ar, pcie_state_targ_addr +
 				 offsetof(struct pcie_state, config_flags),
-				 (u8 *) &pcie_config_flags,
+				 &pcie_config_flags,
 				 sizeof(pcie_config_flags));
 	if (ret != 0) {
 		ath10k_err("Failed to write pcie config_flags: %d\n", ret);
