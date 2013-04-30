@@ -578,7 +578,9 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 			}
 
 			htc->control_resp_len =
-			    min((int)skb->len, ATH10K_HTC_MAX_CTRL_MSG_LEN);
+				min_t(int, skb->len,
+				      ATH10K_HTC_MAX_CTRL_MSG_LEN);
+
 			memcpy(htc->control_resp_buffer, skb->data,
 			       htc->control_resp_len);
 

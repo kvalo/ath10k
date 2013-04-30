@@ -96,7 +96,7 @@ int ath10k_bmi_read_memory(struct ath10k *ar,
 		   __func__, ar, address, length);
 
 	while (length) {
-		rxlen = min(length, (u32)BMI_MAX_DATA_SIZE);
+		rxlen = min_t(u32, length, BMI_MAX_DATA_SIZE);
 
 		cmd.id            = __cpu_to_le32(BMI_READ_MEMORY);
 		cmd.read_mem.addr = __cpu_to_le32(address);

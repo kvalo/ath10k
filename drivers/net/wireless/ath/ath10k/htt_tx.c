@@ -269,7 +269,7 @@ int ath10k_htt_mgmt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 	cmd->mgmt_tx.desc_id    = __cpu_to_le32(msdu_id);
 	cmd->mgmt_tx.vdev_id    = __cpu_to_le32(vdev_id);
 	memcpy(cmd->mgmt_tx.hdr, msdu->data,
-	       min((int)msdu->len, HTT_MGMT_FRM_HDR_DOWNLOAD_LEN));
+	       min_t(int, msdu->len, HTT_MGMT_FRM_HDR_DOWNLOAD_LEN));
 
 	/* refcount is decremented by HTC and HTT completions until it reaches
 	 * zero and is freed */
