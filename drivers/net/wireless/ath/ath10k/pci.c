@@ -695,6 +695,7 @@ static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 	u32 reg_dump_area = 0;
 	u32 reg_dump_values[REG_DUMP_COUNT_QCA988X];
 	u32 host_addr;
+	int ret;
 	u32 i;
 
 	host_addr = host_interest_item_address(HI_ITEM(hi_failure_state));
@@ -706,9 +707,10 @@ static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 
 	ath10k_err("target register Dump Location: 0x%08X\n", reg_dump_area);
 
-	if (ath10k_pci_diag_read_mem(ar, reg_dump_area,
-				     &reg_dump_values[0],
-				     REG_DUMP_COUNT_QCA988X * sizeof(u32)) != 0) {
+	ret = ath10k_pci_diag_read_mem(ar, reg_dump_area,
+				       &reg_dump_values[0],
+				       REG_DUMP_COUNT_QCA988X * sizeof(u32));
+	if (ret != 0) {
 		ath10k_err("could not dump FW Dump Area\n");
 		return;
 	}
