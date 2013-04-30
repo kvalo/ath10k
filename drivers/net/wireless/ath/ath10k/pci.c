@@ -98,7 +98,7 @@ static const struct ce_pipe_config target_ce_config_wlan[] = {
  * Caller must guarantee proper alignment, when applicable, and single user
  * at any moment.
  */
-static int ath10k_pci_diag_read_mem(struct ath10k *ar, u32 address, u8 *data,
+static int ath10k_pci_diag_read_mem(struct ath10k *ar, u32 address, void *data,
 				    int nbytes)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
@@ -249,8 +249,7 @@ static int ath10k_pci_diag_read_access(struct ath10k *ar, u32 address, u32 *data
 {
 	/* Assume range doesn't cross this boundary */
 	if (address >= DRAM_BASE_ADDRESS)
-		return ath10k_pci_diag_read_mem(ar, address, (u8 *)data,
-						sizeof(u32));
+		return ath10k_pci_diag_read_mem(ar, address, data, sizeof(u32));
 	else {
 		ath10k_pci_wake(ar);
 		*data = ath10k_pci_read32(ar, address);
@@ -693,7 +692,7 @@ static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 
 	host_addr = host_interest_item_address(HI_ITEM(hi_failure_state));
 	if (ath10k_pci_diag_read_mem(ar, host_addr,
-				     (u8 *) &reg_dump_area, sizeof(u32)) != 0) {
+				     &reg_dump_area, sizeof(u32)) != 0) {
 		ath10k_warn("could not read hi_failure_state\n");
 		return;
 	}
@@ -701,7 +700,7 @@ static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 	ath10k_err("target register Dump Location: 0x%08X\n", reg_dump_area);
 
 	if (ath10k_pci_diag_read_mem(ar, reg_dump_area,
-				     (u8 *) &reg_dump_values[0],
+				     &reg_dump_values[0],
 				     REG_DUMP_COUNT_QCA988X * sizeof(u32)) != 0) {
 		ath10k_err("could not dump FW Dump Area\n");
 		return;
