@@ -188,8 +188,8 @@ struct wmi_mac_addr {
  */
 enum wmi_cmd_group {
 	/* 0 to 2 are reserved */
-	WMI_GRP_START=0x3,
-	WMI_GRP_SCAN=WMI_GRP_START,
+	WMI_GRP_START = 0x3,
+	WMI_GRP_SCAN = WMI_GRP_START,
 	WMI_GRP_PDEV,
 	WMI_GRP_VDEV,
 	WMI_GRP_PEER,
@@ -223,7 +223,7 @@ enum wmi_cmd_group {
 
 /* Command IDs and commande events. */
 enum wmi_cmd_id {
-	WMI_INIT_CMDID=0x1,
+	WMI_INIT_CMDID = 0x1,
 
 	/* Scan specific commands */
 	WMI_START_SCAN_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_SCAN),
@@ -318,7 +318,8 @@ enum wmi_cmd_id {
 	WMI_AP_PS_PEER_UAPSD_COEX_CMDID,
 
 	/* Rate-control specific commands */
-	WMI_PEER_RATE_RETRY_SCHED_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_RATE_CTRL),
+	WMI_PEER_RATE_RETRY_SCHED_CMDID =
+	WMI_CMD_GRP_START_ID(WMI_GRP_RATE_CTRL),
 
 	/* WLAN Profiling commands. */
 	WMI_WLAN_PROFILE_TRIGGER_CMDID = WMI_CMD_GRP_START_ID(WMI_GRP_PROFILE),
@@ -384,7 +385,7 @@ enum wmi_cmd_id {
 };
 
 enum wmi_event_id {
-	WMI_SERVICE_READY_EVENTID=0x1,
+	WMI_SERVICE_READY_EVENTID = 0x1,
 	WMI_READY_EVENTID,
 
 	/* Scan specific events */
@@ -527,7 +528,9 @@ enum wmi_channel_change_cause {
 #define WMI_CHAN_FLAG_DFS            (1 << 10)
 #define WMI_CHAN_FLAG_ALLOW_HT       (1 << 11)
 #define WMI_CHAN_FLAG_ALLOW_VHT      (1 << 12)
-#define WMI_CHANNEL_CHANGE_CAUSE_CSA (1 << 13) /* Indicate reason for channel switch */
+
+/* Indicate reason for channel switch */
+#define WMI_CHANNEL_CHANGE_CAUSE_CSA (1 << 13)
 
 #define WMI_MAX_SPATIAL_STREAM   3
 
@@ -745,10 +748,11 @@ struct wmi_resource_config {
 	__le32 num_peers;
 
 	/*
-	 * In offload mode target supports features like WOW, chatter and other
-	 * protocol offloads. In order to support them some functionalities like
-	 * reorder buffering, PN checking need to be done in target. This determines
-	 * maximum number of peers suported by target in offload mode
+	 * In offload mode target supports features like WOW, chatter and
+	 * other protocol offloads. In order to support them some
+	 * functionalities like reorder buffering, PN checking need to be
+	 * done in target. This determines maximum number of peers suported
+	 * by target in offload mode
 	 */
 	__le32 num_offload_peers;
 
@@ -1639,52 +1643,109 @@ struct wmi_pdev_set_wmm_params_arg {
 };
 
 struct wal_dbg_tx_stats {
-	__le32 comp_queued; /* Num HTT cookies queued to dispatch list */
-	__le32 comp_delivered; /* Num HTT cookies dispatched */
-	__le32 msdu_enqued; /* Num MSDU queued to WAL */
-	__le32 mpdu_enqued; /* Num MPDU queue to WAL */
-	__le32 wmm_drop; /* Num MSDUs dropped by WMM limit */
-	__le32 local_enqued; /* Num Local frames queued */
-	__le32 local_freed; /* Num Local frames done */
-	__le32 hw_queued; /* Num queued to HW */
-	__le32 hw_reaped; /* Num PPDU reaped from HW */
-	__le32 underrun; /* Num underruns */
-	__le32 tx_abort; /* Num PPDUs cleaned up in TX abort */
-	__le32 mpdus_requed; /* Num MPDUs requed by SW */
-	__le32 tx_ko; /* excessive retries */
-	__le32 data_rc; /* data hw rate code */
-	__le32 self_triggers; /* Scheduler self triggers */
-	__le32 sw_retry_failure; /* frames dropped due to excessive sw retries */
-	__le32 illgl_rate_phy_err; /* illegal rate phy errors  */
-	__le32 pdev_cont_xretry; /* wal pdev continous xretry */
-	__le32 pdev_tx_timeout; /* wal pdev continous xretry */
-	__le32 pdev_resets; /* wal pdev resets  */
+	/* Num HTT cookies queued to dispatch list */
+	__le32 comp_queued;
+
+	/* Num HTT cookies dispatched */
+	__le32 comp_delivered;
+
+	/* Num MSDU queued to WAL */
+	__le32 msdu_enqued;
+
+	/* Num MPDU queue to WAL */
+	__le32 mpdu_enqued;
+
+	/* Num MSDUs dropped by WMM limit */
+	__le32 wmm_drop;
+
+	/* Num Local frames queued */
+	__le32 local_enqued;
+
+	/* Num Local frames done */
+	__le32 local_freed;
+
+	/* Num queued to HW */
+	__le32 hw_queued;
+
+	/* Num PPDU reaped from HW */
+	__le32 hw_reaped;
+
+	/* Num underruns */
+	__le32 underrun;
+
+	/* Num PPDUs cleaned up in TX abort */
+	__le32 tx_abort;
+
+	/* Num MPDUs requed by SW */
+	__le32 mpdus_requed;
+
+	/* excessive retries */
+	__le32 tx_ko;
+
+	/* data hw rate code */
+	__le32 data_rc;
+
+	/* Scheduler self triggers */
+	__le32 self_triggers;
+
+	/* frames dropped due to excessive sw retries */
+	__le32 sw_retry_failure;
+
+	/* illegal rate phy errors  */
+	__le32 illgl_rate_phy_err;
+
+	/* wal pdev continous xretry */
+	__le32 pdev_cont_xretry;
+
+	/* wal pdev continous xretry */
+	__le32 pdev_tx_timeout;
+
+	/* wal pdev resets  */
+	__le32 pdev_resets;
+
 	__le32 phy_underrun;
-	__le32 txop_ovf; /* MPDU is more than txop limit */
+
+	/* MPDU is more than txop limit */
+	__le32 txop_ovf;
 } __packed;
 
 struct wal_dbg_rx_stats {
-	__le32 mid_ppdu_route_change; /* Cnts any change in ring routing mid-ppdu */
-	__le32 status_rcvd; /* Total number of statuses processed */
+	/* Cnts any change in ring routing mid-ppdu */
+	__le32 mid_ppdu_route_change;
+
+	/* Total number of statuses processed */
+	__le32 status_rcvd;
+
 	/* Extra frags on rings 0-3 */
 	__le32 r0_frags;
 	__le32 r1_frags;
 	__le32 r2_frags;
 	__le32 r3_frags;
+
 	/* MSDUs / MPDUs delivered to HTT */
 	__le32 htt_msdus;
 	__le32 htt_mpdus;
+
 	/* MSDUs / MPDUs delivered to local stack */
 	__le32 loc_msdus;
 	__le32 loc_mpdus;
-	__le32 oversize_amsdu; /* AMSDUs that have more MSDUs than the status ring size */
-	__le32 phy_errs; /* Number of PHY errors */
-	__le32 phy_err_drop; /* Number of PHY errors drops */
-	__le32 mpdu_errs; /* Number of mpdu errors - FCS, MIC, ENC etc. */
+
+	/* AMSDUs that have more MSDUs than the status ring size */
+	__le32 oversize_amsdu;
+
+	/* Number of PHY errors */
+	__le32 phy_errs;
+
+	/* Number of PHY errors drops */
+	__le32 phy_err_drop;
+
+	/* Number of mpdu errors - FCS, MIC, ENC etc. */
+	__le32 mpdu_errs;
 } __packed;
 
 struct wal_dbg_peer_stats {
-	__le32 dummy; /* REMOVE THIS ONCE REAL PEER STAT COUNTERS ARE ADDED */
+	/* REMOVE THIS ONCE REAL PEER STAT COUNTERS ARE ADDED */
+	__le32 dummy;
 } __packed;
 
 struct wal_dbg_stats {
@@ -1709,8 +1770,11 @@ struct wmi_request_stats_cmd {
 
 /* Suspend option */
 enum {
-	WMI_PDEV_SUSPEND, /* suspend */
-	WMI_PDEV_SUSPEND_AND_DISABLE_INTR, /* suspend and disable all interrupts */
+	/* suspend */
+	WMI_PDEV_SUSPEND,
+
+	/* suspend and disable all interrupts */
+	WMI_PDEV_SUSPEND_AND_DISABLE_INTR,
 };
 
 struct wmi_pdev_suspend_cmd {
@@ -2804,7 +2868,8 @@ int ath10k_wmi_pdev_set_param(struct ath10k *ar, enum wmi_pdev_param id,
 int ath10k_wmi_cmd_init(struct ath10k *ar);
 int ath10k_wmi_start_scan(struct ath10k *ar, const struct wmi_start_scan_arg *);
 void ath10k_wmi_start_scan_init(struct ath10k *ar, struct wmi_start_scan_arg *);
-int ath10k_wmi_stop_scan(struct ath10k *ar, const struct wmi_stop_scan_arg *arg);
+int ath10k_wmi_stop_scan(struct ath10k *ar,
+			 const struct wmi_stop_scan_arg *arg);
 int ath10k_wmi_vdev_create(struct ath10k *ar, u32 vdev_id,
 			   enum wmi_vdev_type type,
 			   enum wmi_vdev_subtype subtype,
@@ -2815,7 +2880,8 @@ int ath10k_wmi_vdev_start(struct ath10k *ar,
 int ath10k_wmi_vdev_restart(struct ath10k *ar,
 			    const struct wmi_vdev_start_request_arg *);
 int ath10k_wmi_vdev_stop(struct ath10k *ar, u32 vdev_id);
-int ath10k_wmi_vdev_up(struct ath10k *ar, u32 vdev_id, u32 aid, const u8 *bssid);
+int ath10k_wmi_vdev_up(struct ath10k *ar, u32 vdev_id, u32 aid,
+		       const u8 *bssid);
 int ath10k_wmi_vdev_down(struct ath10k *ar, u32 vdev_id);
 int ath10k_wmi_vdev_set_param(struct ath10k *ar, u32 vdev_id,
 			      enum wmi_vdev_param param_id, u32 param_value);
@@ -2827,8 +2893,9 @@ int ath10k_wmi_peer_delete(struct ath10k *ar, u32 vdev_id,
 		    const u8 peer_addr[ETH_ALEN]);
 int ath10k_wmi_peer_flush(struct ath10k *ar, u32 vdev_id,
 		   const u8 peer_addr[ETH_ALEN], u32 tid_bitmap);
-int ath10k_wmi_peer_set_param(struct ath10k *ar, u32 vdev_id, const u8 *peer_addr,
-		       enum wmi_peer_param param_id, u32 param_value);
+int ath10k_wmi_peer_set_param(struct ath10k *ar, u32 vdev_id,
+			      const u8 *peer_addr,
+			      enum wmi_peer_param param_id, u32 param_value);
 int ath10k_wmi_peer_assoc(struct ath10k *ar,
 			  const struct wmi_peer_assoc_complete_arg *arg);
 int ath10k_wmi_set_psmode(struct ath10k *ar, u32 vdev_id,
