@@ -763,7 +763,7 @@ static void ath10k_pci_start_ce(struct ath10k *ar)
 	const struct ce_attr *attr;
 	struct hif_ce_pipe_info *pipe_info;
 	struct ath10k_pci_compl *compl;
-	int i, pipe_num, completions;
+	int i, pipe_num, completions, disable_interrupts;
 
 	spin_lock_init(&ar_pci->compl_lock);
 	INIT_LIST_HEAD(&ar_pci->compl_process);
@@ -782,9 +782,10 @@ static void ath10k_pci_start_ce(struct ath10k *ar)
 		completions = 0;
 
 		if (attr->src_nentries) {
+			disable_interrupts = attr->flags & CE_ATTR_DIS_INTR;
 			ath10k_ce_send_cb_register(pipe_info->ce_hdl,
 						   ath10k_pci_ce_send_done,
-						   attr->flags & CE_ATTR_DIS_INTR);
+						   disable_interrupts);
 			completions += attr->src_nentries;
 			pipe_info->num_sends_allowed = attr->src_nentries - 1;
 		}
