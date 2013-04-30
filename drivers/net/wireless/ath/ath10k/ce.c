@@ -942,14 +942,17 @@ static int ath10k_ce_init_src_ring(struct ath10k *ar,
 	if (ptr == NULL)
 		return -ENOMEM;
 
-	src_ring = ce_state->src_ring =	(struct ce_ring_state *)ptr;
+	ce_state->src_ring = (struct ce_ring_state *)ptr;
+	src_ring = ce_state->src_ring;
+
 	ptr += sizeof(struct ce_ring_state);
 	src_ring->nentries = nentries;
 	src_ring->nentries_mask = nentries - 1;
 
 	ath10k_pci_wake(ar);
-	src_ring->hw_index = src_ring->sw_index =
-		ath10k_ce_src_ring_read_index_get(ar, ctrl_addr);
+	src_ring->sw_index = ath10k_ce_src_ring_read_index_get(ar, ctrl_addr);
+	src_ring->hw_index = src_ring->sw_index;
+
 	src_ring->write_index =
 		ath10k_ce_src_ring_write_index_get(ar, ctrl_addr);
 	ath10k_pci_sleep(ar);
@@ -1024,7 +1027,9 @@ static int ath10k_ce_init_dest_ring(struct ath10k *ar,
 	if (ptr == NULL)
 		return -ENOMEM;
 
-	dest_ring = ce_state->dest_ring = (struct ce_ring_state *)ptr;
+	ce_state->dest_ring = (struct ce_ring_state *)ptr;
+	dest_ring = ce_state->dest_ring;
+
 	ptr += sizeof(struct ce_ring_state);
 	dest_ring->nentries = nentries;
 	dest_ring->nentries_mask = nentries - 1;
