@@ -1679,9 +1679,9 @@ static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 		ath10k_pci_write32(ar, fw_indicator_address,
 				   fw_indicator & ~FW_IND_EVENT_PENDING);
 
-		if (ar_pci->started)
+		if (ar_pci->started) {
 			ath10k_pci_hif_dump_area(ar);
-		else {
+		} else {
 			/*
 			 * Probable Target failure before we're prepared
 			 * to handle it.  Generally unexpected.
@@ -2222,9 +2222,9 @@ static int ath10k_pci_probe(struct pci_dev *pdev,
 	if (ret)
 		goto err_intr;
 
-	if (ath10k_target_ps)
+	if (ath10k_target_ps) {
 		ath10k_dbg(ATH10K_DBG_PCI, "on-chip power save enabled\n");
-	else {
+	} else {
 		/* Force AWAKE forever */
 		ath10k_dbg(ATH10K_DBG_PCI, "on-chip power save disabled\n");
 		ath10k_do_pci_wake(ar);

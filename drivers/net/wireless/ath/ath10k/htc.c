@@ -60,8 +60,9 @@ static inline void ath10k_htc_recalc_queue(struct ath10k_htc_ep *ep, int delta)
 	if (ep->tx_queue_stopped) {
 		if (ep->tx_queue_len <= ep->max_tx_queue_depth/2)
 			ath10k_htc_wake_queue(ep);
-	} else if (ep->tx_queue_len >= ep->max_tx_queue_depth)
+	} else if (ep->tx_queue_len >= ep->max_tx_queue_depth) {
 		ath10k_htc_stop_queue(ep);
+	}
 }
 
 static inline void ath10k_htc_send_complete_check(struct ath10k_htc_ep *ep,

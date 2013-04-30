@@ -717,8 +717,9 @@ int ath10k_ce_cancel_send_next(struct ce_state *ce_state,
 		sw_index = CE_RING_IDX_INCR(nentries_mask, sw_index);
 		src_ring->sw_index = sw_index;
 		ret = 0;
-	} else
+	} else {
 		ret = -EIO;
+	}
 
 	spin_unlock_bh(&ar_pci->ce_lock);
 

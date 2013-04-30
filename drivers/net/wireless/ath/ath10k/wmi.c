@@ -529,8 +529,9 @@ static void ath10k_wmi_update_tim(struct ath10k *ar,
 			ie[1] += expand_size;
 			ie_len += expand_size;
 			pvm_len += expand_size;
-		} else
+		} else {
 			ath10k_warn("tim expansion failed\n");
+		}
 	}
 
 	if (pvm_len > sizeof(arvif->u.ap.tim_bitmap)) {

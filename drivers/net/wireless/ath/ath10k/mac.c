@@ -688,8 +688,9 @@ static void ath10k_ps_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
 		}
 
 		ar_iter->ret = ret;
-	} else
+	} else {
 		psmode = WMI_STA_PS_MODE_DISABLED;
+	}
 
 	ar_iter->ret = ath10k_wmi_set_psmode(ar_iter->ar, arvif->vdev_id,
 					     psmode);
@@ -917,8 +918,10 @@ static void ath10k_peer_assoc_h_phymode(struct ath10k *ar,
 				phymode = MODE_11NG_HT40;
 			else
 				phymode = MODE_11NG_HT20;
-		} else
+		} else {
 			phymode = MODE_11G;
+		}
+
 		break;
 	case IEEE80211_BAND_5GHZ:
 		if (sta->ht_cap.ht_supported) {
@@ -926,8 +929,10 @@ static void ath10k_peer_assoc_h_phymode(struct ath10k *ar,
 				phymode = MODE_11NA_HT40;
 			else
 				phymode = MODE_11NA_HT20;
-		} else
+		} else {
 			phymode = MODE_11A;
+		}
+
 		break;
 	default:
 		break;
@@ -1499,8 +1504,9 @@ static void ath10k_tx(struct ieee80211_hw *hw,
 	if (info->control.vif) {
 		arvif = ath10k_vif_to_arvif(info->control.vif);
 		vdev_id = arvif->vdev_id;
-	} else if (ar->monitor_enabled)
+	} else if (ar->monitor_enabled) {
 		vdev_id = ar->monitor_vdev_id;
+	}
 
 	/* We should disable CCK RATE due to P2P */
 	if (info->flags & IEEE80211_TX_CTL_NO_CCK_RATE)
