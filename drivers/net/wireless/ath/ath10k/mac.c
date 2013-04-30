@@ -371,27 +371,31 @@ static int ath10k_vdev_start(struct ath10k_vif *arvif)
 	struct ath10k *ar = arvif->ar;
 	struct ieee80211_conf *conf = &ar->hw->conf;
 	struct ieee80211_channel *channel = conf->chandef.chan;
-	struct wmi_vdev_start_request_arg arg = {
-		.vdev_id = arvif->vdev_id,
-		.channel = {
-			.freq = channel->center_freq,
-			.band_center_freq1 = band_center_freq(channel,
-							      cfg80211_get_chandef_type(&conf->chandef)),
-			.mode = chan_to_phymode(channel,
-						cfg80211_get_chandef_type(&conf->chandef)),
-			.min_power = channel->max_power * 3,
-			.max_power = channel->max_power * 4,
-			.max_reg_power = channel->max_reg_power * 4,
-			.max_antenna_gain = channel->max_antenna_gain,
-		},
-		.bcn_intval = arvif->beacon_interval,
-		.dtim_period = arvif->dtim_period,
-	};
+	struct wmi_vdev_start_request_arg arg = {};
 	int ret = 0;
 
 	lockdep_assert_held(&ar->conf_mutex);
 
 	INIT_COMPLETION(ar->vdev_setup_done);
+
+	arg.vdev_id = arvif->vdev_id;
+	arg.dtim_period = arvif->dtim_period;
+	arg.bcn_intval = arvif->beacon_interval;
+
+	arg.channel.freq = channel->center_freq;
+
+	arg.channel.band_center_freq1 =
+		band_center_freq(channel,
+				 cfg80211_get_chandef_type(&conf->chandef));
+
+	arg.channel.mode =
+		chan_to_phymode(channel,
+				cfg80211_get_chandef_type(&conf->chandef));
+
+	arg.channel.min_power = channel->max_power * 3;
+	arg.channel.max_power = channel->max_power * 4;
+	arg.channel.max_reg_power = channel->max_reg_power * 4;
+	arg.channel.max_antenna_gain = channel->max_antenna_gain;
 
 	if (arvif->vdev_type == WMI_VDEV_TYPE_AP) {
 		arg.ssid = arvif->u.ap.ssid;
