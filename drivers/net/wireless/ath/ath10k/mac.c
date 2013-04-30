@@ -667,22 +667,28 @@ static void ath10k_config_ps_iter(void *data, u8 *mac,
 	struct ath10k_generic_iter *ar_iter = data;
 	struct ieee80211_conf *conf = &ar_iter->ar->hw->conf;
 	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
+	enum wmi_sta_powersave_param param;
 	enum wmi_sta_ps_mode psmode;
+	int ret;
 
 	if (vif->type != NL80211_IFTYPE_STATION)
 		return;
 
 	if (conf->flags & IEEE80211_CONF_PS) {
 		psmode = WMI_STA_PS_MODE_ENABLED;
-		ar_iter->ret = ath10k_wmi_set_sta_ps_param(ar_iter->ar,
-							   arvif->vdev_id,
-							   WMI_STA_PS_PARAM_INACTIVITY_TIME,
-							   conf->dynamic_ps_timeout);
-		if (ar_iter->ret) {
+		param = WMI_STA_PS_PARAM_INACTIVITY_TIME;
+
+		ret = ath10k_wmi_set_sta_ps_param(ar_iter->ar,
+						  arvif->vdev_id,
+						  param,
+						  conf->dynamic_ps_timeout);
+		if (ret) {
 			ath10k_warn("Failed to set inactivity time for VDEV: %d\n",
 				    arvif->vdev_id);
 			return;
 		}
+
+		ar_iter->ret = ret;
 	} else
 		psmode = WMI_STA_PS_MODE_DISABLED;
 
