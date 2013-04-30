@@ -2247,7 +2247,14 @@ static int ath10k_conf_tx(struct ieee80211_hw *hw,
 	p->cwmin = params->cw_min;
 	p->cwmax = params->cw_max;
 	p->aifs = params->aifs;
-	p->txop = params->txop;
+
+	/*
+	 * The channel time duration programmed in the HW is in absolute
+	 * microseconds, while mac80211 gives the txop in units of
+	 * 32 microseconds.
+	 */
+	p->txop = params->txop * 32;
+
 	/* FIXME: can we pass the params->uapsd to the FW? */
 	/* FIXME: FW accepts wmm params per hw, not per vif */
 
