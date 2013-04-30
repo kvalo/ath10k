@@ -271,6 +271,8 @@ int ath10k_htt_mgmt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 	memcpy(cmd->mgmt_tx.hdr, msdu->data,
 	       min((int)msdu->len, HTT_MGMT_FRM_HDR_DOWNLOAD_LEN));
 
+	/* refcount is decremented by HTC and HTT completions until it reaches
+	 * zero and is freed */
 	skb_cb = ATH10K_SKB_CB(txdesc);
 	skb_cb->htt.msdu_id = msdu_id;
 	skb_cb->htt.refcount = 2;
@@ -403,6 +405,8 @@ int ath10k_htt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 
 	memcpy(cmd->data_tx.prefetch, msdu->data, prefetch_len);
 
+	/* refcount is decremented by HTC and HTT completions until it reaches
+	 * zero and is freed */
 	skb_cb = ATH10K_SKB_CB(txdesc);
 	skb_cb->htt.msdu_id = msdu_id;
 	skb_cb->htt.refcount = 2;

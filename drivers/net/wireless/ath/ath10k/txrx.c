@@ -55,7 +55,9 @@ void ath10k_txrx_tx_unref(struct ath10k_htt *htt, struct sk_buff *txdesc)
 	if (ATH10K_SKB_CB(txdesc)->htt.refcount == 0)
 		return;
 
-	if (--ATH10K_SKB_CB(txdesc)->htt.refcount > 0)
+	ATH10K_SKB_CB(txdesc)->htt.refcount--;
+
+	if (ATH10K_SKB_CB(txdesc)->htt.refcount > 0)
 		return;
 
 	if (txfrag) {
