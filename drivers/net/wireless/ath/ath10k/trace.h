@@ -15,11 +15,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#if !defined(_ATH10K_TRACE_H) || defined(TRACE_HEADER_MULTI_READ)
+#if !defined(_TRACE_H_) || defined(TRACE_HEADER_MULTI_READ)
 
 #include <linux/tracepoint.h>
 
-#define _ATH10K_TRACE_H
+#define _TRACE_H_
 
 /* create empty functions when tracing is disabled */
 #if !defined(CONFIG_ATH10K_TRACING)
@@ -158,7 +158,7 @@ TRACE_EVENT(ath10k_wmi_event,
 	)
 );
 
-#endif /* _ ATH10K_TRACE_H || TRACE_HEADER_MULTI_READ*/
+#endif /* _TRACE_H_ || TRACE_HEADER_MULTI_READ*/
 
 /* we don't want to use include/trace/events */
 #undef TRACE_INCLUDE_PATH

@@ -15,8 +15,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef _HTC_H
-#define _HTC_H
+#ifndef _HTC_H_
+#define _HTC_H_
 
 #include <linux/kernel.h>
 #include <linux/list.h>
