@@ -155,12 +155,14 @@ static int ath10k_clear_peer_keys(struct ath10k_vif *arvif,
 		if (peer->keys[i] == NULL)
 			continue;
 
-		ret = ath10k_install_key(arvif, peer->keys[i], DISABLE_KEY, addr);
+		ret = ath10k_install_key(arvif, peer->keys[i],
+					 DISABLE_KEY, addr);
 		if (ret && first_errno == 0)
 			first_errno = ret;
 
 		if (ret)
-			ath10k_warn("could not remove peer wep key %d (%d)\n", i, ret);
+			ath10k_warn("could not remove peer wep key %d (%d)\n",
+				    i, ret);
 
 		peer->keys[i] = NULL;
 	}
@@ -617,9 +619,8 @@ static void ath10k_control_ibss(struct ath10k_vif *arvif,
 	if (!info->ibss_joined) {
 		ret = ath10k_peer_delete(arvif->ar, arvif->vdev_id, self_peer);
 		if (ret)
-			ath10k_warn("Failed to delete IBSS self peer:%pM "
-				    "for VDEV:%d ret:%d\n", self_peer,
-				    arvif->vdev_id, ret);
+			ath10k_warn("Failed to delete IBSS self peer:%pM for VDEV:%d ret:%d\n",
+				    self_peer, arvif->vdev_id, ret);
 
 		if (is_zero_ether_addr(arvif->u.ibss.bssid))
 			return;
@@ -627,9 +628,8 @@ static void ath10k_control_ibss(struct ath10k_vif *arvif,
 		ret = ath10k_peer_delete(arvif->ar, arvif->vdev_id,
 					 arvif->u.ibss.bssid);
 		if (ret) {
-			ath10k_warn("Failed to delete IBSS BSSID peer:%pM "
-				    "for VDEV:%d ret:%d\n", arvif->u.ibss.bssid,
-				     arvif->vdev_id, ret);
+			ath10k_warn("Failed to delete IBSS BSSID peer:%pM for VDEV:%d ret:%d\n",
+				    arvif->u.ibss.bssid, arvif->vdev_id, ret);
 			return;
 		}
 
@@ -640,8 +640,8 @@ static void ath10k_control_ibss(struct ath10k_vif *arvif,
 
 	ret = ath10k_peer_create(arvif->ar, arvif->vdev_id, self_peer);
 	if (ret) {
-		ath10k_warn("Failed to create IBSS self peer:%pM for VDEV:%d"
-			    "ret:%d\n", self_peer, arvif->vdev_id, ret);
+		ath10k_warn("Failed to create IBSS self peer:%pM for VDEV:%d ret:%d\n",
+			    self_peer, arvif->vdev_id, ret);
 		return;
 	}
 
@@ -656,7 +656,8 @@ static void ath10k_control_ibss(struct ath10k_vif *arvif,
 /*
  * Review this when mac80211 gains per-interface powersave support.
  */
-static void ath10k_config_ps_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
+static void ath10k_config_ps_iter(void *data, u8 *mac,
+				  struct ieee80211_vif *vif)
 {
 	struct ath10k_generic_iter *ar_iter = data;
 	struct ieee80211_conf *conf = &ar_iter->ar->hw->conf;
@@ -971,7 +972,8 @@ static void ath10k_bss_assoc(struct ieee80211_hw *hw,
 
 	rcu_read_unlock();
 
-	ret = ath10k_wmi_vdev_up(ar, arvif->vdev_id, bss_conf->aid, bss_conf->bssid);
+	ret = ath10k_wmi_vdev_up(ar, arvif->vdev_id, bss_conf->aid,
+				 bss_conf->bssid);
 	if (ret)
 		ath10k_warn("VDEV: %d up failed: ret %d\n",
 			    arvif->vdev_id, ret);
@@ -1074,7 +1076,8 @@ static void ath10k_update_channel_list(struct ath10k *ar)
 			continue;
 
 		for (i = 0; i < bands[band]->n_channels; i++) {
-			if (bands[band]->channels[i].flags & IEEE80211_CHAN_DISABLED)
+			if (bands[band]->channels[i].flags &
+			    IEEE80211_CHAN_DISABLED)
 				continue;
 
 			arg.n_channels++;
@@ -1101,23 +1104,22 @@ static void ath10k_update_channel_list(struct ath10k *ar)
 
 			ch->allow_ht   = true;
 			ch->allow_ibss = !(channel->flags & IEEE80211_CHAN_NO_IBSS);
-			ch->ht40plus   = !(channel->flags & IEEE80211_CHAN_NO_HT40PLUS);
-			ch->passive    = !!(channel->flags & IEEE80211_CHAN_PASSIVE_SCAN);
+			ch->ht40plus = !(channel->flags & IEEE80211_CHAN_NO_HT40PLUS);
+			ch->passive = !!(channel->flags & IEEE80211_CHAN_PASSIVE_SCAN);
 
-			ch->freq             = channel->center_freq;
-			ch->min_power        = channel->max_power * 3;
-			ch->max_power        = channel->max_power * 4;
-			ch->max_reg_power    = channel->max_reg_power * 4;
+			ch->freq = channel->center_freq;
+			ch->min_power = channel->max_power * 3;
+			ch->max_power = channel->max_power * 4;
+			ch->max_reg_power = channel->max_reg_power * 4;
 			ch->max_antenna_gain = channel->max_antenna_gain;
-			ch->reg_class_id     = 0; /* FIXME */
-			ch->mode             = chan_to_phymode(channel, NL80211_CHAN_NO_HT);
+			ch->reg_class_id = 0; /* FIXME */
+			ch->mode = chan_to_phymode(channel, NL80211_CHAN_NO_HT);
 
 			if (WARN_ON_ONCE(ch->mode == MODE_UNKNOWN))
 				continue;
 
-			ath10k_dbg(ATH10K_DBG_WMI, "%s: [%zd/%d] freq %d "
-				   "maxpower %d regpower %d antenna %d "
-				   "mode %d\n",
+			ath10k_dbg(ATH10K_DBG_WMI,
+				   "%s: [%zd/%d] freq %d maxpower %d regpower %d antenna %d mode %d\n",
 				   __func__, ch - arg.channels, arg.n_channels,
 				   ch->freq, ch->max_power, ch->max_reg_power,
 				   ch->max_antenna_gain, ch->mode);
@@ -1190,7 +1192,8 @@ static void ath10k_tx_h_qos_workaround(struct ieee80211_hw *hw,
 	} else {
 		qos_ctl = ieee80211_get_qos_ctl(hdr);
 		memmove(qos_ctl, qos_ctl + IEEE80211_QOS_CTL_LEN,
-			skb->len - (qos_ctl + IEEE80211_QOS_CTL_LEN - skb->data));
+			skb->len -
+			(qos_ctl + IEEE80211_QOS_CTL_LEN - skb->data));
 		skb_trim(skb, skb->len - IEEE80211_QOS_CTL_LEN);
 	}
 }
@@ -1250,7 +1253,8 @@ static void ath10k_tx_h_add_p2p_noa_ie(struct ath10k *ar, struct sk_buff *skb)
 	if (unlikely(ieee80211_is_probe_resp(hdr->frame_control))) {
 		spin_lock_bh(&ar->data_lock);
 		if (arvif->u.ap.noa_data)
-			if (!pskb_expand_head(skb, 0, arvif->u.ap.noa_len, GFP_ATOMIC))
+			if (!pskb_expand_head(skb, 0, arvif->u.ap.noa_len,
+					      GFP_ATOMIC))
 				memcpy(skb_put(skb, arvif->u.ap.noa_len),
 				       arvif->u.ap.noa_data,
 				       arvif->u.ap.noa_len);
@@ -1311,7 +1315,8 @@ void ath10k_offchan_tx_work(struct work_struct *work)
 
 		mutex_lock(&ar->conf_mutex);
 
-		ath10k_dbg(ATH10K_DBG_MAC, "processing offchannel skb %p\n", skb);
+		ath10k_dbg(ATH10K_DBG_MAC, "processing offchannel skb %p\n",
+			   skb);
 
 		hdr = (struct ieee80211_hdr *)skb->data;
 		peer_addr = ieee80211_get_DA(hdr);
@@ -1323,7 +1328,7 @@ void ath10k_offchan_tx_work(struct work_struct *work)
 
 		if (peer)
 			ath10k_dbg(ATH10K_DBG_MAC, "peer %pM on vdev %d already present\n",
-				    peer_addr, vdev_id);
+				   peer_addr, vdev_id);
 
 		if (!peer) {
 			ret = ath10k_peer_create(ar, vdev_id, peer_addr);
@@ -1339,9 +1344,11 @@ void ath10k_offchan_tx_work(struct work_struct *work)
 
 		ath10k_tx_htt(ar, skb);
 
-		ret = wait_for_completion_timeout(&ar->offchan_tx_completed, 3*HZ);
+		ret = wait_for_completion_timeout(&ar->offchan_tx_completed,
+						  3 * HZ);
 		if (ret <= 0)
-			ath10k_warn("timed out waiting for offchannel skb %p\n", skb);
+			ath10k_warn("timed out waiting for offchannel skb %p\n",
+				    skb);
 
 		if (!peer) {
 			ret = ath10k_peer_delete(ar, vdev_id, peer_addr);
@@ -1409,7 +1416,8 @@ static void ath10k_abort_scan(struct ath10k *ar)
 
 	ret = ath10k_wmi_stop_scan(ar, &arg);
 	if (ret)
-		ath10k_warn("%s: ath10k_wmi_stop_scan failed (%d)\n", __func__, ret);
+		ath10k_warn("%s: ath10k_wmi_stop_scan failed (%d)\n",
+			    __func__, ret);
 
 	ath10k_wmi_flush_tx(ar);
 
@@ -1522,11 +1530,13 @@ static int ath10k_start(struct ieee80211_hw *hw)
 
 	ret = ath10k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_PMF_QOS, 1);
 	if (ret)
-		ath10k_warn("could not enable WMI_PDEV_PARAM_PMF_QOS (%d)\n", ret);
+		ath10k_warn("could not enable WMI_PDEV_PARAM_PMF_QOS (%d)\n",
+			    ret);
 
 	ret = ath10k_wmi_pdev_set_param(ar, WMI_PDEV_PARAM_DYNAMIC_BW, 0);
 	if (ret)
-		ath10k_warn("could not init WMI_PDEV_PARAM_DYNAMIC_BW (%d)\n", ret);
+		ath10k_warn("could not init WMI_PDEV_PARAM_DYNAMIC_BW (%d)\n",
+			    ret);
 
 	return 0;
 }
@@ -1559,8 +1569,9 @@ static int ath10k_config(struct ieee80211_hw *hw, u32 changed)
 		memset(&ar_iter, 0, sizeof(struct ath10k_generic_iter));
 		ar_iter.ar = ar;
 		ieee80211_iterate_active_interfaces_atomic(hw,
-					    IEEE80211_IFACE_ITER_RESUME_ALL,
-					    ath10k_config_ps_iter, &ar_iter);
+							   IEEE80211_IFACE_ITER_RESUME_ALL,
+							   ath10k_config_ps_iter,
+							   &ar_iter);
 		ret = ar_iter.ret;
 	}
 
@@ -1832,7 +1843,8 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 
 	if (changed & BSS_CHANGED_BSSID) {
 		if (!is_zero_ether_addr(info->bssid)) {
-			ret = ath10k_peer_create(ar, arvif->vdev_id, info->bssid);
+			ret = ath10k_peer_create(ar, arvif->vdev_id,
+						 info->bssid);
 			if (ret)
 				ath10k_warn("Failed to add peer: %pM for VDEV: %d\n",
 					    info->bssid, arvif->vdev_id);
@@ -1847,7 +1859,8 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 				 * this is never erased as we it for crypto key
 				 * clearing; this is FW requirement
 				 */
-				memcpy(arvif->u.sta.bssid, info->bssid, ETH_ALEN);
+				memcpy(arvif->u.sta.bssid, info->bssid,
+				       ETH_ALEN);
 
 				ret = ath10k_vdev_start(arvif);
 				if (!ret)
@@ -1862,7 +1875,8 @@ static void ath10k_bss_info_changed(struct ieee80211_hw *hw,
 			 * IBSS in order to remove BSSID peer.
 			 */
 			if (vif->type == NL80211_IFTYPE_ADHOC)
-				memcpy(arvif->u.ibss.bssid, info->bssid, ETH_ALEN);
+				memcpy(arvif->u.ibss.bssid, info->bssid,
+				       ETH_ALEN);
 		}
 	}
 
@@ -2348,7 +2362,7 @@ static int ath10k_set_frag_threshold(struct ieee80211_hw *hw, u32 value)
 
 	mutex_lock(&ar->conf_mutex);
 	ieee80211_iterate_active_interfaces(hw, IEEE80211_IFACE_ITER_RESUME_ALL,
-					   ath10k_set_frag_iter, &ar_iter);
+					    ath10k_set_frag_iter, &ar_iter);
 	mutex_unlock(&ar->conf_mutex);
 
 	return ar_iter.ret;
@@ -2367,7 +2381,8 @@ static void ath10k_flush(struct ieee80211_hw *hw, u32 queues, bool drop)
 	ret = wait_event_timeout(ar->htt->empty_tx_wq, ({
 			bool empty;
 			spin_lock_bh(&ar->htt->tx_lock);
-			empty = bitmap_empty(ar->htt->used_msdu_ids, HTT_MAX_NUM_PENDING_TX);
+			empty = bitmap_empty(ar->htt->used_msdu_ids,
+					     HTT_MAX_NUM_PENDING_TX);
 			spin_unlock_bh(&ar->htt->tx_lock);
 			(empty);
 		}), ATH10K_FLUSH_TIMEOUT_HZ);
@@ -2607,7 +2622,8 @@ static struct ieee80211_sta_ht_cap ath10k_get_ht_cap(struct ath10k *ar)
 }
 
 
-static void ath10k_get_arvif_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
+static void ath10k_get_arvif_iter(void *data, u8 *mac,
+				  struct ieee80211_vif *vif)
 {
 	struct ath10k_vif_iter *arvif_iter = data;
 	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
@@ -2624,8 +2640,9 @@ struct ath10k_vif *ath10k_get_arvif(struct ath10k *ar, u32 vdev_id)
 	arvif_iter.vdev_id = vdev_id;
 
 	ieee80211_iterate_active_interfaces_atomic(ar->hw,
-					   IEEE80211_IFACE_ITER_RESUME_ALL,
-					   ath10k_get_arvif_iter, &arvif_iter);
+						   IEEE80211_IFACE_ITER_RESUME_ALL,
+						   ath10k_get_arvif_iter,
+						   &arvif_iter);
 	if (!arvif_iter.arvif) {
 		ath10k_warn("No VIF found for VDEV: %d\n", vdev_id);
 		return NULL;
