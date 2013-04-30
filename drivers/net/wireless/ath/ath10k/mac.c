@@ -661,8 +661,7 @@ static void ath10k_control_ibss(struct ath10k_vif *arvif,
 /*
  * Review this when mac80211 gains per-interface powersave support.
  */
-static void ath10k_config_ps_iter(void *data, u8 *mac,
-				  struct ieee80211_vif *vif)
+static void ath10k_ps_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
 {
 	struct ath10k_generic_iter *ar_iter = data;
 	struct ieee80211_conf *conf = &ar_iter->ar->hw->conf;
@@ -1575,6 +1574,7 @@ static int ath10k_config(struct ieee80211_hw *hw, u32 changed)
 	struct ath10k *ar = hw->priv;
 	struct ieee80211_conf *conf = &hw->conf;
 	int ret = 0;
+	u32 flags;
 
 	mutex_lock(&ar->conf_mutex);
 
@@ -1587,10 +1587,13 @@ static int ath10k_config(struct ieee80211_hw *hw, u32 changed)
 	if (changed & IEEE80211_CONF_CHANGE_PS) {
 		memset(&ar_iter, 0, sizeof(struct ath10k_generic_iter));
 		ar_iter.ar = ar;
+		flags = IEEE80211_IFACE_ITER_RESUME_ALL;
+
 		ieee80211_iterate_active_interfaces_atomic(hw,
-							   IEEE80211_IFACE_ITER_RESUME_ALL,
-							   ath10k_config_ps_iter,
+							   flags,
+							   ath10k_ps_iter,
 							   &ar_iter);
+
 		ret = ar_iter.ret;
 	}
 
@@ -2662,12 +2665,14 @@ static void ath10k_get_arvif_iter(void *data, u8 *mac,
 struct ath10k_vif *ath10k_get_arvif(struct ath10k *ar, u32 vdev_id)
 {
 	struct ath10k_vif_iter arvif_iter;
+	u32 flags;
 
 	memset(&arvif_iter, 0, sizeof(struct ath10k_vif_iter));
 	arvif_iter.vdev_id = vdev_id;
 
+	flags = IEEE80211_IFACE_ITER_RESUME_ALL;
 	ieee80211_iterate_active_interfaces_atomic(ar->hw,
-						   IEEE80211_IFACE_ITER_RESUME_ALL,
+						   flags,
 						   ath10k_get_arvif_iter,
 						   &arvif_iter);
 	if (!arvif_iter.arvif) {
