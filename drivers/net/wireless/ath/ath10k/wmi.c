@@ -568,8 +568,8 @@ static void ath10k_p2p_fill_noa_ie(u8 *data, u32 len,
 
 	/* NOA ATTR */
 	data[6] = IEEE80211_P2P_ATTR_ABSENCE_NOTICE;
-	noa_attr_len = (__le16 *) &data[7]; /* 2 bytes */
-	noa_attr = (struct ieee80211_p2p_noa_attr *) &data[9];
+	noa_attr_len = (__le16 *)&data[7]; /* 2 bytes */
+	noa_attr = (struct ieee80211_p2p_noa_attr *)&data[9];
 
 	noa_attr->index = noa->index;
 	noa_attr->oppps_ctwindow = ctwindow;
@@ -1621,7 +1621,7 @@ static int ath10k_wmi_vdev_start_restart(struct ath10k *ar,
 	if (arg->pmf_enabled)
 		flags |= WMI_VDEV_START_PMF_ENABLED;
 
-	cmd = (struct wmi_vdev_start_request_cmd *) skb->data;
+	cmd = (struct wmi_vdev_start_request_cmd *)skb->data;
 	cmd->vdev_id         = __cpu_to_le32(arg->vdev_id);
 	cmd->disable_hw_ack  = __cpu_to_le32(arg->disable_hw_ack);
 	cmd->beacon_interval = __cpu_to_le32(arg->bcn_intval);
@@ -1851,7 +1851,7 @@ int ath10k_wmi_peer_set_param(struct ath10k *ar, u32 vdev_id,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (struct wmi_peer_set_param_cmd *) skb->data;
+	cmd = (struct wmi_peer_set_param_cmd *)skb->data;
 	cmd->vdev_id     = __cpu_to_le32(vdev_id);
 	cmd->param_id    = __cpu_to_le32(param_id);
 	cmd->param_value = __cpu_to_le32(param_value);
@@ -1874,7 +1874,7 @@ int ath10k_wmi_set_psmode(struct ath10k *ar, u32 vdev_id,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (struct wmi_sta_powersave_mode_cmd *) skb->data;
+	cmd = (struct wmi_sta_powersave_mode_cmd *)skb->data;
 	cmd->vdev_id     = __cpu_to_le32(vdev_id);
 	cmd->sta_ps_mode = __cpu_to_le32(psmode);
 
@@ -1896,7 +1896,7 @@ int ath10k_wmi_set_sta_ps_param(struct ath10k *ar, u32 vdev_id,
 	if (!skb)
 		return -ENOMEM;
 
-	cmd = (struct wmi_sta_powersave_param_cmd *) skb->data;
+	cmd = (struct wmi_sta_powersave_param_cmd *)skb->data;
 	cmd->vdev_id     = __cpu_to_le32(vdev_id);
 	cmd->param_id    = __cpu_to_le32(param_id);
 	cmd->param_value = __cpu_to_le32(value);

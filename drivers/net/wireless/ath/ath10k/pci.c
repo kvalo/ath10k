@@ -143,9 +143,9 @@ static int ath10k_pci_diag_read_mem(struct ath10k *ar, u32 address, void *data,
 	 *   2) Buffer in DMA-able space
 	 */
 	orig_nbytes = nbytes;
-	data_buf = (unsigned char *) pci_alloc_consistent(ar_pci->pdev,
-							  orig_nbytes,
-							  &ce_data_base);
+	data_buf = (unsigned char *)pci_alloc_consistent(ar_pci->pdev,
+							 orig_nbytes,
+							 &ce_data_base);
 
 	if (!data_buf) {
 		ret = -ENOMEM;
@@ -287,9 +287,9 @@ static int ath10k_pci_diag_write_mem(struct ath10k *ar, u32 address,
 	 *   2) Buffer in DMA-able space
 	 */
 	orig_nbytes = nbytes;
-	data_buf = (unsigned char *) pci_alloc_consistent(ar_pci->pdev,
-							  orig_nbytes,
-							  &ce_data_base);
+	data_buf = (unsigned char *)pci_alloc_consistent(ar_pci->pdev,
+							 orig_nbytes,
+							 &ce_data_base);
 	if (!data_buf) {
 		ret = -ENOMEM;
 		goto done;
@@ -1717,7 +1717,7 @@ static void ath10k_pci_ce_tasklet(unsigned long ptr)
 
 static void ath10k_msi_err_tasklet(unsigned long data)
 {
-	struct ath10k *ar = (struct ath10k *) data;
+	struct ath10k *ar = (struct ath10k *)data;
 
 	ath10k_pci_fw_interrupt_handler(ar);
 }
@@ -1798,7 +1798,7 @@ static irqreturn_t ath10k_pci_interrupt_handler(int irq, void *arg)
 
 static void ath10k_pci_tasklet(unsigned long data)
 {
-	struct ath10k *ar = (struct ath10k *) data;
+	struct ath10k *ar = (struct ath10k *)data;
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 
 	ath10k_pci_fw_interrupt_handler(ar); /* FIXME: Handle FW error */

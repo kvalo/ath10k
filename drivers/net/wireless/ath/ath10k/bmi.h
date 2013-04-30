@@ -199,7 +199,7 @@ int ath10k_bmi_write_memory(struct ath10k *ar, u32 address,
 		__le32 tmp;						\
 									\
 		addr = host_interest_item_address(HI_ITEM(item));	\
-		ret = ath10k_bmi_read_memory(ar, addr, (u8 *) &tmp, 4); \
+		ret = ath10k_bmi_read_memory(ar, addr, (u8 *)&tmp, 4); \
 		*val = __le32_to_cpu(tmp);				\
 		ret;							\
 	 })
@@ -212,7 +212,7 @@ int ath10k_bmi_write_memory(struct ath10k *ar, u32 address,
 									\
 		address = host_interest_item_address(HI_ITEM(item));	\
 		ret = ath10k_bmi_write_memory(ar, address,		\
-					      (u8 *) &v, sizeof(v));	\
+					      (u8 *)&v, sizeof(v));	\
 		ret;							\
 	})
 
