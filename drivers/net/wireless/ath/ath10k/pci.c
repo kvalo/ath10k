@@ -894,9 +894,9 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 		spin_unlock_bh(&ar_pci->compl_lock);
 
 		if (compl->send_or_recv == HIF_CE_COMPLETE_SEND) {
-			cb->tx_completion_handler(ar,
-						  compl->transfer_context,
-						  compl->transfer_id);
+			cb->tx_completion(ar,
+					  compl->transfer_context,
+					  compl->transfer_id);
 			send_done = 1;
 		} else {
 			ret = ath10k_pci_post_rx_pipe(compl->pipe_info, 1);
@@ -918,8 +918,8 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 			if (skb->len + skb_tailroom(skb) >= nbytes) {
 				skb_trim(skb, 0);
 				skb_put(skb, nbytes);
-				cb->rx_completion_handler(ar, skb,
-							  compl->pipe_info->pipe_num);
+				cb->rx_completion(ar, skb,
+						  compl->pipe_info->pipe_num);
 			} else {
 				ath10k_warn("%s: rxed more than expected (nbytes %d, max %d)",
 					   __func__, nbytes,
@@ -1170,8 +1170,9 @@ static void ath10k_pci_tx_pipe_cleanup(struct hif_ce_pipe_info *pipe_info)
 			 * the buffer
 			 */
 			ATH10K_SKB_CB(netbuf)->is_aborted = true;
-			ar_pci->msg_callbacks_current.tx_completion_handler(
-							ar, netbuf, id);
+			ar_pci->msg_callbacks_current.tx_completion(ar,
+								    netbuf,
+								    id);
 	}
 }
 

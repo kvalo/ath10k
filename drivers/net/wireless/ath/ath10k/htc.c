@@ -1023,8 +1023,8 @@ struct ath10k_htc *ath10k_htc_create(struct ath10k *ar,
 	ath10k_htc_reset_endpoint_states(htc);
 
 	/* setup HIF layer callbacks */
-	htc_callbacks.rx_completion_handler = ath10k_htc_rx_completion_handler;
-	htc_callbacks.tx_completion_handler = ath10k_htc_tx_completion_handler;
+	htc_callbacks.rx_completion = ath10k_htc_rx_completion_handler;
+	htc_callbacks.tx_completion = ath10k_htc_tx_completion_handler;
 	htc->ar = ar;
 
 	/* Get HIF default pipe for HTC message exchange */
