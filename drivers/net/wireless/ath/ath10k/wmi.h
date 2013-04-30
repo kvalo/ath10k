@@ -2490,7 +2490,7 @@ struct wmi_p2p_noa_info {
 	/* Number of NOA descriptors */
 	u8 num_descriptors;
 
-	struct wmi_p2p_noa_descriptor noa_descriptors[WMI_P2P_MAX_NOA_DESCRIPTORS];
+	struct wmi_p2p_noa_descriptor descriptors[WMI_P2P_MAX_NOA_DESCRIPTORS];
 } __packed;
 
 struct wmi_bcn_info {

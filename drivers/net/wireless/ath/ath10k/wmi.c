@@ -575,11 +575,10 @@ static void ath10k_p2p_fill_noa_ie(u8 *data, u32 len,
 
 	for (i = 0; i < noa_descriptors; i++) {
 		noa_attr->desc[i].count =
-			__le32_to_cpu(noa->noa_descriptors[i].type_count);
-		noa_attr->desc[i].duration = noa->noa_descriptors[i].duration;
-		noa_attr->desc[i].interval = noa->noa_descriptors[i].interval;
-		noa_attr->desc[i].start_time =
-				noa->noa_descriptors[i].start_time;
+			__le32_to_cpu(noa->descriptors[i].type_count);
+		noa_attr->desc[i].duration = noa->descriptors[i].duration;
+		noa_attr->desc[i].interval = noa->descriptors[i].interval;
+		noa_attr->desc[i].start_time = noa->descriptors[i].start_time;
 	}
 
 	attr_len = 2; /* index + oppps_ctwindow */
