@@ -875,7 +875,7 @@ static void ath10k_pci_cleanup_ce(struct ath10k *ar)
 static void ath10k_pci_process_ce(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ar->hif.priv;
-	struct ath10k_hif_cb *msg_callbacks = &ar_pci->msg_callbacks_current;
+	struct ath10k_hif_cb *cb = &ar_pci->msg_callbacks_current;
 	struct ath10k_pci_compl *compl;
 	struct sk_buff *skb;
 	unsigned int nbytes;
@@ -894,9 +894,9 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 		spin_unlock_bh(&ar_pci->compl_lock);
 
 		if (compl->send_or_recv == HIF_CE_COMPLETE_SEND) {
-			msg_callbacks->tx_completion_handler(ar,
-						     compl->transfer_context,
-						     compl->transfer_id);
+			cb->tx_completion_handler(ar,
+						  compl->transfer_context,
+						  compl->transfer_id);
 			send_done = 1;
 		} else {
 			ret = ath10k_pci_post_rx_pipe(compl->pipe_info, 1);
@@ -918,8 +918,8 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 			if (skb->len + skb_tailroom(skb) >= nbytes) {
 				skb_trim(skb, 0);
 				skb_put(skb, nbytes);
-				msg_callbacks->rx_completion_handler(ar, skb,
-								     compl->pipe_info->pipe_num);
+				cb->rx_completion_handler(ar, skb,
+							  compl->pipe_info->pipe_num);
 			} else {
 				ath10k_warn("%s: rxed more than expected (nbytes %d, max %d)",
 					   __func__, nbytes,
