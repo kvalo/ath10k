@@ -106,6 +106,7 @@ static ssize_t ath10k_read_wmi_services(struct file *file,
 	struct ath10k *ar = file->private_data;
 	char *buf;
 	unsigned int len = 0, buf_len = 1500;
+	const char *status;
 	ssize_t ret_cnt;
 	int i;
 
@@ -125,11 +126,14 @@ static ssize_t ath10k_read_wmi_services(struct file *file,
 				 "=================");
 	for (i = 0; i < WMI_SERVICE_LAST; i++) {
 
+		if (WMI_SERVICE_IS_ENABLED(ar->debug.wmi_service_bitmap, i))
+			status = "enabled";
+		else
+			status = "disabled";
+
 		len += scnprintf(buf + len, buf_len - len,
 				 " - 0x%02x - %20s - %s\n",
-				 i, wmi_service_name(i),
-				 WMI_SERVICE_IS_ENABLED(ar->debug.wmi_service_bitmap, i) ?
-				 "enabled" : "disabled");
+				 i, wmi_service_name(i), status);
 	}
 
 	ret_cnt = simple_read_from_buffer(user_buf, count, ppos, buf, len);
