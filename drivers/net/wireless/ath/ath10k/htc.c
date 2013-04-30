@@ -374,10 +374,11 @@ static void ath10k_htc_flush_endpoint_tx(struct ath10k_htc *htc,
 /* Receive */
 /***********/
 
-static void ath10k_htc_process_credit_report(struct ath10k_htc *htc,
-					     const struct ath10k_htc_credit_report *report,
-					     int len,
-					     enum ath10k_htc_ep_id eid)
+static void
+ath10k_htc_process_credit_report(struct ath10k_htc *htc,
+				 const struct ath10k_htc_credit_report *report,
+				 int len,
+				 enum ath10k_htc_ep_id eid)
 {
 	struct ath10k_htc_ep *ep;
 	int i, n_reports;
@@ -413,6 +414,7 @@ static int ath10k_htc_process_trailer(struct ath10k_htc *htc,
 	struct ath10k_htc_record *record;
 	u8 *orig_buffer;
 	int orig_length;
+	size_t len;
 
 	orig_buffer = buffer;
 	orig_length = length;
@@ -435,7 +437,8 @@ static int ath10k_htc_process_trailer(struct ath10k_htc *htc,
 
 		switch (record->hdr.id) {
 		case ATH10K_HTC_RECORD_CREDITS:
-			if (record->hdr.len < sizeof(struct ath10k_htc_credit_report)) {
+			len = sizeof(struct ath10k_htc_credit_report);
+			if (record->hdr.len < len) {
 				ath10k_warn("Credit report too long\n");
 				status = -EINVAL;
 				break;
