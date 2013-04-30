@@ -1105,7 +1105,7 @@ static void ath10k_pci_hif_start(struct ath10k *ar)
 	ar_pci->started = 1;
 }
 
-static void ath10k_pci_recv_buffer_cleanup_on_pipe(struct hif_ce_pipe_info *pipe_info)
+static void ath10k_pci_rx_pipe_cleanup(struct hif_ce_pipe_info *pipe_info)
 {
 	struct ath10k *ar;
 	struct ath10k_pci *ar_pci;
@@ -1137,7 +1137,7 @@ static void ath10k_pci_recv_buffer_cleanup_on_pipe(struct hif_ce_pipe_info *pipe
 	}
 }
 
-static void ath10k_pci_send_buffer_cleanup_on_pipe(struct hif_ce_pipe_info *pipe_info)
+static void ath10k_pci_tx_pipe_cleanup(struct hif_ce_pipe_info *pipe_info)
 {
 	struct ath10k *ar;
 	struct ath10k_pci *ar_pci;
@@ -1192,8 +1192,8 @@ static void ath10k_pci_buffer_cleanup(struct ath10k *ar)
 		struct hif_ce_pipe_info *pipe_info;
 
 		pipe_info = &ar_pci->pipe_info[pipe_num];
-		ath10k_pci_recv_buffer_cleanup_on_pipe(pipe_info);
-		ath10k_pci_send_buffer_cleanup_on_pipe(pipe_info);
+		ath10k_pci_rx_pipe_cleanup(pipe_info);
+		ath10k_pci_tx_pipe_cleanup(pipe_info);
 	}
 }
 
