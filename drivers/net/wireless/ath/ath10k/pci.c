@@ -1938,18 +1938,16 @@ exit:
 
 static void ath10k_pci_stop_intr(struct ath10k *ar)
 {
-	int i;
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
+	int i;
 
-	if (ar_pci->num_msi_intrs > 0) {
-		/* MSI interrupt(s) */
-		for (i = 0; i < ar_pci->num_msi_intrs; i++)
-			free_irq(ar_pci->pdev->irq + i, ar);
-		ar_pci->num_msi_intrs = 0;
+	/* There's at least one interrupt irregardless whether its legacy INTR
+	 * or MSI or MSI-X */
+	for (i = 0; i < max(1, ar_pci->num_msi_intrs); i++)
+		free_irq(ar_pci->pdev->irq + i, ar);
+
+	if (ar_pci->num_msi_intrs > 0)
 		pci_disable_msi(ar_pci->pdev);
-	} else
-		/* Legacy PCI line interrupt */
-		free_irq(ar_pci->pdev->irq, ar);
 }
 
 static int ath10k_pci_reset_target(struct ath10k *ar)
