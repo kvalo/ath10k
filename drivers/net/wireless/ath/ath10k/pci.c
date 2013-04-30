@@ -49,8 +49,8 @@ static int ath10k_pci_diag_read_access(struct ath10k *ar, u32 address,
 				       u32 *data);
 
 static void ath10k_pci_process_ce(struct ath10k *ar);
-static int ath10k_pci_post_recv_buffers(struct ath10k *ar);
-static int ath10k_pci_post_recv_buffers_pipe(struct hif_ce_pipe_info *pipe_info,
+static int ath10k_pci_post_rx(struct ath10k *ar);
+static int ath10k_pci_post_rx_pipe(struct hif_ce_pipe_info *pipe_info,
 					     int num);
 
 static const struct ce_attr host_ce_config_wlan[] = {
@@ -899,7 +899,7 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 						     compl->transfer_id);
 			send_done = 1;
 		} else {
-			ret = ath10k_pci_post_recv_buffers_pipe(compl->pipe_info, 1);
+			ret = ath10k_pci_post_rx_pipe(compl->pipe_info, 1);
 			if (ret) {
 				ath10k_warn("Unable to post recv buffer for pipe: %d\n",
 					    compl->pipe_info->pipe_num);
@@ -1019,8 +1019,8 @@ static void ath10k_pci_hif_get_default_pipe(struct ath10k *ar,
 						 &dl_is_polled);
 }
 
-static int ath10k_pci_post_recv_buffers_pipe(struct hif_ce_pipe_info *pipe_info,
-					     int num)
+static int ath10k_pci_post_rx_pipe(struct hif_ce_pipe_info *pipe_info,
+				   int num)
 {
 	struct ath10k *ar = pipe_info->hif_ce_state;
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
@@ -1067,7 +1067,7 @@ static int ath10k_pci_post_recv_buffers_pipe(struct hif_ce_pipe_info *pipe_info,
 	return ret;
 }
 
-static int ath10k_pci_post_recv_buffers(struct ath10k *ar)
+static int ath10k_pci_post_rx(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct hif_ce_pipe_info *pipe_info;
@@ -1081,8 +1081,8 @@ static int ath10k_pci_post_recv_buffers(struct ath10k *ar)
 		if (attr->dest_nentries == 0)
 			continue;
 
-		ret = ath10k_pci_post_recv_buffers_pipe(pipe_info,
-							attr->dest_nentries - 1);
+		ret = ath10k_pci_post_rx_pipe(pipe_info,
+					      attr->dest_nentries - 1);
 		if (ret) {
 			ath10k_warn("Unable to replenish recv buffers for pipe: %d\n",
 				    pipe_num);
@@ -1101,7 +1101,7 @@ static void ath10k_pci_hif_start(struct ath10k *ar)
 	ath10k_pci_start_ce(ar);
 
 	/* Post buffers once to start things off. */
-	ret = ath10k_pci_post_recv_buffers(ar); /* FIXME: Handle error */
+	ret = ath10k_pci_post_rx(ar); /* FIXME: Handle error */
 	ar_pci->started = 1;
 }
 
