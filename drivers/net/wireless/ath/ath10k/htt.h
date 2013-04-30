@@ -734,65 +734,149 @@ struct htt_pktlog_msg {
 } __packed;
 
 struct htt_dbg_stats_rx_reorder_stats {
-	__le32 deliver_non_qos; /* Non QoS MPDUs received */
-	__le32 deliver_in_order; /* MPDUs received in-order */
-	__le32 deliver_flush_timeout; /* Flush due to reorder timer expired */
-	__le32 deliver_flush_oow; /* Flush due to move out of window */
-	__le32 deliver_flush_delba; /* Flush due to DELBA */
-	__le32 fcs_error; /* MPDUs dropped due to FCS error */
-	__le32 mgmt_ctrl; /* MPDUs dropped due to monitor mode non-data packet */
-	__le32 invalid_peer; /* MPDUs dropped due to invalid peer */
-	__le32 dup_non_aggr; /* MPDUs dropped due to duplication (non aggregation) */
-	__le32 dup_past; /* MPDUs dropped due to processed before */
-	__le32 dup_in_reorder; /* MPDUs dropped due to duplicate in reorder queue */
-	__le32 reorder_timeout; /* Reorder timeout happened */
-	__le32 invalid_bar_ssn; /* invalid bar ssn */
-	__le32 ssn_reset; /* reorder reset due to bar ssn */
+	/* Non QoS MPDUs received */
+	__le32 deliver_non_qos;
+
+	/* MPDUs received in-order */
+	__le32 deliver_in_order;
+
+	/* Flush due to reorder timer expired */
+	__le32 deliver_flush_timeout;
+
+	/* Flush due to move out of window */
+	__le32 deliver_flush_oow;
+
+	/* Flush due to DELBA */
+	__le32 deliver_flush_delba;
+
+	/* MPDUs dropped due to FCS error */
+	__le32 fcs_error;
+
+	/* MPDUs dropped due to monitor mode non-data packet */
+	__le32 mgmt_ctrl;
+
+	/* MPDUs dropped due to invalid peer */
+	__le32 invalid_peer;
+
+	/* MPDUs dropped due to duplication (non aggregation) */
+	__le32 dup_non_aggr;
+
+	/* MPDUs dropped due to processed before */
+	__le32 dup_past;
+
+	/* MPDUs dropped due to duplicate in reorder queue */
+	__le32 dup_in_reorder;
+
+	/* Reorder timeout happened */
+	__le32 reorder_timeout;
+
+	/* invalid bar ssn */
+	__le32 invalid_bar_ssn;
+
+	/* reorder reset due to bar ssn */
+	__le32 ssn_reset;
 };
 
 struct htt_dbg_stats_wal_tx_stats {
-	__le32 comp_queued; /* Num HTT cookies queued to dispatch list */
-	__le32 comp_delivered; /* Num HTT cookies dispatched */
-	__le32 msdu_enqued; /* Num MSDU queued to WAL */
-	__le32 mpdu_enqued; /* Num MPDU queue to WAL */
-	__le32 wmm_drop; /* Num MSDUs dropped by WMM limit */
-	__le32 local_enqued; /* Num Local frames queued */
-	__le32 local_freed; /* Num Local frames done */
-	__le32 hw_queued; /* Num queued to HW */
-	__le32 hw_reaped; /* Num PPDU reaped from HW */
-	__le32 underrun; /* Num underruns */
-	__le32 tx_abort; /* Num PPDUs cleaned up in TX abort */
-	__le32 mpdus_requed; /* Num MPDUs requed by SW */
-	__le32 tx_ko; /* excessive retries */
-	__le32 data_rc; /* data hw rate code */
-	__le32 self_triggers; /* Scheduler self triggers */
-	__le32 sw_retry_failure; /* frames dropped due to excessive sw retries */
-	__le32 illgl_rate_phy_err; /* illegal rate phy errors  */
-	__le32 pdev_cont_xretry; /* wal pdev continous xretry */
-	__le32 pdev_tx_timeout; /* wal pdev continous xretry */
-	__le32 pdev_resets; /* wal pdev resets  */
+
+	/* Num HTT cookies queued to dispatch list */
+	__le32 comp_queued;
+
+	/* Num HTT cookies dispatched */
+	__le32 comp_delivered;
+
+	/* Num MSDU queued to WAL */
+	__le32 msdu_enqued;
+
+	/* Num MPDU queue to WAL */
+	__le32 mpdu_enqued;
+
+	/* Num MSDUs dropped by WMM limit */
+	__le32 wmm_drop;
+
+	/* Num Local frames queued */
+	__le32 local_enqued;
+
+	/* Num Local frames done */
+	__le32 local_freed;
+
+	/* Num queued to HW */
+	__le32 hw_queued;
+
+	/* Num PPDU reaped from HW */
+	__le32 hw_reaped;
+
+	/* Num underruns */
+	__le32 underrun;
+
+	/* Num PPDUs cleaned up in TX abort */
+	__le32 tx_abort;
+
+	/* Num MPDUs requed by SW */
+	__le32 mpdus_requed;
+
+	/* excessive retries */
+	__le32 tx_ko;
+
+	/* data hw rate code */
+	__le32 data_rc;
+
+	/* Scheduler self triggers */
+	__le32 self_triggers;
+
+	/* frames dropped due to excessive sw retries */
+	__le32 sw_retry_failure;
+
+	/* illegal rate phy errors  */
+	__le32 illgl_rate_phy_err;
+
+	/* wal pdev continous xretry */
+	__le32 pdev_cont_xretry;
+
+	/* wal pdev continous xretry */
+	__le32 pdev_tx_timeout;
+
+	/* wal pdev resets  */
+	__le32 pdev_resets;
+
 	__le32 phy_underrun;
-	__le32 txop_ovf; /* MPDU is more than txop limit */
+
+	/* MPDU is more than txop limit */
+	__le32 txop_ovf;
 } __packed;
 
 struct htt_dbg_stats_wal_rx_stats {
-	__le32 mid_ppdu_route_change; /* Cnts any change in ring routing mid-ppdu */
-	__le32 status_rcvd; /* Total number of statuses processed */
+	/* Cnts any change in ring routing mid-ppdu */
+	__le32 mid_ppdu_route_change;
+
+	/* Total number of statuses processed */
+	__le32 status_rcvd;
+
 	/* Extra frags on rings 0-3 */
 	__le32 r0_frags;
 	__le32 r1_frags;
 	__le32 r2_frags;
 	__le32 r3_frags;
+
 	/* MSDUs / MPDUs delivered to HTT */
 	__le32 htt_msdus;
 	__le32 htt_mpdus;
+
 	/* MSDUs / MPDUs delivered to local stack */
 	__le32 loc_msdus;
 	__le32 loc_mpdus;
-	__le32 oversize_amsdu; /* AMSDUs that have more MSDUs than the status ring size */
-	__le32 phy_errs; /* Number of PHY errors */
-	__le32 phy_err_drop; /* Number of PHY errors drops */
-	__le32 mpdu_errs; /* Number of mpdu errors - FCS, MIC, ENC etc. */
+
+	/* AMSDUs that have more MSDUs than the status ring size */
+	__le32 oversize_amsdu;
+
+	/* Number of PHY errors */
+	__le32 phy_errs;
+
+	/* Number of PHY errors drops */
+	__le32 phy_err_drop;
+
+	/* Number of mpdu errors - FCS, MIC, ENC etc. */
+	__le32 mpdu_errs;
 } __packed;
 
 struct htt_dbg_stats_wal_peer_stats {
