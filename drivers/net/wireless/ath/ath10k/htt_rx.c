@@ -104,6 +104,7 @@ static int ath10k_htt_rx_ring_fill_level(struct ath10k_htt *htt)
 static void ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
 {
 	struct htt_rx_desc *rx_desc;
+	unsigned long timeout;
 	struct sk_buff *skb;
 	dma_addr_t paddr;
 	int idx;
@@ -120,8 +121,10 @@ static void ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
 			 * As long as enough buffers are left in the ring for
 			 * another A-MPDU rx, no special recovery is needed.
 			 */
-			mod_timer(&htt->rx_ring.refill_retry_timer, jiffies +
-				  msecs_to_jiffies(HTT_RX_RING_REFILL_RETRY_MS));
+			timeout = jiffies +
+				msecs_to_jiffies(HTT_RX_RING_REFILL_RETRY_MS);
+			mod_timer(&htt->rx_ring.refill_retry_timer,
+				  timeout);
 			goto fail;
 		}
 

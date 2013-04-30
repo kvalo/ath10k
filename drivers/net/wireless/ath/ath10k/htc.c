@@ -479,6 +479,7 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 	struct ath10k_htc_ep *ep;
 	u16 payload_len;
 	u32 trailer_len = 0;
+	size_t min_len;
 	u8 eid;
 	bool trailer_present;
 
@@ -533,7 +534,9 @@ static int ath10k_htc_rx_completion_handler(struct ath10k *ar,
 		u8 *trailer;
 
 		trailer_len = hdr->trailer_len;
-		if ((trailer_len < sizeof(struct ath10k_ath10k_htc_record_hdr)) ||
+		min_len = sizeof(struct ath10k_ath10k_htc_record_hdr);
+
+		if ((trailer_len < min_len) ||
 		    (trailer_len > payload_len)) {
 			ath10k_warn("Invalid trailer length: %d\n",
 				    trailer_len);
