@@ -823,7 +823,10 @@ static void ath10k_peer_assoc_h_ht(struct ath10k *ar,
 	arg->peer_flags |= WMI_PEER_HT;
 	arg->peer_max_mpdu = (1 << (IEEE80211_HT_MAX_AMPDU_FACTOR +
 				    ht_cap->ampdu_factor)) - 1;
-	arg->peer_mpdu_density = ath10k_parse_mpdudensity(ht_cap->ampdu_density);
+
+	arg->peer_mpdu_density =
+		ath10k_parse_mpdudensity(ht_cap->ampdu_density);
+
 	arg->peer_ht_caps = ht_cap->cap;
 	arg->peer_rate_caps |= WMI_RC_HT_FLAG;
 
@@ -1114,9 +1117,14 @@ static void ath10k_update_channel_list(struct ath10k *ar)
 				continue;
 
 			ch->allow_ht   = true;
-			ch->allow_ibss = !(channel->flags & IEEE80211_CHAN_NO_IBSS);
-			ch->ht40plus = !(channel->flags & IEEE80211_CHAN_NO_HT40PLUS);
-			ch->passive = !!(channel->flags & IEEE80211_CHAN_PASSIVE_SCAN);
+
+			ch->allow_ibss =
+				!(channel->flags & IEEE80211_CHAN_NO_IBSS);
+
+			ch->ht40plus =
+				!(channel->flags & IEEE80211_CHAN_NO_HT40PLUS);
+			ch->passive =
+				!!(channel->flags & IEEE80211_CHAN_PASSIVE_SCAN);
 
 			ch->freq = channel->center_freq;
 			ch->min_power = channel->max_power * 3;
@@ -1609,7 +1617,9 @@ static int ath10k_add_interface(struct ieee80211_hw *hw,
 {
 	struct ath10k *ar = hw->priv;
 	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
+	enum wmi_sta_powersave_param param;
 	int ret = 0;
+	u32 value;
 	int bit;
 
 	mutex_lock(&ar->conf_mutex);
@@ -1684,21 +1694,24 @@ static int ath10k_add_interface(struct ieee80211_hw *hw,
 	}
 
 	if (arvif->vdev_type == WMI_VDEV_TYPE_STA) {
+		param = WMI_STA_PS_PARAM_RX_WAKE_POLICY;
+		value = WMI_STA_PS_RX_WAKE_POLICY_WAKE;
 		ret = ath10k_wmi_set_sta_ps_param(ar, arvif->vdev_id,
-						  WMI_STA_PS_PARAM_RX_WAKE_POLICY,
-						  WMI_STA_PS_RX_WAKE_POLICY_WAKE);
+						  param, value);
 		if (ret)
 			ath10k_warn("Failed to set RX wake policy: %d\n", ret);
 
+		param = WMI_STA_PS_PARAM_TX_WAKE_THRESHOLD;
+		value = WMI_STA_PS_TX_WAKE_THRESHOLD_ALWAYS;
 		ret = ath10k_wmi_set_sta_ps_param(ar, arvif->vdev_id,
-						  WMI_STA_PS_PARAM_TX_WAKE_THRESHOLD,
-						  WMI_STA_PS_TX_WAKE_THRESHOLD_ALWAYS);
+						  param, value);
 		if (ret)
 			ath10k_warn("Failed to set TX wake thresh: %d\n", ret);
 
+		param = WMI_STA_PS_PARAM_PSPOLL_COUNT;
+		value = WMI_STA_PS_PSPOLL_COUNT_NO_MAX;
 		ret = ath10k_wmi_set_sta_ps_param(ar, arvif->vdev_id,
-						  WMI_STA_PS_PARAM_PSPOLL_COUNT,
-						  WMI_STA_PS_PSPOLL_COUNT_NO_MAX);
+						  param, value);
 		if (ret)
 			ath10k_warn("Failed to set PSPOLL count: %d\n", ret);
 	}
@@ -2346,14 +2359,17 @@ static void ath10k_set_frag_iter(void *data, u8 *mac, struct ieee80211_vif *vif)
 	struct ath10k_generic_iter *ar_iter = data;
 	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
 	u32 frag = ar_iter->ar->hw->wiphy->frag_threshold;
+	int ret;
 
 	frag = clamp_t(u32, frag,
 		       ATH10K_FRAGMT_THRESHOLD_MIN,
 		       ATH10K_FRAGMT_THRESHOLD_MAX);
 
-	ar_iter->ret = ath10k_wmi_vdev_set_param(ar_iter->ar, arvif->vdev_id,
-						 WMI_VDEV_PARAM_FRAGMENTATION_THRESHOLD,
-						 frag);
+	ret = ath10k_wmi_vdev_set_param(ar_iter->ar, arvif->vdev_id,
+					WMI_VDEV_PARAM_FRAGMENTATION_THRESHOLD,
+					frag);
+
+	ar_iter->ret = ret;
 	if (ar_iter->ret)
 		ath10k_warn("Failed to set frag threshold for VDEV: %d\n",
 			    arvif->vdev_id);
