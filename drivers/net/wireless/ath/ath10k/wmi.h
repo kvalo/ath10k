@@ -1883,7 +1883,7 @@ enum wmi_vdev_subtype {
 
 struct wmi_p2p_noa_descriptor {
 	__le32 type_count; /* 255: continuous schedule, 0: reserved */
-	__le32 duration ;  /* Absent period duration in micro seconds */
+	__le32 duration;  /* Absent period duration in micro seconds */
 	__le32 interval;   /* Absent period interval in micro seconds */
 	__le32 start_time; /* 32 bit tsf time when in starts */
 } __packed;
