@@ -485,9 +485,9 @@ void ath10k_do_pci_sleep(struct ath10k *ar)
  * FIXME: Handle OOM properly.
  */
 static inline
-struct hif_ce_completion_state *get_free_compl(struct hif_ce_pipe_info *pipe_info)
+struct ath10k_pci_compl *get_free_compl(struct hif_ce_pipe_info *pipe_info)
 {
-	struct hif_ce_completion_state *compl = NULL;
+	struct ath10k_pci_compl *compl = NULL;
 
 	spin_lock_bh(&pipe_info->pipe_lock);
 	if (list_empty(&pipe_info->compl_free)) {
@@ -495,7 +495,7 @@ struct hif_ce_completion_state *get_free_compl(struct hif_ce_pipe_info *pipe_inf
 		goto exit;
 	}
 	compl = list_first_entry(&pipe_info->compl_free,
-				 struct hif_ce_completion_state, list);
+				 struct ath10k_pci_compl, list);
 	list_del(&compl->list);
 exit:
 	spin_unlock_bh(&pipe_info->pipe_lock);
@@ -530,7 +530,7 @@ static void ath10k_pci_ce_send_done(struct ce_state *ce_state,
 	struct ath10k *ar = ce_state->ar;
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct hif_ce_pipe_info *pipe_info =  &ar_pci->pipe_info[ce_state->id];
-	struct hif_ce_completion_state *compl;
+	struct ath10k_pci_compl *compl;
 	bool process = false;
 
 	do {
@@ -592,7 +592,7 @@ static void ath10k_pci_ce_recv_data(struct ce_state *ce_state,
 	struct ath10k *ar = ce_state->ar;
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct hif_ce_pipe_info *pipe_info =  &ar_pci->pipe_info[ce_state->id];
-	struct hif_ce_completion_state *compl;
+	struct ath10k_pci_compl *compl;
 	struct sk_buff *skb;
 
 	do {
@@ -760,7 +760,7 @@ static void ath10k_pci_start_ce(struct ath10k *ar)
 	struct ce_state *ce_diag = ar_pci->ce_diag;
 	const struct ce_attr *attr;
 	struct hif_ce_pipe_info *pipe_info;
-	struct hif_ce_completion_state *compl;
+	struct ath10k_pci_compl *compl;
 	int i, pipe_num, completions;
 
 	spin_lock_init(&ar_pci->compl_lock);
@@ -797,7 +797,7 @@ static void ath10k_pci_start_ce(struct ath10k *ar)
 			continue;
 
 		for (i = 0; i < completions; i++) {
-			compl = kmalloc(sizeof(struct hif_ce_completion_state),
+			compl = kmalloc(sizeof(struct ath10k_pci_compl),
 					GFP_KERNEL);
 			if (!compl) {
 				ath10k_warn("No memory for completion state\n");
@@ -813,7 +813,7 @@ static void ath10k_pci_start_ce(struct ath10k *ar)
 static void ath10k_pci_stop_ce(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	struct hif_ce_completion_state *compl;
+	struct ath10k_pci_compl *compl;
 	struct sk_buff *skb;
 	int i;
 
@@ -838,7 +838,7 @@ static void ath10k_pci_stop_ce(struct ath10k *ar)
 static void ath10k_pci_cleanup_ce(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-	struct hif_ce_completion_state *compl, *tmp;
+	struct ath10k_pci_compl *compl, *tmp;
 	struct hif_ce_pipe_info *pipe_info;
 	struct sk_buff *netbuf;
 	int pipe_num;
@@ -874,7 +874,7 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ar->hif.priv;
 	struct ath10k_hif_cb *msg_callbacks = &ar_pci->msg_callbacks_current;
-	struct hif_ce_completion_state *compl;
+	struct ath10k_pci_compl *compl;
 	struct sk_buff *skb;
 	unsigned int nbytes;
 	int ret, send_done = 0;
@@ -886,7 +886,7 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 			break;
 		}
 		compl = list_first_entry(&ar_pci->compl_process,
-					 struct hif_ce_completion_state, list);
+					 struct ath10k_pci_compl, list);
 		list_del(&compl->list);
 		ar_pci->compl_processing = true;
 		spin_unlock_bh(&ar_pci->compl_lock);

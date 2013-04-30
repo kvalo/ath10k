@@ -43,7 +43,7 @@ struct bmi_xfer {
 	u32 resp_len;
 };
 
-struct hif_ce_completion_state {
+struct ath10k_pci_compl {
 	struct list_head list;
 	int send_or_recv;
 	struct ce_state *ce_state;
