@@ -978,7 +978,8 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 end:
 	if (fw_desc_len > 0) {
 		ath10k_dbg(ATH10K_DBG_HTT,
-			   "expecting more fragmented rx in one indication %d\n", fw_desc_len);
+			   "expecting more fragmented rx in one indication %d\n",
+			   fw_desc_len);
 	}
 }
 

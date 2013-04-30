@@ -184,7 +184,8 @@ static int ath10k_pci_diag_read_mem(struct ath10k *ar, u32 address, void *data,
 
 		i = 0;
 		while (ath10k_ce_completed_send_next(ce_diag, NULL, &buf,
-						     &completed_nbytes, &id) != 0) {
+						     &completed_nbytes,
+						     &id) != 0) {
 			mdelay(1);
 			if (i++ > DIAG_ACCESS_CE_TIMEOUT_MS) {
 				ret = -EBUSY;

@@ -316,7 +316,8 @@ static inline void ath10k_pci_write32(struct ath10k *ar, u32 offset,
 		ioread32(addr+offset+4); /* 1st read prior to write */
 		iowrite32(value, addr+offset);
 
-		spin_unlock_irqrestore(&ar_pci->hw_v1_workaround_lock, irq_flags);
+		spin_unlock_irqrestore(&ar_pci->hw_v1_workaround_lock,
+				       irq_flags);
 	} else
 		iowrite32(value, addr+offset);
 }

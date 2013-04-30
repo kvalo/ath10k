@@ -254,7 +254,8 @@ static int ath10k_download_board_data(struct ath10k *ar)
 	fw = ath10k_fetch_fw_file(ar, ar->hw_params.fw.dir,
 				  ar->hw_params.fw.board);
 	if (IS_ERR(fw)) {
-		ath10k_err("could not fetch board data fw file (%ld)\n", PTR_ERR(fw));
+		ath10k_err("could not fetch board data fw file (%ld)\n",
+			   PTR_ERR(fw));
 		return PTR_ERR(fw);
 	}
 
@@ -304,7 +305,8 @@ static int ath10k_download_and_run_otp(struct ath10k *ar)
 
 	address = ar->hw_params.patch_load_addr;
 
-	fw = ath10k_fetch_fw_file(ar, ar->hw_params.fw.dir, ar->hw_params.fw.otp);
+	fw = ath10k_fetch_fw_file(ar, ar->hw_params.fw.dir,
+				  ar->hw_params.fw.otp);
 	if (IS_ERR(fw)) {
 		ath10k_warn("could not fetch otp (%ld)\n", PTR_ERR(fw));
 		return 0;
@@ -339,7 +341,8 @@ static int ath10k_download_fw(struct ath10k *ar)
 
 	address = ar->hw_params.patch_load_addr;
 
-	fw = ath10k_fetch_fw_file(ar, ar->hw_params.fw.dir, ar->hw_params.fw.fw);
+	fw = ath10k_fetch_fw_file(ar, ar->hw_params.fw.dir,
+				  ar->hw_params.fw.fw);
 	if (IS_ERR(fw)) {
 		ath10k_err("could not fetch fw (%ld)\n", PTR_ERR(fw));
 		return PTR_ERR(fw);

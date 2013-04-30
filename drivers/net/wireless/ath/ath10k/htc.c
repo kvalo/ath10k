@@ -74,7 +74,8 @@ static inline void ath10k_htc_send_complete_check(struct ath10k_htc_ep *ep,
 	ath10k_hif_send_complete_check(ep->htc->ar, ep->ul_pipe_id, force);
 }
 
-static void ath10k_htc_control_tx_complete(struct ath10k *ar, struct sk_buff *skb)
+static void ath10k_htc_control_tx_complete(struct ath10k *ar,
+					   struct sk_buff *skb)
 {
 	kfree_skb(skb);
 }
@@ -596,7 +597,8 @@ out:
 	return status;
 }
 
-static void ath10k_htc_control_rx_complete(struct ath10k *ar, struct sk_buff *skb)
+static void ath10k_htc_control_rx_complete(struct ath10k *ar,
+					   struct sk_buff *skb)
 {
 	/* TODO, can't receive HTC control messages yet */
 	ath10k_dbg(ATH10K_DBG_HTC, "Invalid call to %s\n", __func__);
@@ -849,14 +851,16 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 
 		ath10k_dbg(ATH10K_DBG_HTC,
 			   "HTC Service %s connect response: status: 0x%x, assigned ep: 0x%x\n",
-			   htc_service_name(service_id), resp_msg->status, resp_msg->eid);
+			   htc_service_name(service_id),
+			   resp_msg->status, resp_msg->eid);
 
 		conn_resp->connect_resp_code = resp_msg->status;
 
 		/* check response status */
 		if (resp_msg->status != ATH10K_HTC_CONN_SVC_STATUS_SUCCESS) {
 			ath10k_err("HTC Service %s connect request failed: 0x%x)\n",
-				   htc_service_name(service_id), resp_msg->status);
+				   htc_service_name(service_id),
+				   resp_msg->status);
 			return -EPROTO;
 		}
 
