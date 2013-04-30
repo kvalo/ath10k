@@ -1651,7 +1651,6 @@ static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 	if (fw_indicator & FW_IND_EVENT_PENDING) {
 		/* ACK: clear Target-side pending event */
 		ath10k_pci_write32(ar, fw_indicator_address, fw_indicator & ~FW_IND_EVENT_PENDING);
-		ath10k_pci_sleep(ar);
 
 		if (ar_pci->started)
 			ath10k_pci_hif_dump_area(ar);
@@ -1662,9 +1661,9 @@ static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
 			 */
 			ath10k_warn("early firmware event indicated\n");
 		}
-	} else {
-		ath10k_pci_sleep(ar);
 	}
+
+	ath10k_pci_sleep(ar);
 }
 
 static const struct ath10k_hif_ops ath10k_pci_hif_ops = {
