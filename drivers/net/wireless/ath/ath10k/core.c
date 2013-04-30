@@ -221,7 +221,7 @@ static int ath10k_push_board_ext_data(struct ath10k *ar,
 		return 0;
 
 	if (fw->size != (board_data_size + board_ext_data_size)) {
-		ath10k_err("invalid board (ext) data sizes %lu != %d+%d\n",
+		ath10k_err("invalid board (ext) data sizes %zu != %d+%d\n",
 			   fw->size, board_data_size, board_ext_data_size);
 		return -EINVAL;
 	}
