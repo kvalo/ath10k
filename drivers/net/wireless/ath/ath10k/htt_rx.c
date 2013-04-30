@@ -569,6 +569,8 @@ static int ath10k_htt_rx_amsdu(struct ath10k_htt *htt,
 	struct sk_buff *skb = info->skb;
 	enum rx_msdu_decap_format fmt;
 	enum htt_rx_mpdu_encrypt_type enctype;
+	unsigned int hdr_len;
+	int crypto_len;
 
 	rxd = (void *)skb->data - sizeof(*rxd);
 	fmt = MS(__le32_to_cpu(rxd->msdu_start.info1),
@@ -619,8 +621,11 @@ static int ath10k_htt_rx_amsdu(struct ath10k_htt *htt,
 			 * aligned to 4 byte boundary. */
 
 			hdr = (void *)amsdu->data;
-			decap_hdr += roundup(ieee80211_hdrlen(hdr->frame_control), 4);
-			decap_hdr += roundup(ath10k_htt_rx_crypto_param_len(enctype), 4);
+			hdr_len = ieee80211_hdrlen(hdr->frame_control);
+			crypto_len = ath10k_htt_rx_crypto_param_len(enctype);
+
+			decap_hdr += roundup(hdr_len, 4);
+			decap_hdr += roundup(crypto_len, 4);
 		}
 
 		if (fmt == RX_MSDU_DECAP_ETHERNET2_DIX) {
@@ -766,6 +771,7 @@ static void ath10k_htt_rx_handler(struct ath10k_htt *htt,
 {
 	struct htt_rx_info info;
 	struct htt_rx_indication_mpdu_range *mpdu_ranges;
+	struct ieee80211_hdr *hdr;
 	int num_mpdu_ranges;
 	int fw_desc_len;
 	u8 *fw_desc;
@@ -791,6 +797,7 @@ static void ath10k_htt_rx_handler(struct ath10k_htt *htt,
 
 		for (j = 0; j < mpdu_ranges[i].mpdu_count; j++) {
 			struct sk_buff *msdu_head, *msdu_tail;
+			enum htt_rx_mpdu_status status;
 			int msdu_chaining;
 
 			msdu_head = NULL;
@@ -818,18 +825,20 @@ static void ath10k_htt_rx_handler(struct ath10k_htt *htt,
 				continue;
 			}
 
+			status = info.status;
+
 			/* Skip mgmt frames while we handle this in WMI */
-			if (info.status == HTT_RX_IND_MPDU_STATUS_MGMT_CTRL) {
+			if (status == HTT_RX_IND_MPDU_STATUS_MGMT_CTRL) {
 				ath10k_htt_rx_free_msdu_chain(msdu_head);
 				continue;
 			}
 
-			if (info.status != HTT_RX_IND_MPDU_STATUS_OK &&
-			    info.status != HTT_RX_IND_MPDU_STATUS_TKIP_MIC_ERR &&
+			if (status != HTT_RX_IND_MPDU_STATUS_OK &&
+			    status != HTT_RX_IND_MPDU_STATUS_TKIP_MIC_ERR &&
 			    !htt->ar->monitor_enabled) {
 				ath10k_dbg(ATH10K_DBG_HTT,
 					   "htt rx ignoring frame w/ status %d\n",
-					   info.status);
+					   status);
 				ath10k_htt_rx_free_msdu_chain(msdu_head);
 				continue;
 			}
@@ -851,7 +860,9 @@ static void ath10k_htt_rx_handler(struct ath10k_htt *htt,
 			info.rate.info1 = __le32_to_cpu(rx->ppdu.info1);
 			info.rate.info2 = __le32_to_cpu(rx->ppdu.info2);
 
-			if (ath10k_htt_rx_hdr_is_amsdu(ath10k_htt_rx_skb_get_hdr(msdu_head)))
+			hdr = ath10k_htt_rx_skb_get_hdr(msdu_head);
+
+			if (ath10k_htt_rx_hdr_is_amsdu(hdr))
 				ret = ath10k_htt_rx_amsdu(htt, &info);
 			else
 				ret = ath10k_htt_rx_msdu(htt, &info);
@@ -886,7 +897,7 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 	bool tkip_mic_err;
 	bool decrypt_err;
 	u8 *fw_desc;
-	int fw_desc_len;
+	int fw_desc_len, hdrlen, paramlen;
 	int trim;
 
 	fw_desc_len = __le16_to_cpu(frag->fw_rx_desc_bytes);
@@ -944,8 +955,8 @@ static void ath10k_htt_rx_frag_handler(struct ath10k_htt *htt,
 	}
 
 	if (info.encrypt_type != HTT_RX_MPDU_ENCRYPT_NONE) {
-		int hdrlen = ieee80211_hdrlen(hdr->frame_control);
-		int paramlen = ath10k_htt_rx_crypto_param_len(info.encrypt_type);
+		hdrlen = ieee80211_hdrlen(hdr->frame_control);
+		paramlen = ath10k_htt_rx_crypto_param_len(info.encrypt_type);
 
 		/* It is more efficient to move the header than the payload */
 		memmove((void *)info.skb->data + paramlen,
@@ -1025,10 +1036,11 @@ void ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 		break;
 	}
 	case HTT_T2H_MSG_TYPE_MGMT_TX_COMPLETION: {
-		struct htt_tx_done tx_done = {
-			.msdu_id = __le32_to_cpu(resp->mgmt_tx_completion.desc_id),
-		};
+		struct htt_tx_done tx_done = {};
 		int status = __le32_to_cpu(resp->mgmt_tx_completion.status);
+
+		tx_done.msdu_id =
+			__le32_to_cpu(resp->mgmt_tx_completion.desc_id);
 
 		switch (status) {
 		case HTT_MGMT_TX_STATUS_OK:
@@ -1047,6 +1059,7 @@ void ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 		struct htt_tx_done tx_done = {};
 		int status = MS(resp->data_tx_completion.flags,
 				HTT_DATA_TX_STATUS);
+		__le16 msdu_id;
 		int i;
 
 		switch (status) {
@@ -1073,8 +1086,8 @@ void ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 			   resp->data_tx_completion.num_msdus);
 
 		for (i = 0; i < resp->data_tx_completion.num_msdus; i++) {
-			tx_done.msdu_id =
-				__le16_to_cpu(resp->data_tx_completion.msdus[i]);
+			msdu_id = resp->data_tx_completion.msdus[i];
+			tx_done.msdu_id = __le16_to_cpu(msdu_id);
 			ath10k_txrx_tx_completed(htt, &tx_done);
 		}
 		break;
