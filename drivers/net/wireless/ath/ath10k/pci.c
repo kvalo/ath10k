@@ -250,12 +250,11 @@ static int ath10k_pci_diag_read_access(struct ath10k *ar, u32 address, u32 *data
 	/* Assume range doesn't cross this boundary */
 	if (address >= DRAM_BASE_ADDRESS)
 		return ath10k_pci_diag_read_mem(ar, address, data, sizeof(u32));
-	else {
-		ath10k_pci_wake(ar);
-		*data = ath10k_pci_read32(ar, address);
-		ath10k_pci_sleep(ar);
-		return 0;
-	}
+
+	ath10k_pci_wake(ar);
+	*data = ath10k_pci_read32(ar, address);
+	ath10k_pci_sleep(ar);
+	return 0;
 }
 
 static int ath10k_pci_diag_write_mem(struct ath10k *ar, u32 address,
@@ -394,17 +393,14 @@ static int ath10k_pci_diag_write_access(struct ath10k *ar, u32 address,
 					u32 data)
 {
 	/* Assume range doesn't cross this boundary */
-	if (address >= DRAM_BASE_ADDRESS) {
-		u32 data_buf = data;
-		return ath10k_pci_diag_write_mem(ar, address, &data_buf,
+	if (address >= DRAM_BASE_ADDRESS)
+		return ath10k_pci_diag_write_mem(ar, address, &data,
 						 sizeof(u32));
-	} else {
-		ath10k_pci_wake(ar);
-		ath10k_pci_write32(ar, address, data);
-		ath10k_pci_sleep(ar);
 
-		return 0;
-	}
+	ath10k_pci_wake(ar);
+	ath10k_pci_write32(ar, address, data);
+	ath10k_pci_sleep(ar);
+	return 0;
 }
 
 static bool ath10k_pci_target_is_awake(struct ath10k *ar)
