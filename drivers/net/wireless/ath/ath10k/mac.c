@@ -462,7 +462,7 @@ static int ath10k_monitor_start(struct ath10k *ar, int vdev_id)
 
 	/* TODO setup this dynamically, what in case we
 	   don't have any vifs? */
-	arg.channel.mode = chan_to_phymode(channel,type);
+	arg.channel.mode = chan_to_phymode(channel, type);
 
 	arg.channel.min_power = channel->max_power * 3;
 	arg.channel.max_power = channel->max_power * 4;

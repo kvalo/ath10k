@@ -922,8 +922,8 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 						  compl->pipe_info->pipe_num);
 			} else {
 				ath10k_warn("%s: rxed more than expected (nbytes %d, max %d)",
-					   __func__, nbytes,
-					   skb->len + skb_tailroom(skb));
+					    __func__, nbytes,
+					    skb->len + skb_tailroom(skb));
 			}
 		}
 

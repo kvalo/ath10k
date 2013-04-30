@@ -618,7 +618,7 @@ static void ath10k_htc_control_rx_complete(struct ath10k *ar,
 
 static const char *htc_service_name(enum ath10k_htc_svc_id id)
 {
-	switch(id) {
+	switch (id) {
 	case ATH10K_HTC_SVC_ID_RESERVED:
 		return "Reserved";
 	case ATH10K_HTC_SVC_ID_RSVD_CTRL:
