@@ -101,30 +101,36 @@ static int ath10k_htt_rx_ring_fill_level(struct ath10k_htt *htt)
 	return size;
 }
 
-static void ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
+static void ath10k_htt_rx_ring_free(struct ath10k_htt *htt)
+{
+	struct sk_buff *skb;
+	struct ath10k_skb_cb *cb;
+	int i;
+
+	for (i = 0; i < htt->rx_ring.fill_cnt; i++) {
+		skb = htt->rx_ring.netbufs_ring[i];
+		cb = ATH10K_SKB_CB(skb);
+		dma_unmap_single(htt->ar->dev, cb->paddr,
+				 skb->len + skb_tailroom(skb),
+				 DMA_FROM_DEVICE);
+		dev_kfree_skb_any(skb);
+	}
+
+	htt->rx_ring.fill_cnt = 0;
+}
+
+static int __ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
 {
 	struct htt_rx_desc *rx_desc;
-	unsigned long timeout;
 	struct sk_buff *skb;
 	dma_addr_t paddr;
-	int idx;
-
-	lockdep_assert_held(&htt->rx_ring.lock);
+	int ret = 0, idx;
 
 	idx = __le32_to_cpu(*(htt->rx_ring.alloc_idx.vaddr));
 	while (num > 0) {
 		skb = dev_alloc_skb(HTT_RX_BUF_SIZE + HTT_RX_DESC_ALIGN);
 		if (!skb) {
-			/*
-			 * Failed to fill it to the desired level -
-			 * we'll start a timer and try again next time.
-			 * As long as enough buffers are left in the ring for
-			 * another A-MPDU rx, no special recovery is needed.
-			 */
-			timeout = jiffies +
-				msecs_to_jiffies(HTT_RX_RING_REFILL_RETRY_MS);
-			mod_timer(&htt->rx_ring.refill_retry_timer,
-				  timeout);
+			ret = -ENOMEM;
 			goto fail;
 		}
 
@@ -143,6 +149,7 @@ static void ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
 
 		if (unlikely(dma_mapping_error(htt->ar->dev, paddr))) {
 			dev_kfree_skb_any(skb);
+			ret = -ENOMEM;
 			goto fail;
 		}
 
@@ -158,16 +165,32 @@ static void ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
 
 fail:
 	*(htt->rx_ring.alloc_idx.vaddr) = __cpu_to_le32(idx);
-	return;
+	return ret;
+}
+
+static int ath10k_htt_rx_ring_fill_n(struct ath10k_htt *htt, int num)
+{
+	lockdep_assert_held(&htt->rx_ring.lock);
+	return __ath10k_htt_rx_ring_fill_n(htt, num);
 }
 
 static void ath10k_htt_rx_msdu_buff_replenish(struct ath10k_htt *htt)
 {
-	int num_to_fill;
+	int ret, num_to_fill;
 
 	spin_lock_bh(&htt->rx_ring.lock);
 	num_to_fill = htt->rx_ring.fill_level - htt->rx_ring.fill_cnt;
-	ath10k_htt_rx_ring_fill_n(htt, num_to_fill);
+	ret = ath10k_htt_rx_ring_fill_n(htt, num_to_fill);
+	if (ret == -ENOMEM) {
+		/*
+		 * Failed to fill it to the desired level -
+		 * we'll start a timer and try again next time.
+		 * As long as enough buffers are left in the ring for
+		 * another A-MPDU rx, no special recovery is needed.
+		 */
+		mod_timer(&htt->rx_ring.refill_retry_timer, jiffies +
+			  msecs_to_jiffies(HTT_RX_RING_REFILL_RETRY_MS));
+	}
 	spin_unlock_bh(&htt->rx_ring.lock);
 }
 
@@ -446,13 +469,13 @@ int ath10k_htt_rx_attach(struct ath10k_htt *htt)
 		kmalloc(htt->rx_ring.size * sizeof(struct sk_buff *),
 			GFP_KERNEL);
 	if (!htt->rx_ring.netbufs_ring)
-		goto fail1;
+		goto err_netbuf;
 
 	vaddr = dma_alloc_coherent(htt->ar->dev,
 		   (htt->rx_ring.size * sizeof(htt->rx_ring.paddrs_ring)),
 		   &paddr, GFP_DMA);
 	if (!vaddr)
-		goto fail2;
+		goto err_dma_ring;
 
 	htt->rx_ring.paddrs_ring = vaddr;
 	htt->rx_ring.base_paddr = paddr;
@@ -461,7 +484,7 @@ int ath10k_htt_rx_attach(struct ath10k_htt *htt)
 				   sizeof(*htt->rx_ring.alloc_idx.vaddr),
 				   &paddr, GFP_DMA);
 	if (!vaddr)
-		goto fail3;
+		goto err_dma_idx;
 
 	htt->rx_ring.alloc_idx.vaddr = vaddr;
 	htt->rx_ring.alloc_idx.paddr = paddr;
@@ -472,23 +495,30 @@ int ath10k_htt_rx_attach(struct ath10k_htt *htt)
 	setup_timer(timer, ath10k_htt_rx_ring_refill_retry, (unsigned long)htt);
 
 	spin_lock_init(&htt->rx_ring.lock);
-	spin_lock_bh(&htt->rx_ring.lock);
+
 	htt->rx_ring.fill_cnt = 0;
-	ath10k_htt_rx_ring_fill_n(htt, htt->rx_ring.fill_level);
-	spin_unlock_bh(&htt->rx_ring.lock);
+	if (__ath10k_htt_rx_ring_fill_n(htt, htt->rx_ring.fill_level))
+		goto err_fill_ring;
 
 	ath10k_dbg(ATH10K_DBG_HTT, "HTT RX ring size: %d, fill_level: %d\n",
 		   htt->rx_ring.size, htt->rx_ring.fill_level);
 	return 0;
-fail3:
+
+err_fill_ring:
+	ath10k_htt_rx_ring_free(htt);
+	dma_free_coherent(htt->ar->dev,
+			  sizeof(*htt->rx_ring.alloc_idx.vaddr),
+			  htt->rx_ring.alloc_idx.vaddr,
+			  htt->rx_ring.alloc_idx.paddr);
+err_dma_idx:
 	dma_free_coherent(htt->ar->dev,
 			  (htt->rx_ring.size *
 			   sizeof(htt->rx_ring.paddrs_ring)),
 			  htt->rx_ring.paddrs_ring,
 			  htt->rx_ring.base_paddr);
-fail2:
+err_dma_ring:
 	kfree(htt->rx_ring.netbufs_ring);
-fail1:
+err_netbuf:
 	return -ENOMEM;
 }
 
