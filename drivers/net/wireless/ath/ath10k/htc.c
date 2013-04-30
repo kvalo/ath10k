@@ -793,86 +793,89 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 		assigned_eid = ATH10K_HTC_EP_0;
 		max_msg_size = ATH10K_HTC_MAX_CTRL_MSG_LEN;
 		memset(&resp_msg_dummy, 0, sizeof(resp_msg_dummy));
-	} else {
-		tx_alloc = ath10k_htc_get_credit_allocation(htc,
-							    conn_req->service_id);
-		if (!tx_alloc)
-			ath10k_warn("HTC Service %s does not allocate target credits\n",
-				    htc_service_name(conn_req->service_id));
-
-		skb = ath10k_htc_build_tx_ctrl_skb(htc->ar);
-		if (!skb) {
-			ath10k_err("Failed to allocate HTC packet\n");
-			return -ENOMEM;
-		}
-
-		length = sizeof(msg->hdr) + sizeof(msg->connect_service);
-		skb_put(skb, length);
-		memset(skb->data, 0, length);
-
-		msg = (struct ath10k_htc_msg *)skb->data;
-		msg->hdr.message_id =
-			__cpu_to_le16(ATH10K_HTC_MSG_CONNECT_SERVICE_ID);
-
-		flags |= SM(tx_alloc, ATH10K_HTC_CONN_FLAGS_RECV_ALLOC);
-
-		req_msg = &msg->connect_service;
-		req_msg->flags = __cpu_to_le16(flags);
-		req_msg->service_id = __cpu_to_le16(conn_req->service_id);
-
-		/* Only enable credit flow control for WMI ctrl service */
-		if (conn_req->service_id != ATH10K_HTC_SVC_ID_WMI_CONTROL) {
-			flags |= ATH10K_HTC_CONN_FLAGS_DISABLE_CREDIT_FLOW_CTRL;
-			disable_credit_flow_ctrl = true;
-		}
-
-		INIT_COMPLETION(htc->ctl_resp);
-
-		status = ath10k_htc_send(htc, ATH10K_HTC_EP_0, skb);
-		if (status)
-			return status;
-
-		/* wait for response */
-		status = wait_for_completion_timeout(&htc->ctl_resp,
-						     ATH10K_HTC_CONN_SVC_TIMEOUT_HZ);
-		if (status <= 0) {
-			if (status == 0)
-				status = -ETIMEDOUT;
-			ath10k_err("Service connect timeout: %d\n", status);
-			return status;
-		}
-
-		/* we controlled the buffer creation, it's aligned */
-		msg = (struct ath10k_htc_msg *)htc->control_resp_buffer;
-		resp_msg = &msg->connect_service_response;
-		message_id = __le16_to_cpu(msg->hdr.message_id);
-		service_id = __le16_to_cpu(resp_msg->service_id);
-
-		if ((message_id != ATH10K_HTC_MSG_CONNECT_SERVICE_RESP_ID) ||
-		    (htc->control_resp_len < sizeof(msg->hdr) +
-		     sizeof(msg->connect_service_response))) {
-			ath10k_err("Invalid resp message ID 0x%x", message_id);
-			return -EPROTO;
-		}
-
-		ath10k_dbg(ATH10K_DBG_HTC,
-			   "HTC Service %s connect response: status: 0x%x, assigned ep: 0x%x\n",
-			   htc_service_name(service_id),
-			   resp_msg->status, resp_msg->eid);
-
-		conn_resp->connect_resp_code = resp_msg->status;
-
-		/* check response status */
-		if (resp_msg->status != ATH10K_HTC_CONN_SVC_STATUS_SUCCESS) {
-			ath10k_err("HTC Service %s connect request failed: 0x%x)\n",
-				   htc_service_name(service_id),
-				   resp_msg->status);
-			return -EPROTO;
-		}
-
-		assigned_eid = (enum ath10k_htc_ep_id)resp_msg->eid;
-		max_msg_size = __le16_to_cpu(resp_msg->max_msg_size);
+		goto setup;
 	}
+
+	tx_alloc = ath10k_htc_get_credit_allocation(htc,
+						    conn_req->service_id);
+	if (!tx_alloc)
+		ath10k_warn("HTC Service %s does not allocate target credits\n",
+			    htc_service_name(conn_req->service_id));
+
+	skb = ath10k_htc_build_tx_ctrl_skb(htc->ar);
+	if (!skb) {
+		ath10k_err("Failed to allocate HTC packet\n");
+		return -ENOMEM;
+	}
+
+	length = sizeof(msg->hdr) + sizeof(msg->connect_service);
+	skb_put(skb, length);
+	memset(skb->data, 0, length);
+
+	msg = (struct ath10k_htc_msg *)skb->data;
+	msg->hdr.message_id =
+		__cpu_to_le16(ATH10K_HTC_MSG_CONNECT_SERVICE_ID);
+
+	flags |= SM(tx_alloc, ATH10K_HTC_CONN_FLAGS_RECV_ALLOC);
+
+	req_msg = &msg->connect_service;
+	req_msg->flags = __cpu_to_le16(flags);
+	req_msg->service_id = __cpu_to_le16(conn_req->service_id);
+
+	/* Only enable credit flow control for WMI ctrl service */
+	if (conn_req->service_id != ATH10K_HTC_SVC_ID_WMI_CONTROL) {
+		flags |= ATH10K_HTC_CONN_FLAGS_DISABLE_CREDIT_FLOW_CTRL;
+		disable_credit_flow_ctrl = true;
+	}
+
+	INIT_COMPLETION(htc->ctl_resp);
+
+	status = ath10k_htc_send(htc, ATH10K_HTC_EP_0, skb);
+	if (status)
+		return status;
+
+	/* wait for response */
+	status = wait_for_completion_timeout(&htc->ctl_resp,
+					     ATH10K_HTC_CONN_SVC_TIMEOUT_HZ);
+	if (status <= 0) {
+		if (status == 0)
+			status = -ETIMEDOUT;
+		ath10k_err("Service connect timeout: %d\n", status);
+		return status;
+	}
+
+	/* we controlled the buffer creation, it's aligned */
+	msg = (struct ath10k_htc_msg *)htc->control_resp_buffer;
+	resp_msg = &msg->connect_service_response;
+	message_id = __le16_to_cpu(msg->hdr.message_id);
+	service_id = __le16_to_cpu(resp_msg->service_id);
+
+	if ((message_id != ATH10K_HTC_MSG_CONNECT_SERVICE_RESP_ID) ||
+	    (htc->control_resp_len < sizeof(msg->hdr) +
+	     sizeof(msg->connect_service_response))) {
+		ath10k_err("Invalid resp message ID 0x%x", message_id);
+		return -EPROTO;
+	}
+
+	ath10k_dbg(ATH10K_DBG_HTC,
+		   "HTC Service %s connect response: status: 0x%x, assigned ep: 0x%x\n",
+		   htc_service_name(service_id),
+		   resp_msg->status, resp_msg->eid);
+
+	conn_resp->connect_resp_code = resp_msg->status;
+
+	/* check response status */
+	if (resp_msg->status != ATH10K_HTC_CONN_SVC_STATUS_SUCCESS) {
+		ath10k_err("HTC Service %s connect request failed: 0x%x)\n",
+			   htc_service_name(service_id),
+			   resp_msg->status);
+		return -EPROTO;
+	}
+
+	assigned_eid = (enum ath10k_htc_ep_id)resp_msg->eid;
+	max_msg_size = __le16_to_cpu(resp_msg->max_msg_size);
+
+setup:
 
 	if (assigned_eid >= ATH10K_HTC_EP_COUNT)
 		return -EPROTO;
