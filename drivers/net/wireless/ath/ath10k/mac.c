@@ -1080,6 +1080,7 @@ static void ath10k_update_channel_list(struct ath10k *ar)
 	struct ieee80211_channel *channel;
 	struct wmi_scan_chan_list_arg arg = {0};
 	struct wmi_channel_arg *ch;
+	bool passive;
 	int len;
 	int i;
 
@@ -1122,8 +1123,9 @@ static void ath10k_update_channel_list(struct ath10k *ar)
 
 			ch->ht40plus =
 				!(channel->flags & IEEE80211_CHAN_NO_HT40PLUS);
-			ch->passive =
-				!!(channel->flags & IEEE80211_CHAN_PASSIVE_SCAN);
+
+			passive = channel->flags & IEEE80211_CHAN_PASSIVE_SCAN;
+			ch->passive = passive;
 
 			ch->freq = channel->center_freq;
 			ch->min_power = channel->max_power * 3;
