@@ -2604,6 +2604,7 @@ static struct ieee80211_sta_ht_cap ath10k_get_ht_cap(struct ath10k *ar)
 
 	ht_cap.ht_supported = 1;
 	ht_cap.ampdu_factor = IEEE80211_HT_MAX_AMPDU_64K;
+	ht_cap.ampdu_density = IEEE80211_HT_MPDU_DENSITY_8;
 	ht_cap.cap |= IEEE80211_HT_CAP_SUP_WIDTH_20_40;
 	ht_cap.cap |= IEEE80211_HT_CAP_DSSSCCK40;
 	ht_cap.cap |= WLAN_HT_CAP_SM_PS_STATIC << IEEE80211_HT_CAP_SM_PS_SHIFT;
@@ -2643,16 +2644,6 @@ static struct ieee80211_sta_ht_cap ath10k_get_ht_cap(struct ath10k *ar)
 
 	if (ar->ht_cap_info & WMI_HT_CAP_L_SIG_TXOP_PROT)
 		ht_cap.cap |= IEEE80211_HT_CAP_LSIG_TXOP_PROT;
-
-	if (ar->ht_cap_info & WMI_HT_CAP_MPDU_DENSITY) {
-		u32 density;
-
-		density   = ar->ht_cap_info;
-		density  &= WMI_HT_CAP_MPDU_DENSITY;
-		density >>= WMI_HT_CAP_MPDU_DENSITY_MASK_SHIFT;
-
-		ht_cap.ampdu_density = density;
-	}
 
 	/* max AMSDU is implicitly taken from vht_cap_info */
 	if (ar->vht_cap_info & WMI_VHT_CAP_MAX_MPDU_LEN_MASK)
