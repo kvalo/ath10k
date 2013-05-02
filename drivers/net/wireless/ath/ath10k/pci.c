@@ -2142,7 +2142,6 @@ static int ath10k_pci_probe(struct pci_dev *pdev,
 	 */
 	ret = pci_assign_resource(pdev, BAR_NUM);
 	if (ret) {
-		/* FIXME: do we need to free something in error path? */
 		ath10k_err("cannot assign PCI space: %d\n", ret);
 		goto err_ar;
 	}
