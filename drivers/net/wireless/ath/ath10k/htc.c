@@ -845,8 +845,10 @@ int ath10k_htc_connect_service(struct ath10k_htc *htc,
 	INIT_COMPLETION(htc->ctl_resp);
 
 	status = ath10k_htc_send(htc, ATH10K_HTC_EP_0, skb);
-	if (status)
+	if (status) {
+		kfree_skb(skb);
 		return status;
+	}
 
 	/* wait for response */
 	status = wait_for_completion_timeout(&htc->ctl_resp,
@@ -989,8 +991,12 @@ int ath10k_htc_start(struct ath10k_htc *htc)
 	ath10k_dbg(ATH10K_DBG_HTC, "HTC is using TX credit flow control\n");
 
 	status = ath10k_htc_send(htc, ATH10K_HTC_EP_0, skb);
+	if (status) {
+		kfree_skb(skb);
+		return status;
+	}
 
-	return status;
+	return 0;
 }
 
 /*
