@@ -608,8 +608,10 @@ out:
 static void ath10k_htc_control_rx_complete(struct ath10k *ar,
 					   struct sk_buff *skb)
 {
-	/* TODO, can't receive HTC control messages yet */
-	ath10k_dbg(ATH10K_DBG_HTC, "Invalid call to %s\n", __func__);
+	/* This is unexpected. FW is not supposed to send regular rx on this
+	 * endpoint. */
+	ath10k_warn("unexpected htc rx\n");
+	kfree_skb(skb);
 }
 
 /***************/
