@@ -53,6 +53,7 @@ static int ath10k_pci_post_rx(struct ath10k *ar);
 static int ath10k_pci_post_rx_pipe(struct hif_ce_pipe_info *pipe_info,
 					     int num);
 static void ath10k_pci_rx_pipe_cleanup(struct hif_ce_pipe_info *pipe_info);
+static void ath10k_pci_stop_ce(struct ath10k *ar);
 
 static const struct ce_attr host_ce_config_wlan[] = {
 	/* host->target HTC control and raw streams */
@@ -756,7 +757,7 @@ static void ath10k_pci_hif_post_init(struct ath10k *ar,
 	       sizeof(ar_pci->msg_callbacks_current));
 }
 
-static void ath10k_pci_start_ce(struct ath10k *ar)
+static int ath10k_pci_start_ce(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct ce_state *ce_diag = ar_pci->ce_diag;
@@ -804,13 +805,16 @@ static void ath10k_pci_start_ce(struct ath10k *ar)
 					GFP_KERNEL);
 			if (!compl) {
 				ath10k_warn("No memory for completion state\n");
-				break;
+				ath10k_pci_stop_ce(ar);
+				return -ENOMEM;
 			}
 
 			compl->send_or_recv = HIF_CE_COMPLETE_FREE;
 			list_add_tail(&compl->list, &pipe_info->compl_free);
 		}
 	}
+
+	return 0;
 }
 
 static void ath10k_pci_stop_ce(struct ath10k *ar)
@@ -1113,7 +1117,11 @@ static int ath10k_pci_hif_start(struct ath10k *ar)
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	int ret;
 
-	ath10k_pci_start_ce(ar);
+	ret = ath10k_pci_start_ce(ar);
+	if (ret) {
+		ath10k_warn("could not start CE (%d)\n", ret);
+		return ret;
+	}
 
 	/* Post buffers once to start things off. */
 	ret = ath10k_pci_post_rx(ar);
