@@ -615,21 +615,13 @@ EXPORT_SYMBOL(ath10k_core_register);
 
 void ath10k_core_unregister(struct ath10k *ar)
 {
-	/*
-	 * FIXME: the ordering here may be broken!
-	 *        mac_unregister must be done before htc is stopped,
-	 *        since it might want to remove interfaces -> vdev_remove
-	 */
+	/* We must unregister from mac80211 before we stop HTC and HIF.
+	 * Otherwise we will fail to submit commands to FW and mac80211 will be
+	 * unhappy about callback failures. */
 	ath10k_mac_unregister(ar);
-
-	if (!WARN_ON(!ar->htc))
-		ath10k_htc_stop(ar->htc);
-
-	/* FIXME: we may need to free up htt tx desc here too */
+	ath10k_htc_stop(ar->htc);
 	ath10k_htt_detach(ar->htt);
-
 	ath10k_wmi_detach(ar);
-
 	ath10k_htc_destroy(ar->htc);
 }
 EXPORT_SYMBOL(ath10k_core_unregister);
