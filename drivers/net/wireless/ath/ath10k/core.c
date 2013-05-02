@@ -84,10 +84,11 @@ static int ath10k_check_fw_version(struct ath10k *ar)
 		 SUPPORTED_FW_MAJOR, SUPPORTED_FW_MINOR,
 		 SUPPORTED_FW_RELEASE, SUPPORTED_FW_BUILD);
 
-	ath10k_err("Firmware %s is not supported. Please use version %s (or newer)\n",
-		   ar->hw->wiphy->fw_version, version);
+	ath10k_warn("WARNING: Firmware version %s is not officially supported.\n",
+		    ar->hw->wiphy->fw_version);
+	ath10k_warn("Please upgrade to version %s (or newer)\n", version);
 
-	return -EINVAL;
+	return 0;
 }
 
 static int ath10k_init_connect_htc(struct ath10k *ar)
