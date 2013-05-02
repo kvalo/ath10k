@@ -375,7 +375,6 @@ static int ath10k_init_download_firmware(struct ath10k *ar)
 	if (ret)
 		return ret;
 
-	ath10k_info("firmware downloaded\n");
 	return ret;
 }
 
@@ -568,6 +567,8 @@ int ath10k_core_register(struct ath10k *ar)
 	status = ath10k_init_connect_htc(ar);
 	if (status)
 		goto err_htt_detach;
+
+	ath10k_info("firmware %s booted\n", ar->hw->wiphy->fw_version);
 
 	status = ath10k_check_fw_version(ar);
 	if (status)
