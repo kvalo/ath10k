@@ -1254,15 +1254,14 @@ struct ath10k_htt {
 		 */
 		struct timer_list refill_retry_timer;
 
-		/* FIXME: document what this protects */
+		/* Protects access to all rx ring buffer state variables */
 		spinlock_t lock;
 	} rx_ring;
 
 	unsigned int prefetch_len;
 
-	/* FIXME: document what this protects */
+	/* Protects access to %pending_tx, %used_msdu_ids */
 	spinlock_t tx_lock;
-
 	struct sk_buff *pending_tx[HTT_MAX_NUM_PENDING_TX];
 	DECLARE_BITMAP(used_msdu_ids, HTT_MAX_NUM_PENDING_TX);
 	wait_queue_head_t empty_tx_wq;
