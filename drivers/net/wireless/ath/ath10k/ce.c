@@ -1134,6 +1134,7 @@ struct ce_state *ath10k_ce_init(struct ath10k *ar,
 		if (ath10k_ce_init_src_ring(ar, ce_id, ce_state, attr)) {
 			ath10k_err("Failed to initialize CE src ring for ID: %d\n",
 				   ce_id);
+			ath10k_ce_deinit(ce_state);
 			return NULL;
 		}
 	}
@@ -1142,6 +1143,7 @@ struct ce_state *ath10k_ce_init(struct ath10k *ar,
 		if (ath10k_ce_init_dest_ring(ar, ce_id, ce_state, attr)) {
 			ath10k_err("Failed to initialize CE dest ring for ID: %d\n",
 				   ce_id);
+			ath10k_ce_deinit(ce_state);
 			return NULL;
 		}
 	}

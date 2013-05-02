@@ -1618,7 +1618,7 @@ static int ath10k_pci_init_config(struct ath10k *ar)
 
 
 
-static void ath10k_pci_ce_init(struct ath10k *ar)
+static int ath10k_pci_ce_init(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	struct hif_ce_pipe_info *pipe_info;
@@ -1633,9 +1633,13 @@ static void ath10k_pci_ce_init(struct ath10k *ar)
 
 		pipe_info->ce_hdl = ath10k_ce_init(ar, pipe_num, attr);
 		if (pipe_info->ce_hdl == NULL) {
-			/* FIXME: Handle error */
 			ath10k_err("Unable to initialize CE for pipe: %d\n",
 				   pipe_num);
+
+			/* It is safe to call it here. It checks if ce_hdl is
+			 * valid for each pipe */
+			ath10k_pci_ce_deinit(ar);
+			return -1;
 		}
 
 		if (pipe_num == ar_pci->ce_count - 1) {
@@ -1662,6 +1666,8 @@ static void ath10k_pci_ce_init(struct ath10k *ar)
 	pipe_info = &ar_pci->pipe_info[BMI_CE_NUM_TO_HOST];
 	ath10k_ce_recv_cb_register(pipe_info->ce_hdl,
 				   ath10k_pci_bmi_recv_data);
+
+	return 0;
 }
 
 static void ath10k_pci_fw_interrupt_handler(struct ath10k *ar)
@@ -2229,7 +2235,9 @@ static int ath10k_pci_probe(struct pci_dev *pdev,
 		ath10k_do_pci_wake(ar);
 	}
 
-	ath10k_pci_ce_init(ar);
+	ret = ath10k_pci_ce_init(ar);
+	if (ret)
+		goto err_intr;
 
 	ret = ath10k_pci_init_config(ar);
 	if (ret)
