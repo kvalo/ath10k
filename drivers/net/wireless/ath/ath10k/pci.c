@@ -52,6 +52,7 @@ static void ath10k_pci_process_ce(struct ath10k *ar);
 static int ath10k_pci_post_rx(struct ath10k *ar);
 static int ath10k_pci_post_rx_pipe(struct hif_ce_pipe_info *pipe_info,
 					     int num);
+static void ath10k_pci_rx_pipe_cleanup(struct hif_ce_pipe_info *pipe_info);
 
 static const struct ce_attr host_ce_config_wlan[] = {
 	/* host->target HTC control and raw streams */
@@ -1035,9 +1036,10 @@ static int ath10k_pci_post_rx_pipe(struct hif_ce_pipe_info *pipe_info,
 	for (i = 0; i < num; i++) {
 		skb = dev_alloc_skb(pipe_info->buf_sz);
 		if (!skb) {
-			ath10k_warn("%s: Memory allocation failure\n",
-				    __func__);
-			return -ENOMEM;
+			ath10k_warn("could not allocate skbuff for pipe %d\n",
+				    num);
+			ret = -ENOMEM;
+			goto err;
 		}
 
 		WARN_ONCE((unsigned long)skb->data & 3, "unaligned skb");
@@ -1047,9 +1049,10 @@ static int ath10k_pci_post_rx_pipe(struct hif_ce_pipe_info *pipe_info,
 					 DMA_FROM_DEVICE);
 
 		if (unlikely(dma_mapping_error(ar->dev, ce_data))) {
-			ath10k_warn("%s mapping error\n",  __func__);
+			ath10k_warn("could not dma map skbuff\n");
 			dev_kfree_skb_any(skb);
-			return -EIO;
+			ret = -EIO;
+			goto err;
 		}
 
 		ATH10K_SKB_CB(skb)->paddr = ce_data;
@@ -1060,10 +1063,17 @@ static int ath10k_pci_post_rx_pipe(struct hif_ce_pipe_info *pipe_info,
 
 		ret = ath10k_ce_recv_buf_enqueue(ce_state, (void *)skb,
 						 ce_data);
-		if (ret)
-			break; /* FIXME: Handle error */
+		if (ret) {
+			ath10k_warn("could not enqueue to pipe %d (%d)\n",
+				    num, ret);
+			goto err;
+		}
 	}
 
+	return ret;
+
+err:
+	ath10k_pci_rx_pipe_cleanup(pipe_info);
 	return ret;
 }
 
@@ -1086,14 +1096,19 @@ static int ath10k_pci_post_rx(struct ath10k *ar)
 		if (ret) {
 			ath10k_warn("Unable to replenish recv buffers for pipe: %d\n",
 				    pipe_num);
-			goto done;
+
+			for (; pipe_num >= 0; pipe_num--) {
+				pipe_info = &ar_pci->pipe_info[pipe_num];
+				ath10k_pci_rx_pipe_cleanup(pipe_info);
+			}
+			return ret;
 		}
 	}
-done:
-	return ret;
+
+	return 0;
 }
 
-static void ath10k_pci_hif_start(struct ath10k *ar)
+static int ath10k_pci_hif_start(struct ath10k *ar)
 {
 	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
 	int ret;
@@ -1101,8 +1116,14 @@ static void ath10k_pci_hif_start(struct ath10k *ar)
 	ath10k_pci_start_ce(ar);
 
 	/* Post buffers once to start things off. */
-	ret = ath10k_pci_post_rx(ar); /* FIXME: Handle error */
+	ret = ath10k_pci_post_rx(ar);
+	if (ret) {
+		ath10k_warn("could not post rx pipes (%d)\n", ret);
+		return ret;
+	}
+
 	ar_pci->started = 1;
+	return 0;
 }
 
 static void ath10k_pci_rx_pipe_cleanup(struct hif_ce_pipe_info *pipe_info)

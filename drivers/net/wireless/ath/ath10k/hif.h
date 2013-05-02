@@ -46,7 +46,7 @@ struct ath10k_hif_ops {
 				void *request, u32 request_len,
 				void *response, u32 *response_len);
 
-	void (*start)(struct ath10k *ar);
+	int (*start)(struct ath10k *ar);
 
 	void (*stop)(struct ath10k *ar);
 
@@ -89,7 +89,7 @@ static inline int ath10k_hif_exchange_bmi_msg(struct ath10k *ar,
 					     response, response_len);
 }
 
-static inline void ath10k_hif_start(struct ath10k *ar)
+static inline int ath10k_hif_start(struct ath10k *ar)
 {
 	return ar->hif.ops->start(ar);
 }
