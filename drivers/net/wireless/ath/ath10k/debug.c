@@ -476,7 +476,7 @@ void ath10k_dbg(enum ath10k_debug_mask mask, const char *fmt, ...)
 	vaf.fmt = fmt;
 	vaf.va = &args;
 
-	if (debug_mask & mask)
+	if (ath10k_debug_mask & mask)
 		ath10k_printk(KERN_DEBUG, "%pV", &vaf);
 
 	trace_ath10k_log_dbg(mask, &vaf);
@@ -489,7 +489,7 @@ void ath10k_dbg_dump(enum ath10k_debug_mask mask,
 		     const char *msg, const char *prefix,
 		     const void *buf, size_t len)
 {
-	if (debug_mask & mask) {
+	if (ath10k_debug_mask & mask) {
 		if (msg)
 			ath10k_dbg(mask, "%s\n", msg);
 

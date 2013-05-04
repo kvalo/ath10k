@@ -27,10 +27,10 @@
 #include "debug.h"
 #include "htt.h"
 
-unsigned int debug_mask;
+unsigned int ath10k_debug_mask;
 static bool uart_print;
 static unsigned int ath10k_p2p;
-module_param(debug_mask, uint, 0644);
+module_param_named(debug_mask, ath10k_debug_mask, uint, 0644);
 module_param(uart_print, bool, 0644);
 module_param(ath10k_p2p, uint, 0644);
 MODULE_PARM_DESC(debug_mask, "Debugging mask");

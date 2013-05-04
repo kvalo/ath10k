@@ -34,7 +34,7 @@ enum ath10k_debug_mask {
 	ATH10K_DBG_ANY		= 0xffffffff,
 };
 
-extern unsigned int debug_mask;
+extern unsigned int ath10k_debug_mask;
 
 extern __printf(1, 2) int ath10k_info(const char *fmt, ...);
 extern __printf(1, 2) int ath10k_err(const char *fmt, ...);
