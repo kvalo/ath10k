@@ -32,10 +32,10 @@ static bool uart_print;
 static unsigned int ath10k_p2p;
 module_param_named(debug_mask, ath10k_debug_mask, uint, 0644);
 module_param(uart_print, bool, 0644);
-module_param(ath10k_p2p, uint, 0644);
+module_param_named(p2p, ath10k_p2p, uint, 0644);
 MODULE_PARM_DESC(debug_mask, "Debugging mask");
 MODULE_PARM_DESC(uart_print, "Uart target debugging");
-MODULE_PARM_DESC(ath10k_p2p, "Enable ath10k P2P support");
+MODULE_PARM_DESC(p2p, "Enable ath10k P2P support");
 
 static const struct ath10k_hw_params ath10k_hw_params_list[] = {
 	{
