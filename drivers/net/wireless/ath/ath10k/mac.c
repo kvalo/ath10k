@@ -1475,8 +1475,10 @@ static int ath10k_start_scan(struct ath10k *ar,
 	ath10k_wmi_flush_tx(ar);
 
 	ret = wait_for_completion_timeout(&ar->scan.started, 1*HZ);
-	if (ret == 0)
+	if (ret == 0) {
+		ath10k_abort_scan(ar);
 		return ret;
+	}
 
 	/* the scan can complete earlier, before we even
 	 * start the timer. in that case the timer handler
