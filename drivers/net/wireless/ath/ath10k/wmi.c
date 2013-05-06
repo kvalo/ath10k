@@ -92,10 +92,8 @@ static int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb,
 	int status;
 	u32 cmd = 0;
 
-	if (skb_push(skb, sizeof(struct wmi_cmd_hdr)) == NULL) {
-		ath10k_warn("%s: skb_push failed\n", __func__);
+	if (skb_push(skb, sizeof(struct wmi_cmd_hdr)) == NULL)
 		return -ENOMEM;
-	}
 
 	cmd |= SM(cmd_id, WMI_CMD_HDR_CMD_ID);
 
@@ -118,10 +116,10 @@ static int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb,
 	if (status) {
 		dev_kfree_skb_any(skb);
 		atomic_dec(&ar->wmi.pending_tx_count);
-		ath10k_warn("%s(): htc_send failed (%d)\n", __func__, status);
+		return status;
 	}
 
-	return status;
+	return 0;
 }
 
 static int ath10k_wmi_event_scan(struct ath10k *ar, struct sk_buff *skb)
@@ -1220,10 +1218,8 @@ int ath10k_wmi_pdev_resume_target(struct ath10k *ar)
 	struct sk_buff *skb;
 
 	skb = ath10k_wmi_alloc_skb(0);
-	if (skb == NULL) {
-		ath10k_warn("%s: ath10k_wmi_alloc_skb() failed\n", __func__);
+	if (skb == NULL)
 		return -ENOMEM;
-	}
 
 	return ath10k_wmi_cmd_send(ar, skb, WMI_PDEV_RESUME_CMDID);
 }
