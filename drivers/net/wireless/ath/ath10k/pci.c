@@ -2347,7 +2347,7 @@ static int ath10k_pci_suspend(struct device *device)
 	struct ath10k *ar = pci_get_drvdata(pdev);
 	struct ath10k_pci *ar_pci;
 	u32 val;
-	u32 left;
+	int ret, retval;
 
 	ath10k_dbg(ATH10K_DBG_PCI, "%s\n", __func__);
 
@@ -2361,14 +2361,17 @@ static int ath10k_pci_suspend(struct device *device)
 	if (ath10k_core_target_suspend(ar))
 		return -EBUSY;
 
-	left = wait_event_interruptible_timeout(ar->event_queue,
+	ret = wait_event_interruptible_timeout(ar->event_queue,
 						ar->is_target_paused == true,
 						1 * HZ);
-
-	if (!left) {
-		ath10k_warn("failed to receive target pasused event [left=%d]\n",
-			    left);
-		return -EIO;
+	if (ret < 0) {
+		ath10k_warn("suspend interrupted (%d)\n", ret);
+		retval = ret;
+		goto resume;
+	} else if (ret == 0) {
+		ath10k_warn("suspend timed out - target pause event never came\n");
+		retval = EIO;
+		goto resume;
 	}
 
 	/*
@@ -2389,6 +2392,12 @@ static int ath10k_pci_suspend(struct device *device)
 	}
 
 	return 0;
+resume:
+	ret = ath10k_core_target_resume(ar);
+	if (ret)
+		ath10k_warn("could not resume (%d)\n", ret);
+
+	return retval;
 }
 
 static int ath10k_pci_resume(struct device *device)
