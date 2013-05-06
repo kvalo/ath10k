@@ -541,8 +541,9 @@ int ath10k_core_register(struct ath10k *ar)
 	htc_ops.target_send_suspend_complete = ath10k_send_suspend_complete;
 
 	ar->htc = ath10k_htc_create(ar, &htc_ops);
-	if (ar->htc == NULL) {
-		status = -ENOMEM;
+	if (IS_ERR(ar->htc)) {
+		status = PTR_ERR(ar->htc);
+		ath10k_err("could not create HTC (%d)\n", status);
 		goto err;
 	}
 

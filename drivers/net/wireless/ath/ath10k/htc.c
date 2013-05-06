@@ -1031,10 +1031,8 @@ struct ath10k_htc *ath10k_htc_create(struct ath10k *ar,
 
 	/* FIXME: use struct ath10k instead */
 	htc = kzalloc(sizeof(struct ath10k_htc), GFP_KERNEL);
-	if (!htc) {
-		ath10k_err("%s: unable to allocate memory\n", __func__);
-		return NULL;
-	}
+	if (!htc)
+		return ERR_PTR(-ENOMEM);
 
 	spin_lock_init(&htc->tx_lock);
 
