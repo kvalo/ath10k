@@ -261,13 +261,13 @@ void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info)
 
 	status->signal = info->signal;
 
-	rcu_read_lock();
-	ch = rcu_dereference(ar->scan_channel);
+	spin_lock_bh(&ar->data_lock);
+	ch = ar->scan_channel;
 	if (!ch)
-		ch = rcu_dereference(ar->rx_channel);
+		ch = ar->rx_channel;
+	spin_unlock_bh(&ar->data_lock);
 
 	if (!ch) {
-		rcu_read_unlock();
 		ath10k_warn("no channel configured; ignoring frame!\n");
 		dev_kfree_skb_any(info->skb);
 		return;
@@ -276,7 +276,6 @@ void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info)
 	process_rx_rates(ar, info, ch->band, status);
 	status->band = ch->band;
 	status->freq = ch->center_freq;
-	rcu_read_unlock();
 
 	ath10k_dbg(ATH10K_DBG_HTT,
 		   "rx skb %p len %u %s%s%s%s%s %srate_idx %u vht_nss %u freq %u band %u\n",

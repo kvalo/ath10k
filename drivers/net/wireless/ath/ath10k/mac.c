@@ -1589,7 +1589,9 @@ static int ath10k_config(struct ieee80211_hw *hw, u32 changed)
 	if (changed & IEEE80211_CONF_CHANGE_CHANNEL) {
 		ath10k_dbg(ATH10K_DBG_MAC, "Config channel %d mhz\n",
 			   conf->chandef.chan->center_freq);
-		rcu_assign_pointer(ar->rx_channel, conf->chandef.chan);
+		spin_lock_bh(&ar->data_lock);
+		ar->rx_channel = conf->chandef.chan;
+		spin_unlock_bh(&ar->data_lock);
 	}
 
 	if (changed & IEEE80211_CONF_CHANGE_PS) {

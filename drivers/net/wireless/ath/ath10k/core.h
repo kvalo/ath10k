@@ -315,10 +315,10 @@ struct ath10k {
 	} mac;
 
 	/* should never be NULL; needed for regular htt rx */
-	struct ieee80211_channel __rcu *rx_channel;
+	struct ieee80211_channel *rx_channel;
 
 	/* valid during scan; needed for mgmt rx during scan */
-	struct ieee80211_channel __rcu *scan_channel;
+	struct ieee80211_channel *scan_channel;
 
 	int free_vdev_map;
 	int monitor_vdev_id;
