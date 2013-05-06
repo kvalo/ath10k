@@ -926,8 +926,8 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 				cb->rx_completion(ar, skb,
 						  compl->pipe_info->pipe_num);
 			} else {
-				ath10k_warn("%s: rxed more than expected (nbytes %d, max %d)",
-					    __func__, nbytes,
+				ath10k_warn("rxed more than expected (nbytes %d, max %d)",
+					    nbytes,
 					    skb->len + skb_tailroom(skb));
 			}
 		}
@@ -1766,8 +1766,7 @@ static irqreturn_t ath10k_pci_per_engine_handler(int irq, void *arg)
 	int ce_id = irq - ar_pci->pdev->irq - MSI_ASSIGN_CE_INITIAL;
 
 	if (ce_id < 0 || ce_id > ARRAY_SIZE(ar_pci->pipe_info)) {
-		ath10k_warn("%s: unexpected/invalid irq %d ce_id %d\n",
-			    __func__, irq, ce_id);
+		ath10k_warn("unexpected/invalid irq %d ce_id %d\n", irq, ce_id);
 		return IRQ_HANDLED;
 	}
 

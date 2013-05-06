@@ -104,7 +104,6 @@ static int ath10k_wmi_cmd_send(struct ath10k *ar, struct sk_buff *skb,
 	    WMI_MAX_PENDING_TX_COUNT) {
 		/* avoid using up memory when FW hangs */
 		atomic_dec(&ar->wmi.pending_tx_count);
-		ath10k_warn("%s: too many tx packets pending\n", __func__);
 		return -EBUSY;
 	}
 
@@ -680,7 +679,7 @@ static void ath10k_wmi_event_host_swba(struct ath10k *ar, struct sk_buff *skb)
 		i++;
 
 		if (i >= WMI_MAX_AP_VDEV) {
-			ath10k_warn("%s: incorect vdev map\n", __func__);
+			ath10k_warn("swba has corrupted vdev map\n");
 			break;
 		}
 
@@ -705,8 +704,7 @@ static void ath10k_wmi_event_host_swba(struct ath10k *ar, struct sk_buff *skb)
 
 		arvif = ath10k_get_arvif(ar, vdev_id);
 		if (arvif == NULL) {
-			ath10k_warn("%s: no vif for vdev_id %d\n",
-				    __func__, vdev_id);
+			ath10k_warn("no vif for vdev_id %d found\n", vdev_id);
 			continue;
 		}
 

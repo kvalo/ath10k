@@ -1446,8 +1446,7 @@ static void ath10k_abort_scan(struct ath10k *ar)
 
 	ret = ath10k_wmi_stop_scan(ar, &arg);
 	if (ret)
-		ath10k_warn("%s: ath10k_wmi_stop_scan failed (%d)\n",
-			    __func__, ret);
+		ath10k_warn("could not submit wmi stop scan (%d)\n", ret);
 
 	ath10k_wmi_flush_tx(ar);
 
@@ -1457,7 +1456,7 @@ static void ath10k_abort_scan(struct ath10k *ar)
 
 	spin_lock_bh(&ar->data_lock);
 	if (ar->scan.in_progress) {
-		ath10k_warn("%s: could not stop scan (%d)\n", __func__, ret);
+		ath10k_warn("could not stop scan. its still in progress\n");
 		ar->scan.in_progress = false;
 		ath10k_offchan_tx_purge(ar);
 	}

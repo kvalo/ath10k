@@ -285,7 +285,7 @@ static int ath10k_htt_rx_amsdu_pop(struct ath10k_htt *htt,
 		ath10k_warn("htt rx ring is empty!\n");
 
 	if (htt->rx_confused) {
-		ath10k_warn("%s: htt failure: cannot rx\n", __func__);
+		ath10k_warn("htt is confused. refusing rx\n");
 		return 0;
 	}
 
