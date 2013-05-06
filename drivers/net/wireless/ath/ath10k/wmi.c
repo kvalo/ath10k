@@ -1083,11 +1083,6 @@ static void ath10k_wmi_process_rx(struct ath10k *ar, struct sk_buff *skb)
 
 	event_id = MS(__le32_to_cpu(cmd_hdr->cmd_id), WMI_CMD_HDR_CMD_ID);
 
-	if (!skb) {
-		ath10k_warn("%s: missing skb\n", __func__);
-		return;
-	}
-
 	/* some events require to be handled ASAP
 	 * thus can't be defered to a worker thread */
 	switch (event_id) {
