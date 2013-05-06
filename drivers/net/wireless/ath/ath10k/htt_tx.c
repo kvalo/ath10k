@@ -369,9 +369,9 @@ int ath10k_htt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 	ath10k_dbg(ATH10K_DBG_HTT, "txfrag 0x%llx msdu 0x%llx\n",
 		   (unsigned long long) ATH10K_SKB_CB(txfrag)->paddr,
 		   (unsigned long long) ATH10K_SKB_CB(msdu)->paddr);
-	ath10k_dbg_dump(ATH10K_DBG_HTT, NULL, "txfrag: ",
+	ath10k_dbg_dump(ATH10K_DBG_HTT_DUMP, NULL, "txfrag: ",
 			txfrag->data, frag_len);
-	ath10k_dbg_dump(ATH10K_DBG_HTT, NULL, "msdu: ",
+	ath10k_dbg_dump(ATH10K_DBG_HTT_DUMP, NULL, "msdu: ",
 			msdu->data, msdu->len);
 
 	skb_put(txdesc, desc_len);
