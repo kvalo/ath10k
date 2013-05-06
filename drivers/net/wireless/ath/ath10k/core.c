@@ -585,7 +585,7 @@ int ath10k_core_register(struct ath10k *ar)
 
 	status = ath10k_wmi_wait_for_unified_ready(ar);
 	if (status <= 0) {
-		ath10k_warn("wmi unified ready event not received\n");
+		ath10k_err("wmi unified ready event not received\n");
 		status = -ETIMEDOUT;
 		goto err_disconnect_htc;
 	}
@@ -600,7 +600,7 @@ int ath10k_core_register(struct ath10k *ar)
 
 	status = ath10k_debug_create(ar);
 	if (status) {
-		ath10k_warn("unable to initialize debugfs\n");
+		ath10k_err("unable to initialize debugfs\n");
 		goto err_unregister_mac;
 	}
 
