@@ -202,6 +202,10 @@ static int ath10k_wmi_event_scan(struct ath10k *ar, struct sk_buff *skb)
 	case WMI_SCAN_EVENT_FOREIGN_CHANNEL:
 		ath10k_dbg(ATH10K_DBG_WMI, "SCAN_EVENT_FOREIGN_CHANNEL\n");
 		ar->scan_channel = ieee80211_get_channel(ar->hw->wiphy, freq);
+		if (ar->scan.in_progress && ar->scan.is_roc &&
+		    ar->scan.roc_freq == freq) {
+			complete(&ar->scan.on_channel);
+		}
 		break;
 	case WMI_SCAN_EVENT_DEQUEUED:
 		ath10k_dbg(ATH10K_DBG_WMI, "SCAN_EVENT_DEQUEUED\n");

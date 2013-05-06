@@ -2294,10 +2294,12 @@ static int ath10k_remain_on_channel(struct ieee80211_hw *hw,
 
 	INIT_COMPLETION(ar->scan.started);
 	INIT_COMPLETION(ar->scan.completed);
+	INIT_COMPLETION(ar->scan.on_channel);
 	ar->scan.in_progress = true;
 	ar->scan.aborting = false;
 	ar->scan.is_roc = true;
 	ar->scan.vdev_id = arvif->vdev_id;
+	ar->scan.roc_freq = chan->center_freq;
 	spin_unlock_bh(&ar->data_lock);
 
 	memset(&arg, 0, sizeof(arg));
@@ -2318,8 +2320,18 @@ static int ath10k_remain_on_channel(struct ieee80211_hw *hw,
 		spin_lock_bh(&ar->data_lock);
 		ar->scan.in_progress = false;
 		spin_unlock_bh(&ar->data_lock);
+		goto exit;
 	}
 
+	ret = wait_for_completion_timeout(&ar->scan.on_channel, 3*HZ);
+	if (ret == 0) {
+		ath10k_warn("could not switch to channel for roc scan\n");
+		ath10k_abort_scan(ar);
+		ret = -ETIMEDOUT;
+		goto exit;
+	}
+
+	ret = 0;
 exit:
 	mutex_unlock(&ar->conf_mutex);
 	return ret;

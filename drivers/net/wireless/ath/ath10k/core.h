@@ -303,11 +303,13 @@ struct ath10k {
 	struct {
 		struct completion started;
 		struct completion completed;
+		struct completion on_channel;
 		struct timer_list timeout;
 		bool is_roc;
 		bool in_progress;
 		bool aborting;
 		int vdev_id;
+		int roc_freq;
 	} scan;
 
 	struct {
