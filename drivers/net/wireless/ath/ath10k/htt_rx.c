@@ -718,6 +718,13 @@ static int ath10k_htt_rx_msdu(struct ath10k_htt *htt, struct htt_rx_info *info)
 	enum rx_msdu_decap_format fmt;
 	enum htt_rx_mpdu_encrypt_type enctype;
 
+	/* This shouldn't happen. If it does than it may be a FW bug. */
+	if (skb->next) {
+		ath10k_warn("received chained non A-MSDU frame\n");
+		ath10k_htt_rx_free_msdu_chain(skb->next);
+		skb->next = NULL;
+	}
+
 	rxd = (void *)skb->data - sizeof(*rxd);
 	fmt = MS(__le32_to_cpu(rxd->msdu_start.info1),
 			RX_MSDU_START_INFO1_DECAP_FORMAT);
