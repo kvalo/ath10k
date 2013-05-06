@@ -576,7 +576,11 @@ int ath10k_core_register(struct ath10k *ar)
 	if (status)
 		goto err_disconnect_htc;
 
-	ath10k_wmi_cmd_init(ar);
+	status = ath10k_wmi_cmd_init(ar);
+	if (status) {
+		ath10k_err("could not send WMI init command (%d)\n", status);
+		goto err_disconnect_htc;
+	}
 
 	status = ath10k_wmi_wait_for_unified_ready(ar);
 	if (status <= 0) {
@@ -636,6 +640,8 @@ int ath10k_core_target_suspend(struct ath10k *ar)
 	ath10k_dbg(ATH10K_DBG_CORE, "%s: called", __func__);
 
 	ret = ath10k_wmi_pdev_suspend_target(ar);
+	if (ret)
+		ath10k_warn("could not suspend target (%d)\n", ret);
 
 	return ret;
 }
@@ -648,6 +654,8 @@ int ath10k_core_target_resume(struct ath10k *ar)
 	ath10k_dbg(ATH10K_DBG_CORE, "%s: called", __func__);
 
 	ret = ath10k_wmi_pdev_resume_target(ar);
+	if (ret)
+		ath10k_warn("could not resume target (%d)\n", ret);
 
 	return ret;
 }

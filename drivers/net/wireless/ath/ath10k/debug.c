@@ -278,6 +278,7 @@ static ssize_t ath10k_read_fw_stats(struct file *file, char __user *user_buf,
 	ssize_t ret_cnt;
 	long left;
 	int i;
+	int ret;
 
 	fw_stats = &ar->debug.target_stats;
 
@@ -285,7 +286,9 @@ static ssize_t ath10k_read_fw_stats(struct file *file, char __user *user_buf,
 	if (!buf)
 		return -ENOMEM;
 
-	if (ath10k_wmi_request_stats(ar, WMI_REQUEST_PEER_STAT)) {
+	ret = ath10k_wmi_request_stats(ar, WMI_REQUEST_PEER_STAT);
+	if (ret) {
+		ath10k_warn("could not request stats (%d)\n", ret);
 		kfree(buf);
 		return -EIO;
 	}

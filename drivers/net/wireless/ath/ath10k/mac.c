@@ -1077,7 +1077,7 @@ static int ath10k_station_disassoc(struct ath10k *ar, struct ath10k_vif *arvif,
 /* Regulatory */
 /**************/
 
-static void ath10k_update_channel_list(struct ath10k *ar)
+static int ath10k_update_channel_list(struct ath10k *ar)
 {
 	struct ieee80211_hw *hw = ar->hw;
 	struct ieee80211_supported_band **bands;
@@ -1087,6 +1087,7 @@ static void ath10k_update_channel_list(struct ath10k *ar)
 	struct wmi_channel_arg *ch;
 	bool passive;
 	int len;
+	int ret;
 	int i;
 
 	bands = hw->wiphy->bands;
@@ -1105,10 +1106,8 @@ static void ath10k_update_channel_list(struct ath10k *ar)
 
 	len = sizeof(struct wmi_channel_arg) * arg.n_channels;
 	arg.channels = kzalloc(len, GFP_KERNEL);
-	if (!arg.channels) {
-		ath10k_warn("%s alloc failed\n", __func__);
-		return;
-	}
+	if (!arg.channels)
+		return -ENOMEM;
 
 	ch = arg.channels;
 	for (band = 0; band < IEEE80211_NUM_BANDS; band++) {
@@ -1153,8 +1152,10 @@ static void ath10k_update_channel_list(struct ath10k *ar)
 		}
 	}
 
-	ath10k_wmi_scan_chan_list(ar, &arg);
+	ret = ath10k_wmi_scan_chan_list(ar, &arg);
 	kfree(arg.channels);
+
+	return ret;
 }
 
 static void ath10k_reg_notifier(struct wiphy *wiphy,
@@ -1162,9 +1163,13 @@ static void ath10k_reg_notifier(struct wiphy *wiphy,
 {
 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
 	struct ath10k *ar = hw->priv;
+	int ret;
 
 	ath_reg_notifier_apply(wiphy, request, &ath10k_common(ar)->regulatory);
-	ath10k_update_channel_list(ar);
+
+	ret = ath10k_update_channel_list(ar);
+	if (ret)
+		ath10k_warn("could not update channel list (%d)\n", ret);
 }
 
 /***************/
