@@ -457,9 +457,11 @@ void ath10k_do_pci_wake(struct ath10k *ar)
 			break;
 		}
 
-		if (tot_delay > PCIE_WAKE_TIMEOUT)
-			ath10k_warn("keep_awake_count %d\n",
+		if (tot_delay > PCIE_WAKE_TIMEOUT) {
+			ath10k_warn("target takes too long to wake up (awake count %d)\n",
 				    atomic_read(&ar_pci->keep_awake_count));
+			break;
+		}
 
 		udelay(curr_delay);
 		tot_delay += curr_delay;
