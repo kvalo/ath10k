@@ -1481,8 +1481,10 @@ static int ath10k_start_scan(struct ath10k *ar,
 	/* the scan can complete earlier, before we even
 	 * start the timer. in that case the timer handler
 	 * checks ar->scan.in_progress and bails out if its
-	 * false. */
-	mod_timer(&ar->scan.timeout, jiffies + (arg->max_scan_time*HZ)/1000);
+	 * false. Add a 200ms margin to account event/command
+	 * processing. */
+	mod_timer(&ar->scan.timeout, jiffies +
+		  ((arg->max_scan_time+200)*HZ)/1000);
 	return 0;
 }
 
