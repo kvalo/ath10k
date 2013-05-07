@@ -247,15 +247,15 @@ enum htt_rx_mpdu_encrypt_type {
 #define RX_MPDU_START_INFO0_SEQ_NUM_LSB       16
 #define RX_MPDU_START_INFO0_ENCRYPT_TYPE_MASK 0xf0000000
 #define RX_MPDU_START_INFO0_ENCRYPT_TYPE_LSB  28
-#define RX_MPDU_START_INFO0_TID_MASK          0xf0000000
-#define RX_MPDU_START_INFO0_TID_LSB           28
+#define RX_MPDU_START_INFO0_FROM_DS           (1 << 11)
+#define RX_MPDU_START_INFO0_TO_DS             (1 << 12)
+#define RX_MPDU_START_INFO0_ENCRYPTED         (1 << 13)
+#define RX_MPDU_START_INFO0_RETRY             (1 << 14)
+#define RX_MPDU_START_INFO0_TXBF_H_INFO       (1 << 15)
 
-#define RX_MPDU_START_INFO1_FROM_DS     (1 << 11)
-#define RX_MPDU_START_INFO1_TO_DS       (1 << 12)
-#define RX_MPDU_START_INFO1_ENCRYPTED   (1 << 13)
-#define RX_MPDU_START_INFO1_RETRY       (1 << 14)
-#define RX_MPDU_START_INFO1_TXBF_H_INFO (1 << 15)
-#define RX_MPDU_START_INFO1_DIRECTED    (1 << 16)
+#define RX_MPDU_START_INFO1_TID_MASK 0xf0000000
+#define RX_MPDU_START_INFO1_TID_LSB  28
+#define RX_MPDU_START_INFO1_DIRECTED (1 << 16)
 
 struct rx_mpdu_start {
 	__le32 info0;
