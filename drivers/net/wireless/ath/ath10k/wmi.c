@@ -355,6 +355,13 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 	hdr = (struct ieee80211_hdr *)skb->data;
 	fc = le16_to_cpu(hdr->frame_control);
 
+	if (fc & IEEE80211_FCTL_PROTECTED) {
+		status->flag |= RX_FLAG_DECRYPTED | RX_FLAG_IV_STRIPPED |
+				RX_FLAG_MMIC_STRIPPED;
+		hdr->frame_control = __cpu_to_le16(fc &
+					~IEEE80211_FCTL_PROTECTED);
+	}
+
 	ath10k_dbg(ATH10K_DBG_WMI,
 		   "event mgmt rx skb %p len %d ftype %02x stype %02x\n",
 		   skb, skb->len,
