@@ -350,6 +350,26 @@ static int ath10k_peer_delete(struct ath10k *ar, u32 vdev_id, const u8 *addr)
 	return 0;
 }
 
+static void ath10k_peer_cleanup(struct ath10k *ar, u32 vdev_id)
+{
+	struct ath10k_peer *peer, *tmp;
+
+	lockdep_assert_held(&ar->conf_mutex);
+
+	spin_lock_bh(&ar->data_lock);
+	list_for_each_entry_safe(peer, tmp, &ar->peers, list) {
+		if (peer->vdev_id != vdev_id)
+			continue;
+
+		ath10k_warn("removing stale peer %pM from vdev_id %d\n",
+			    peer->addr, vdev_id);
+
+		list_del(&peer->list);
+		kfree(peer);
+	}
+	spin_unlock_bh(&ar->data_lock);
+}
+
 /************************/
 /* Interface management */
 /************************/
@@ -1772,6 +1792,8 @@ static void ath10k_remove_interface(struct ieee80211_hw *hw,
 
 	if (arvif->vdev_type == WMI_VDEV_TYPE_MONITOR)
 		ar->monitor_present = false;
+
+	ath10k_peer_cleanup(ar, arvif->vdev_id);
 
 	mutex_unlock(&ar->conf_mutex);
 }
