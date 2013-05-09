@@ -91,6 +91,8 @@ enum wmi_service_id {
 	WMI_SERVICE_RTT,		  /* RTT (round trip time) support */
 	WMI_SERVICE_RATECTRL,		  /* Rate-control */
 	WMI_SERVICE_WOW,		  /* WOW Support */
+	WMI_SERVICE_RATECTRL_CACHE,       /* Rate-control caching */
+	WMI_SERVICE_IRAM_TIDS,            /* TIDs in IRAM */
 	WMI_SERVICE_ARPNS_OFFLOAD,	  /* ARP NS Offload support */
 	WMI_SERVICE_NLO,		  /* Network list offload service */
 	WMI_SERVICE_GTK_OFFLOAD,	  /* GTK offload */
@@ -143,6 +145,10 @@ static inline char *wmi_service_name(int service_id)
 		return "RATECTRL";
 	case WMI_SERVICE_WOW:
 		return "WOW";
+	case WMI_SERVICE_RATECTRL_CACHE:
+		return "RATECTRL CACHE";
+	case WMI_SERVICE_IRAM_TIDS:
+		return "IRAM TIDS";
 	case WMI_SERVICE_ARPNS_OFFLOAD:
 		return "ARPNS_OFFLOAD";
 	case WMI_SERVICE_NLO:
@@ -163,6 +169,12 @@ static inline char *wmi_service_name(int service_id)
 		return "FORCE FW HANG";
 	case WMI_SERVICE_GPIO:
 		return "GPIO";
+	case WMI_SERVICE_STA_DTIM_PS_MODULATED_DTIM:
+		return "MODULATED DTIM";
+	case WMI_STA_UAPSD_BASIC_AUTO_TRIG:
+		return "BASIC UAPSD";
+	case WMI_STA_UAPSD_VAR_AUTO_TRIG:
+		return "VAR UAPSD";
 	case WMI_SERVICE_TX_ENCAP:
 		return "TX ENCAP";
 	default:
