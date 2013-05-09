@@ -104,6 +104,7 @@ enum wmi_service_id {
 	WMI_SERVICE_STA_DTIM_PS_MODULATED_DTIM, /* Modulated DTIM support */
 	WMI_STA_UAPSD_BASIC_AUTO_TRIG,    /* UAPSD AC Trigger Generation  */
 	WMI_STA_UAPSD_VAR_AUTO_TRIG,      /* -do- */
+	WMI_SERVICE_TX_ENCAP,             /* Packet type for TX encapsulation */
 
 	WMI_SERVICE_LAST,
 	WMI_MAX_SERVICE = 64		  /* max service */
@@ -162,6 +163,8 @@ static inline char *wmi_service_name(int service_id)
 		return "FORCE FW HANG";
 	case WMI_SERVICE_GPIO:
 		return "GPIO";
+	case WMI_SERVICE_TX_ENCAP:
+		return "TX ENCAP";
 	default:
 		return "UNKNOWN SERVICE\n";
 	}
@@ -2185,6 +2188,11 @@ enum wmi_vdev_param {
 	 * otherwise forwards to host.
 	 */
 	WMI_VDEV_PARAM_DROP_UNENCRY,
+
+	/*
+	 * Set the encapsulation type for frames.
+	 */
+	WMI_VDEV_PARAM_TX_ENCAP_TYPE,
 };
 
 /* slot time long */

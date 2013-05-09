@@ -1700,6 +1700,12 @@ static int ath10k_add_interface(struct ieee80211_hw *hw,
 	if (ret)
 		ath10k_warn("Failed to set default keyid: %d\n", ret);
 
+	ret = ath10k_wmi_vdev_set_param(ar, arvif->vdev_id,
+					WMI_VDEV_PARAM_TX_ENCAP_TYPE,
+					ATH10K_HW_TXRX_NATIVE_WIFI);
+	if (ret)
+		ath10k_warn("Failed to set TX encap: %d\n", ret);
+
 	if (arvif->vdev_type == WMI_VDEV_TYPE_AP) {
 		ret = ath10k_peer_create(ar, arvif->vdev_id, vif->addr);
 		if (ret) {
