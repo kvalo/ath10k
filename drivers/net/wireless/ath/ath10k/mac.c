@@ -1319,6 +1319,12 @@ static void ath10k_tx_htt(struct ath10k *ar, struct sk_buff *skb)
 
 	if (ieee80211_is_mgmt(hdr->frame_control))
 		ret = ath10k_htt_mgmt_tx(ar->htt, skb);
+	else if (ieee80211_is_nullfunc(hdr->frame_control))
+		/* FW does not report tx status properly for NullFunc frames
+		 * unless they are sent through mgmt tx path. mac80211 sends
+		 * those frames when it detects link/beacon loss and depends on
+		 * the tx status to be correct. */
+		ret = ath10k_htt_mgmt_tx(ar->htt, skb);
 	else
 		ret = ath10k_htt_tx(ar->htt, skb);
 
