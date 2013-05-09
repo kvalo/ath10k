@@ -217,6 +217,7 @@ struct ath10k_vif {
 	union {
 		struct {
 			u8 bssid[ETH_ALEN];
+			u32 uapsd;
 		} sta;
 		struct {
 			/* 127 stations; wmi limit */

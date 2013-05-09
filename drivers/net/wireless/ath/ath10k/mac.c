@@ -963,9 +963,6 @@ static void ath10k_peer_assoc_h_qos_ap(struct ath10k *ar,
 	}
 }
 
-/*
- * FIXME: Handle STA UAPSD later.
- */
 static void ath10k_peer_assoc_h_qos_sta(struct ath10k *ar,
 					struct ath10k_vif *arvif,
 					struct ieee80211_sta *sta,
@@ -2298,6 +2295,63 @@ static int ath10k_sta_state(struct ieee80211_hw *hw,
 	return ret;
 }
 
+static int ath10k_conf_tx_uapsd(struct ath10k *ar, struct ieee80211_vif *vif,
+				 u16 ac, bool enable)
+{
+	struct ath10k_vif *arvif = ath10k_vif_to_arvif(vif);
+	u32 value = 0;
+	int ret = 0;
+
+	if (arvif->vdev_type != WMI_VDEV_TYPE_STA)
+		return 0;
+
+	switch (ac) {
+	case IEEE80211_AC_VO:
+		value = WMI_STA_PS_UAPSD_AC3_DELIVERY_EN |
+			WMI_STA_PS_UAPSD_AC3_TRIGGER_EN;
+		break;
+	case IEEE80211_AC_VI:
+		value = WMI_STA_PS_UAPSD_AC2_DELIVERY_EN |
+			WMI_STA_PS_UAPSD_AC2_TRIGGER_EN;
+		break;
+	case IEEE80211_AC_BE:
+		value = WMI_STA_PS_UAPSD_AC1_DELIVERY_EN |
+			WMI_STA_PS_UAPSD_AC1_TRIGGER_EN;
+		break;
+	case IEEE80211_AC_BK:
+		value = WMI_STA_PS_UAPSD_AC0_DELIVERY_EN |
+			WMI_STA_PS_UAPSD_AC0_TRIGGER_EN;
+		break;
+	}
+
+	if (enable)
+		arvif->u.sta.uapsd |= value;
+	else
+		arvif->u.sta.uapsd &= ~value;
+
+	ret = ath10k_wmi_set_sta_ps_param(ar, arvif->vdev_id,
+					  WMI_STA_PS_PARAM_UAPSD,
+					  arvif->u.sta.uapsd);
+	if (ret) {
+		ath10k_warn("could not set uapsd params %d\n", ret);
+		goto exit;
+	}
+
+	if (arvif->u.sta.uapsd)
+		value = WMI_STA_PS_RX_WAKE_POLICY_POLL_UAPSD;
+	else
+		value = WMI_STA_PS_RX_WAKE_POLICY_WAKE;
+
+	ret = ath10k_wmi_set_sta_ps_param(ar, arvif->vdev_id,
+					  WMI_STA_PS_PARAM_RX_WAKE_POLICY,
+					  value);
+	if (ret)
+		ath10k_warn("could not set rx wake param %d\n", ret);
+
+exit:
+	return ret;
+}
+
 static int ath10k_conf_tx(struct ieee80211_hw *hw,
 			  struct ieee80211_vif *vif, u16 ac,
 			  const struct ieee80211_tx_queue_params *params)
@@ -2323,8 +2377,10 @@ static int ath10k_conf_tx(struct ieee80211_hw *hw,
 		break;
 	}
 
-	if (WARN_ON(!p))
-		return -EINVAL;
+	if (WARN_ON(!p)) {
+		ret = -EINVAL;
+		goto exit;
+	}
 
 	p->cwmin = params->cw_min;
 	p->cwmax = params->cw_max;
@@ -2337,13 +2393,18 @@ static int ath10k_conf_tx(struct ieee80211_hw *hw,
 	 */
 	p->txop = params->txop * 32;
 
-	/* FIXME: can we pass the params->uapsd to the FW? */
 	/* FIXME: FW accepts wmm params per hw, not per vif */
-
 	ret = ath10k_wmi_pdev_set_wmm_params(ar, &ar->wmm_params);
-	if (ret)
-		ath10k_warn("could not set wmm params (%d)\n", ret);
+	if (ret) {
+		ath10k_warn("could not set wmm params %d\n", ret);
+		goto exit;
+	}
 
+	ret = ath10k_conf_tx_uapsd(ar, vif, ac, params->uapsd);
+	if (ret)
+		ath10k_warn("could not set sta uapsd %d\n", ret);
+
+exit:
 	mutex_unlock(&ar->conf_mutex);
 	return ret;
 }
@@ -2844,6 +2905,7 @@ int ath10k_mac_register(struct ath10k *ar)
 	ar->hw->flags = IEEE80211_HW_SIGNAL_DBM |
 			IEEE80211_HW_SUPPORTS_PS |
 			IEEE80211_HW_SUPPORTS_DYNAMIC_PS |
+			IEEE80211_HW_SUPPORTS_UAPSD |
 			IEEE80211_HW_MFP_CAPABLE |
 			IEEE80211_HW_REPORTS_TX_ACK_STATUS |
 			IEEE80211_HW_HAS_RATE_CONTROL |
