@@ -1885,6 +1885,32 @@ int ath10k_wmi_set_sta_ps_param(struct ath10k *ar, u32 vdev_id,
 	return ath10k_wmi_cmd_send(ar, skb, WMI_STA_POWERSAVE_PARAM_CMDID);
 }
 
+int ath10k_wmi_set_ap_ps_param(struct ath10k *ar, u32 vdev_id, const u8 *mac,
+			       enum wmi_ap_ps_peer_param param_id, u32 value)
+{
+	struct wmi_ap_ps_peer_cmd *cmd;
+	struct sk_buff *skb;
+
+	if (!mac)
+		return -EINVAL;
+
+	skb = ath10k_wmi_alloc_skb(sizeof(*cmd));
+	if (!skb)
+		return -ENOMEM;
+
+	cmd = (struct wmi_ap_ps_peer_cmd *)skb->data;
+	cmd->vdev_id = __cpu_to_le32(vdev_id);
+	cmd->param_id = __cpu_to_le32(param_id);
+	cmd->param_value = __cpu_to_le32(value);
+	memcpy(&cmd->peer_macaddr, mac, ETH_ALEN);
+
+	ath10k_dbg(ATH10K_DBG_WMI,
+		   "wmi ap ps param vdev_id 0x%X param %d value %d mac_addr %pM\n",
+		   vdev_id, param_id, value, mac);
+
+	return ath10k_wmi_cmd_send(ar, skb, WMI_AP_PS_PEER_PARAM_CMDID);
+}
+
 int ath10k_wmi_scan_chan_list(struct ath10k *ar,
 			      const struct wmi_scan_chan_list_arg *arg)
 {
