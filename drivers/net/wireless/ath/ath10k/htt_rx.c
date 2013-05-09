@@ -1084,6 +1084,8 @@ void ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 			tx_done.discard = false;
 			break;
 		case HTT_MGMT_TX_STATUS_RETRY:
+			tx_done.no_ack = true;
+			break;
 		case HTT_MGMT_TX_STATUS_DROP:
 			tx_done.discard = true;
 			break;
