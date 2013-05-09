@@ -1081,7 +1081,6 @@ void ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 
 		switch (status) {
 		case HTT_MGMT_TX_STATUS_OK:
-			tx_done.discard = false;
 			break;
 		case HTT_MGMT_TX_STATUS_RETRY:
 			tx_done.no_ack = true;
@@ -1104,10 +1103,8 @@ void ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb)
 		switch (status) {
 		case HTT_DATA_TX_STATUS_NO_ACK:
 			tx_done.no_ack = true;
-			tx_done.discard = false;
 			break;
 		case HTT_DATA_TX_STATUS_OK:
-			tx_done.discard = false;
 			break;
 		case HTT_DATA_TX_STATUS_DISCARD:
 		case HTT_DATA_TX_STATUS_POSTPONE:
