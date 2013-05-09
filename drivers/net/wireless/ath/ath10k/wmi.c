@@ -422,18 +422,6 @@ static void ath10k_wmi_event_vdev_start_resp(struct ath10k *ar,
 	complete(&ar->vdev_setup_done);
 }
 
-static void ath10k_wmi_event_vdev_standby_req(struct ath10k *ar,
-					      struct sk_buff *skb)
-{
-	ath10k_dbg(ATH10K_DBG_WMI, "WMI_VDEV_STANDBY_REQ_EVENTID\n");
-}
-
-static void ath10k_wmi_event_vdev_resume_req(struct ath10k *ar,
-					     struct sk_buff *skb)
-{
-	ath10k_dbg(ATH10K_DBG_WMI, "WMI_VDEV_RESUME_REQ_EVENTID\n");
-}
-
 static void ath10k_wmi_event_vdev_stopped(struct ath10k *ar,
 					  struct sk_buff *skb)
 {
@@ -977,12 +965,6 @@ static void ath10k_wmi_event_process(struct ath10k *ar, struct sk_buff *skb)
 		break;
 	case WMI_VDEV_START_RESP_EVENTID:
 		ath10k_wmi_event_vdev_start_resp(ar, skb);
-		break;
-	case WMI_VDEV_STANDBY_REQ_EVENTID:
-		ath10k_wmi_event_vdev_standby_req(ar, skb);
-		break;
-	case WMI_VDEV_RESUME_REQ_EVENTID:
-		ath10k_wmi_event_vdev_resume_req(ar, skb);
 		break;
 	case WMI_VDEV_STOPPED_EVENTID:
 		ath10k_wmi_event_vdev_stopped(ar, skb);

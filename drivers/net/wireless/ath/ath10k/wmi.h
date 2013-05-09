@@ -99,6 +99,11 @@ enum wmi_service_id {
 	WMI_SERVICE_CHATTER,		  /* Chatter service */
 	WMI_SERVICE_COEX_FREQAVOID,	  /* FW report freq range to avoid */
 	WMI_SERVICE_PACKET_POWER_SAVE,	  /* packet power save service */
+	WMI_SERVICE_FORCE_FW_HANG,        /* To test fw recovery mechanism */
+	WMI_SERVICE_GPIO,                 /* GPIO service */
+	WMI_SERVICE_STA_DTIM_PS_MODULATED_DTIM, /* Modulated DTIM support */
+	WMI_STA_UAPSD_BASIC_AUTO_TRIG,    /* UAPSD AC Trigger Generation  */
+	WMI_STA_UAPSD_VAR_AUTO_TRIG,      /* -do- */
 
 	WMI_SERVICE_LAST,
 	WMI_MAX_SERVICE = 64		  /* max service */
@@ -153,6 +158,10 @@ static inline char *wmi_service_name(int service_id)
 		return "COEX_FREQAVOID";
 	case WMI_SERVICE_PACKET_POWER_SAVE:
 		return "PACKET_POWER_SAVE";
+	case WMI_SERVICE_FORCE_FW_HANG:
+		return "FORCE FW HANG";
+	case WMI_SERVICE_GPIO:
+		return "GPIO";
 	default:
 		return "UNKNOWN SERVICE\n";
 	}
@@ -216,6 +225,7 @@ enum wmi_cmd_group {
 	WMI_GRP_CHATTER,
 	WMI_GRP_TID_ADDBA,
 	WMI_GRP_MISC,
+	WMI_GRP_GPIO,
 };
 
 #define WMI_CMD_GRP(grp_id) (((grp_id) << 12) | 0x1)
@@ -244,6 +254,7 @@ enum wmi_cmd_id {
 	WMI_PDEV_SET_QUIET_MODE_CMDID,
 	WMI_PDEV_GREEN_AP_PS_ENABLE_CMDID,
 	WMI_PDEV_GET_TPC_CONFIG_CMDID,
+	WMI_PDEV_SET_BASE_MACADDR_CMDID,
 
 	/* VDEV (virtual device) specific commands */
 	WMI_VDEV_CREATE_CMDID = WMI_CMD_GRP(WMI_GRP_VDEV),
@@ -253,8 +264,6 @@ enum wmi_cmd_id {
 	WMI_VDEV_UP_CMDID,
 	WMI_VDEV_STOP_CMDID,
 	WMI_VDEV_DOWN_CMDID,
-	WMI_VDEV_STANDBY_RESPONSE_CMDID,
-	WMI_VDEV_RESUME_RESPONSE_CMDID,
 	WMI_VDEV_SET_PARAM_CMDID,
 	WMI_VDEV_INSTALL_KEY_CMDID,
 
@@ -374,14 +383,23 @@ enum wmi_cmd_id {
 	WMI_PEER_TID_ADDBA_CMDID = WMI_CMD_GRP(WMI_GRP_TID_ADDBA),
 	WMI_PEER_TID_DELBA_CMDID,
 
+	/* set station mimo powersave method */
+	WMI_STA_DTIM_PS_METHOD_CMDID,
+	/* Configure the Station UAPSD AC Auto Trigger Parameters */
+	WMI_STA_UAPSD_AUTO_TRIG_CMDID,
+
 	/* misc command group */
 	WMI_ECHO_CMDID = WMI_CMD_GRP(WMI_GRP_MISC),
+	WMI_PDEV_UTF_CMDID,
 	WMI_DBGLOG_CFG_CMDID,
 	WMI_PDEV_QVIT_CMDID,
 	WMI_PDEV_FTM_INTG_CMDID,
 	WMI_VDEV_SET_KEEPALIVE_CMDID,
 	WMI_VDEV_GET_KEEPALIVE_CMDID,
-	WMI_PDEV_UTF_CMDID,
+
+	/* GPIO Configuration */
+	WMI_GPIO_CONFIG_CMDID = WMI_CMD_GRP(WMI_GRP_GPIO),
+	WMI_GPIO_OUTPUT_CMDID,
 };
 
 enum wmi_event_id {
@@ -398,8 +416,6 @@ enum wmi_event_id {
 
 	/* VDEV specific events */
 	WMI_VDEV_START_RESP_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_VDEV),
-	WMI_VDEV_STANDBY_REQ_EVENTID,
-	WMI_VDEV_RESUME_REQ_EVENTID,
 	WMI_VDEV_STOPPED_EVENTID,
 	WMI_VDEV_INSTALL_KEY_COMPLETE_EVENTID,
 
@@ -436,6 +452,7 @@ enum wmi_event_id {
 
 	/* Misc events */
 	WMI_ECHO_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_MISC),
+	WMI_PDEV_UTF_EVENTID,
 	WMI_DEBUG_MESG_EVENTID,
 	WMI_UPDATE_STATS_EVENTID,
 	WMI_DEBUG_PRINT_EVENTID,
@@ -445,7 +462,9 @@ enum wmi_event_id {
 	WMI_PDEV_FTM_INTG_EVENTID,
 	WMI_WLAN_FREQ_AVOID_EVENTID,
 	WMI_VDEV_GET_KEEPALIVE_EVENTID,
-	WMI_PDEV_UTF_EVENTID,
+
+	/* GPIO Event */
+	WMI_GPIO_INPUT_EVENTID = WMI_EVT_GRP_START_ID(WMI_GRP_GPIO),
 };
 
 enum wmi_phy_mode {
@@ -1500,6 +1519,14 @@ enum wmi_pdev_param {
 	WMI_PDEV_PARAM_DCS,
 	/* Enable/Disable ANI on target */
 	WMI_PDEV_PARAM_ANI_ENABLE,
+	/* configure the ANI polling period */
+	WMI_PDEV_PARAM_ANI_POLL_PERIOD,
+	/* configure the ANI listening period */
+	WMI_PDEV_PARAM_ANI_LISTEN_PERIOD,
+	/* configure OFDM immunity level */
+	WMI_PDEV_PARAM_ANI_OFDM_LEVEL,
+	/* configure CCK immunity level */
+	WMI_PDEV_PARAM_ANI_CCK_LEVEL,
 	/* Enable/Disable CDD for 1x1 STAs in rate control module */
 	WMI_PDEV_PARAM_DYNTXCHAIN,
 	/* Enable/Disable proxy STA */
@@ -2076,6 +2103,10 @@ enum wmi_vdev_param {
 	WMI_VDEV_PARAM_ATIM_WINDOW,
 	/* BMISS max */
 	WMI_VDEV_PARAM_BMISS_COUNT_MAX,
+	/* BMISS first time */
+	WMI_VDEV_PARAM_BMISS_FIRST_BCNT,
+	/* BMISS final time */
+	WMI_VDEV_PARAM_BMISS_FINAL_BCNT,
 	/* WMM enables/disabled */
 	WMI_VDEV_PARAM_FEATURE_WMM,
 	/* Channel width */
@@ -2148,6 +2179,12 @@ enum wmi_vdev_param {
 
 	/* Set packet power save */
 	WMI_VDEV_PARAM_PACKET_POWERSAVE,
+
+	/*
+	 * Drops un-encrypted packets if eceived in an encrypted connection
+	 * otherwise forwards to host.
+	 */
+	WMI_VDEV_PARAM_DROP_UNENCRY,
 };
 
 /* slot time long */
