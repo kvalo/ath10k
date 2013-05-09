@@ -906,21 +906,91 @@ static void ath10k_peer_assoc_h_ht(struct ath10k *ar,
 		   arg->peer_num_spatial_streams);
 }
 
+static void ath10k_peer_assoc_h_qos_ap(struct ath10k *ar,
+				       struct ath10k_vif *arvif,
+				       struct ieee80211_sta *sta,
+				       struct ieee80211_bss_conf *bss_conf,
+				       struct wmi_peer_assoc_complete_arg *arg)
+{
+	u32 uapsd = 0;
+	u32 max_sp = 0;
+
+	if (sta->wme)
+		arg->peer_flags |= WMI_PEER_QOS;
+
+	if (sta->wme && sta->uapsd_queues) {
+		ath10k_dbg(ATH10K_DBG_MAC, "uapsd_queues: 0x%X, max_sp: %d\n",
+			   sta->uapsd_queues, sta->max_sp);
+
+		arg->peer_flags |= WMI_PEER_APSD;
+		arg->peer_flags |= WMI_RC_UAPSD_FLAG;
+
+		if (sta->uapsd_queues & IEEE80211_WMM_IE_STA_QOSINFO_AC_VO)
+			uapsd |= WMI_AP_PS_UAPSD_AC3_DELIVERY_EN |
+				 WMI_AP_PS_UAPSD_AC3_TRIGGER_EN;
+		if (sta->uapsd_queues & IEEE80211_WMM_IE_STA_QOSINFO_AC_VI)
+			uapsd |= WMI_AP_PS_UAPSD_AC2_DELIVERY_EN |
+				 WMI_AP_PS_UAPSD_AC2_TRIGGER_EN;
+		if (sta->uapsd_queues & IEEE80211_WMM_IE_STA_QOSINFO_AC_BK)
+			uapsd |= WMI_AP_PS_UAPSD_AC1_DELIVERY_EN |
+				 WMI_AP_PS_UAPSD_AC1_TRIGGER_EN;
+		if (sta->uapsd_queues & IEEE80211_WMM_IE_STA_QOSINFO_AC_BE)
+			uapsd |= WMI_AP_PS_UAPSD_AC0_DELIVERY_EN |
+				 WMI_AP_PS_UAPSD_AC0_TRIGGER_EN;
+
+
+		if (sta->max_sp < MAX_WMI_AP_PS_PEER_PARAM_MAX_SP)
+			max_sp = sta->max_sp;
+
+		ath10k_wmi_set_ap_ps_param(ar, arvif->vdev_id,
+					   sta->addr,
+					   WMI_AP_PS_PEER_PARAM_UAPSD,
+					   uapsd);
+
+		ath10k_wmi_set_ap_ps_param(ar, arvif->vdev_id,
+					   sta->addr,
+					   WMI_AP_PS_PEER_PARAM_MAX_SP,
+					   max_sp);
+
+		/* TODO setup this based on STA listen interval and
+		   beacon interval. Currently we don't know
+		   sta->listen_interval - mac80211 patch required.
+		   Currently use 10 seconds */
+		ath10k_wmi_set_ap_ps_param(ar, arvif->vdev_id,
+					   sta->addr,
+					   WMI_AP_PS_PEER_PARAM_AGEOUT_TIME,
+					   10);
+	}
+}
+
 /*
- * FIXME: Handle UAPSD later.
+ * FIXME: Handle STA UAPSD later.
  */
+static void ath10k_peer_assoc_h_qos_sta(struct ath10k *ar,
+					struct ath10k_vif *arvif,
+					struct ieee80211_sta *sta,
+					struct ieee80211_bss_conf *bss_conf,
+					struct wmi_peer_assoc_complete_arg *arg)
+{
+	if (bss_conf->qos)
+		arg->peer_flags |= WMI_PEER_QOS;
+}
+
 static void ath10k_peer_assoc_h_qos(struct ath10k *ar,
 				    struct ath10k_vif *arvif,
 				    struct ieee80211_sta *sta,
 				    struct ieee80211_bss_conf *bss_conf,
 				    struct wmi_peer_assoc_complete_arg *arg)
 {
-	if (arvif->vdev_type == WMI_VDEV_TYPE_AP) {
-		if (sta->wme)
-			arg->peer_flags |= WMI_PEER_QOS;
-	} else if (arvif->vdev_type == WMI_VDEV_TYPE_STA) {
-		if (bss_conf->qos)
-			arg->peer_flags |= WMI_PEER_QOS;
+	switch (arvif->vdev_type) {
+	case WMI_VDEV_TYPE_AP:
+		ath10k_peer_assoc_h_qos_ap(ar, arvif, sta, bss_conf, arg);
+		break;
+	case WMI_VDEV_TYPE_STA:
+		ath10k_peer_assoc_h_qos_sta(ar, arvif, sta, bss_conf, arg);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -2800,6 +2870,7 @@ int ath10k_mac_register(struct ath10k *ar)
 	ar->hw->wiphy->flags |= WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
 	ar->hw->wiphy->max_remain_on_channel_duration = 5000;
 
+	ar->hw->wiphy->flags |= WIPHY_FLAG_AP_UAPSD;
 	/*
 	 * on LL hardware queues are managed entirely by the FW
 	 * so we only advertise to mac we can do the queues thing
