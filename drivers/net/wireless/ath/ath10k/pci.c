@@ -506,24 +506,6 @@ exit:
 	return compl;
 }
 
-static void ath10k_pci_check_process_ce(struct ath10k *ar)
-{
-	struct ath10k_pci *ar_pci = ath10k_pci_priv(ar);
-
-	/*
-	 * Check if another tasklet is already processing
-	 * the completion list. This could happen in multiple-MSI.
-	 */
-	spin_lock_bh(&ar_pci->compl_lock);
-	if (ar_pci->compl_processing) {
-		spin_unlock_bh(&ar_pci->compl_lock);
-		return;
-	}
-	spin_unlock_bh(&ar_pci->compl_lock);
-
-	ath10k_pci_process_ce(ar);
-}
-
 /* Called by lower (CE) layer when a send to Target completes. */
 static void ath10k_pci_ce_send_done(struct ce_state *ce_state,
 				    void *transfer_context,
@@ -583,7 +565,7 @@ static void ath10k_pci_ce_send_done(struct ce_state *ce_state,
 	if (!process)
 		return;
 
-	ath10k_pci_check_process_ce(ar);
+	ath10k_pci_process_ce(ar);
 }
 
 /* Called by lower (CE) layer when data is received from the Target. */
@@ -629,7 +611,7 @@ static void ath10k_pci_ce_recv_data(struct ce_state *ce_state,
 							   &transfer_id,
 							   &flags) == 0);
 
-	ath10k_pci_check_process_ce(ar);
+	ath10k_pci_process_ce(ar);
 }
 
 /* Send the first nbytes bytes of the buffer */
@@ -888,7 +870,18 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 	unsigned int nbytes;
 	int ret, send_done = 0;
 
-	do {
+	/* Upper layers aren't ready to handle tx/rx completions in parallel so
+	 * we must serialize all completion processing. */
+
+	spin_lock_bh(&ar_pci->compl_lock);
+	if (ar_pci->compl_processing) {
+		spin_unlock_bh(&ar_pci->compl_lock);
+		return;
+	}
+	ar_pci->compl_processing = true;
+	spin_unlock_bh(&ar_pci->compl_lock);
+
+	for (;;) {
 		spin_lock_bh(&ar_pci->compl_lock);
 		if (list_empty(&ar_pci->compl_process)) {
 			spin_unlock_bh(&ar_pci->compl_lock);
@@ -897,7 +890,6 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 		compl = list_first_entry(&ar_pci->compl_process,
 					 struct ath10k_pci_compl, list);
 		list_del(&compl->list);
-		ar_pci->compl_processing = true;
 		spin_unlock_bh(&ar_pci->compl_lock);
 
 		if (compl->send_or_recv == HIF_CE_COMPLETE_SEND) {
@@ -943,8 +935,7 @@ static void ath10k_pci_process_ce(struct ath10k *ar)
 		list_add_tail(&compl->list, &compl->pipe_info->compl_free);
 		compl->pipe_info->num_sends_allowed += send_done;
 		spin_unlock_bh(&compl->pipe_info->pipe_lock);
-
-	} while (1);
+	}
 
 	spin_lock_bh(&ar_pci->compl_lock);
 	ar_pci->compl_processing = false;
