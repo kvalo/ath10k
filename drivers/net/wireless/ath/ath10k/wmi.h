@@ -604,7 +604,7 @@ enum wmi_channel_change_cause {
 #define WMI_VHT_CAP_RX_STBC_MASK                 0x00000300
 #define WMI_VHT_CAP_RX_STBC_MASK_SHIFT           8
 #define WMI_VHT_CAP_MAX_AMPDU_LEN_EXP            0x03800000
-#define WMI_VHT_CAP_MAX_AMPDU_LEN_EXP_SHIT       23
+#define WMI_VHT_CAP_MAX_AMPDU_LEN_EXP_SHIFT      23
 #define WMI_VHT_CAP_RX_FIXED_ANT                 0x10000000
 #define WMI_VHT_CAP_TX_FIXED_ANT                 0x20000000
 
