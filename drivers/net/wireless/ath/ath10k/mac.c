@@ -1551,7 +1551,7 @@ static int ath10k_start_scan(struct ath10k *ar,
 	 * false. Add a 200ms margin to account event/command
 	 * processing. */
 	mod_timer(&ar->scan.timeout, jiffies +
-		  ((arg->max_scan_time+200)*HZ)/1000);
+		  msecs_to_jiffies(arg->max_scan_time+200));
 	return 0;
 }
 
