@@ -679,10 +679,17 @@ static u16 ath10k_pci_hif_get_free_queue_number(struct ath10k *ar, u8 pipe)
 static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 {
 	u32 reg_dump_area = 0;
-	u32 reg_dump_values[REG_DUMP_COUNT_QCA988X];
+	u32 reg_dump_values[REG_DUMP_COUNT_QCA988X] = {};
 	u32 host_addr;
 	int ret;
 	u32 i;
+
+	ath10k_err("firmware crashed!\n");
+	ath10k_err("hardware name %s version 0x%x\n",
+		   ar->hw_params.name, ar->target_version);
+	ath10k_err("firmware version: %u.%u.%u.%u\n", ar->fw_version_major,
+		   ar->fw_version_minor, ar->fw_version_release,
+		   ar->fw_version_build);
 
 	host_addr = host_interest_item_address(HI_ITEM(hi_failure_state));
 	if (ath10k_pci_diag_read_mem(ar, host_addr,
@@ -701,9 +708,16 @@ static void ath10k_pci_hif_dump_area(struct ath10k *ar)
 		return;
 	}
 
+	BUILD_BUG_ON(REG_DUMP_COUNT_QCA988X % 4);
+
 	ath10k_err("target Register Dump\n");
-	for (i = 0; i < REG_DUMP_COUNT_QCA988X; i++)
-		ath10k_err("[%02d]: 0x%08X\n", i, reg_dump_values[i]);
+	for (i = 0; i < REG_DUMP_COUNT_QCA988X; i += 4)
+		ath10k_err("[%02d]: 0x%08X 0x%08X 0x%08X 0x%08X\n",
+			   i,
+			   reg_dump_values[i],
+			   reg_dump_values[i + 1],
+			   reg_dump_values[i + 2],
+			   reg_dump_values[i + 3]);
 }
 
 static void ath10k_pci_hif_send_complete_check(struct ath10k *ar, u8 pipe,
