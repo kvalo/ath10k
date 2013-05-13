@@ -1252,7 +1252,7 @@ static void ath10k_reg_notifier(struct wiphy *wiphy,
 	struct ath10k *ar = hw->priv;
 	int ret;
 
-	ath_reg_notifier_apply(wiphy, request, &ath10k_common(ar)->regulatory);
+	ath_reg_notifier_apply(wiphy, request, &ar->ath_common.regulatory);
 
 	ret = ath10k_update_channel_list(ar);
 	if (ret)
@@ -2846,7 +2846,6 @@ struct ath10k_vif *ath10k_get_arvif(struct ath10k *ar, u32 vdev_id)
 
 int ath10k_mac_register(struct ath10k *ar)
 {
-	struct ath_common *common = ath10k_common(ar);
 	struct ieee80211_supported_band *band;
 	struct ieee80211_sta_ht_cap ht_cap;
 	void *channels;
@@ -2942,8 +2941,8 @@ int ath10k_mac_register(struct ath10k *ar)
 	ar->hw->wiphy->iface_combinations = &ath10k_if_comb;
 	ar->hw->wiphy->n_iface_combinations = 1;
 
-	common->regulatory.country_code = CTRY_DEFAULT;
-	ret = ath_regd_init(&common->regulatory, ar->hw->wiphy,
+	ar->ath_common.regulatory.country_code = CTRY_DEFAULT;
+	ret = ath_regd_init(&ar->ath_common.regulatory, ar->hw->wiphy,
 			    ath10k_reg_notifier);
 	if (ret) {
 		ath10k_err("Regulatory initialization failed\n");
@@ -2956,9 +2955,9 @@ int ath10k_mac_register(struct ath10k *ar)
 		return ret;
 	}
 
-	if (!ath_is_world_regd(&common->regulatory)) {
+	if (!ath_is_world_regd(&ar->ath_common.regulatory)) {
 		ret = regulatory_hint(ar->hw->wiphy,
-				      common->regulatory.alpha2);
+				      ar->ath_common.regulatory.alpha2);
 		if (ret)
 			goto exit;
 	}

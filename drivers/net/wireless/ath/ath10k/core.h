@@ -251,7 +251,7 @@ struct ath10k_debug {
 };
 
 struct ath10k {
-	struct ath_common common;
+	struct ath_common ath_common;
 	struct ieee80211_hw *hw;
 	struct device *dev;
 	u8 mac_addr[ETH_ALEN];
@@ -354,11 +354,6 @@ struct ath10k {
 	struct ath10k_debug debug;
 #endif
 };
-
-static inline struct ath_common *ath10k_common(struct ath10k *ar)
-{
-	return &ar->common;
-}
 
 struct ath10k *ath10k_core_create(void *hif_priv, struct device *dev,
 				  enum ath10k_bus bus,

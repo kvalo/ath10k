@@ -841,7 +841,6 @@ static void ath10k_wmi_event_vdev_install_key_complete(struct ath10k *ar,
 static void ath10k_wmi_service_ready_event_rx(struct ath10k *ar,
 					      struct sk_buff *skb)
 {
-	struct ath_common *common = ath10k_common(ar);
 	struct wmi_service_ready_event *ev = (void *)skb->data;
 
 	if (skb->len < sizeof(*ev)) {
@@ -862,7 +861,7 @@ static void ath10k_wmi_service_ready_event_rx(struct ath10k *ar,
 	ar->fw_version_build = (__le32_to_cpu(ev->sw_version_1) & 0x0000ffff);
 	ar->phy_capability = __le32_to_cpu(ev->phy_capability);
 
-	common->regulatory.current_rd =
+	ar->ath_common.regulatory.current_rd =
 		__le32_to_cpu(ev->hal_reg_capabilities.eeprom_rd);
 
 	ath10k_debug_read_service_map(ar, ev->wmi_service_bitmap,

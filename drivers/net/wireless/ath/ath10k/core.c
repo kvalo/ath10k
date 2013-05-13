@@ -445,15 +445,13 @@ struct ath10k *ath10k_core_create(void *hif_priv, struct device *dev,
 				  const struct ath10k_hif_ops *hif_ops)
 {
 	struct ath10k *ar;
-	struct ath_common *common;
 
 	ar = ath10k_mac_create();
 	if (!ar)
 		return NULL;
 
-	common = ath10k_common(ar);
-	common->priv = ar;
-	common->hw = ar->hw;
+	ar->ath_common.priv = ar;
+	ar->ath_common.hw = ar->hw;
 
 	ar->p2p = !!ath10k_p2p;
 	ar->dev = dev;
