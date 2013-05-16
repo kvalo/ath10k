@@ -139,8 +139,8 @@ static bool ath10k_htc_ep_need_credit_update(struct ath10k_htc_ep *ep)
 	return true;
 }
 
-static int ath10k_htc_prepare_tx_skb(struct ath10k_htc_ep *ep,
-				     struct sk_buff *skb)
+static void ath10k_htc_prepare_tx_skb(struct ath10k_htc_ep *ep,
+				      struct sk_buff *skb)
 {
 	struct ath10k_htc_hdr *hdr;
 
@@ -157,8 +157,6 @@ static int ath10k_htc_prepare_tx_skb(struct ath10k_htc_ep *ep,
 		hdr->flags |= ATH10K_HTC_FLAG_NEED_CREDIT_UPDATE;
 
 	spin_unlock_bh(&ep->htc->tx_lock);
-
-	return 0;
 }
 
 static int ath10k_htc_issue_skb(struct ath10k_htc *htc,
@@ -172,9 +170,7 @@ static int ath10k_htc_issue_skb(struct ath10k_htc *htc,
 	ath10k_dbg(ATH10K_DBG_HTC, "%s: ep %d skb %p\n", __func__,
 		   ep->eid, skb);
 
-	ret = ath10k_htc_prepare_tx_skb(ep, skb);
-	if (ret)
-		goto err;
+	ath10k_htc_prepare_tx_skb(ep, skb);
 
 	ret = ath10k_skb_map(htc->ar->dev, skb);
 	if (ret)
