@@ -198,7 +198,6 @@ err:
 	return ret;
 }
 
-/* assumes tx_lock is held */
 static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 						       struct ath10k_htc_ep *ep,
 						       u8 *credits)
@@ -208,6 +207,8 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 	int credits_required;
 	int remainder;
 	unsigned int transfer_len;
+
+	lockdep_assert_held(&htc->tx_lock);
 
 	skb = __skb_dequeue(&ep->tx_queue);
 	if (!skb)
@@ -241,13 +242,14 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 	return skb;
 }
 
-/* assumes tx_lock is held */
 static struct sk_buff *ath10k_htc_get_skb(struct ath10k_htc *htc,
 					  struct ath10k_htc_ep *ep,
 					  int resources)
 {
 	struct sk_buff *skb;
 	struct ath10k_skb_cb *skb_cb;
+
+	lockdep_assert_held(&htc->tx_lock);
 
 	if (!resources)
 		return NULL;
