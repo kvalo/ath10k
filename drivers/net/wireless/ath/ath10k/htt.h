@@ -1302,21 +1302,6 @@ struct htt_rx_desc {
 #define HTT_MAC_ADDR_LEN 6
 
 /*
- * HTT_MAX_SEND_QUEUE_DEPTH -
- * How many packets HTC should allow to accumulate in a send queue
- * before calling the ep_send_full callback to see whether to retain
- * or drop packets.
- * This is not relevant for LL, where tx descriptors should be immediately
- * downloaded to the target.
- * This is not very relevant for HL either, since it is anticipated that
- * the HL tx download scheduler will not work this far in advance - rather,
- * it will make its decisions just-in-time, so it can be responsive to
- * changing conditions.
- * Hence, this queue depth threshold spec is mostly just a formality.
- */
-#define HTT_MAX_SEND_QUEUE_DEPTH (HTT_MAX_NUM_PENDING_TX)
-
-/*
  * FIX THIS
  * Should be: sizeof(struct htt_host_rx_desc) + max rx MSDU size,
  * rounded up to a cache line size.

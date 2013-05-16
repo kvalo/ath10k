@@ -33,12 +33,6 @@ static int ath10k_htt_htc_attach(struct ath10k_htt *htt)
 	conn_req.ep_ops.ep_tx_complete = ath10k_htt_htc_tx_complete;
 	conn_req.ep_ops.ep_rx_complete = ath10k_htt_t2h_msg_handler;
 
-	/*
-	 * Specify how deep to let a queue get before ath10k_htc_send will
-	 * call the ep_send_full function due to excessive send queue depth.
-	 */
-	conn_req.max_send_queue_depth = HTT_MAX_SEND_QUEUE_DEPTH;
-
 	/* connect to control service */
 	conn_req.service_id = ATH10K_HTC_SVC_ID_HTT_DATA_MSG;
 
