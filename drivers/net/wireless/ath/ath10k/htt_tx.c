@@ -30,7 +30,7 @@ int ath10k_htt_tx_alloc_msdu_id(struct ath10k_htt *htt)
 	msdu_id = find_first_zero_bit(htt->used_msdu_ids,
 				      HTT_MAX_NUM_PENDING_TX);
 	if (msdu_id == HTT_MAX_NUM_PENDING_TX)
-		return -ENOMEM;
+		return -ENOBUFS;
 
 	ath10k_dbg(ATH10K_DBG_HTT, "htt tx alloc msdu_id %d\n", msdu_id);
 	__set_bit(msdu_id, htt->used_msdu_ids);
