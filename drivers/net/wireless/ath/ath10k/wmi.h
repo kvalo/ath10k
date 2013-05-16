@@ -21,8 +21,6 @@
 #include <linux/types.h>
 #include <net/mac80211.h>
 
-#include "core.h"
-
 /*
  * This file specifies the WMI interface for the Unified Software
  * Architecture.
