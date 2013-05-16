@@ -18,8 +18,43 @@
 #include <linux/etherdevice.h>
 #include "htt.h"
 #include "mac.h"
+#include "hif.h"
 #include "txrx.h"
 #include "debug.h"
+
+void __ath10k_htt_tx_dec_pending(struct ath10k_htt *htt)
+{
+	htt->num_pending_tx--;
+	if (htt->num_pending_tx == HTT_MAX_NUM_PENDING_TX - 1)
+		ieee80211_wake_queues(htt->ar->hw);
+}
+
+static void ath10k_htt_tx_dec_pending(struct ath10k_htt *htt)
+{
+	spin_lock_bh(&htt->tx_lock);
+	__ath10k_htt_tx_dec_pending(htt);
+	spin_unlock_bh(&htt->tx_lock);
+}
+
+static int ath10k_htt_tx_inc_pending(struct ath10k_htt *htt)
+{
+	int ret = 0;
+
+	spin_lock_bh(&htt->tx_lock);
+
+	if (htt->num_pending_tx >= HTT_MAX_NUM_PENDING_TX) {
+		ret = -EBUSY;
+		goto exit;
+	}
+
+	htt->num_pending_tx++;
+	if (htt->num_pending_tx == HTT_MAX_NUM_PENDING_TX)
+		ieee80211_stop_queues(htt->ar->hw);
+
+exit:
+	spin_unlock_bh(&htt->tx_lock);
+	return ret;
+}
 
 int ath10k_htt_tx_alloc_msdu_id(struct ath10k_htt *htt)
 {
@@ -238,6 +273,11 @@ int ath10k_htt_mgmt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 	int msdu_id = -1;
 	int res;
 
+
+	res = ath10k_htt_tx_inc_pending(htt);
+	if (res)
+		return res;
+
 	len += sizeof(cmd->hdr);
 	len += sizeof(cmd->mgmt_tx);
 
@@ -295,6 +335,7 @@ err:
 		ath10k_htt_tx_free_msdu_id(htt, msdu_id);
 		spin_unlock_bh(&htt->tx_lock);
 	}
+	ath10k_htt_tx_dec_pending(htt);
 	return res;
 }
 
@@ -315,6 +356,10 @@ int ath10k_htt_tx(struct ath10k_htt *htt, struct sk_buff *msdu)
 	int res;
 	u8 flags0;
 	u16 flags1;
+
+	res = ath10k_htt_tx_inc_pending(htt);
+	if (res)
+		return res;
 
 	prefetch_len = min(htt->prefetch_len, msdu->len);
 	prefetch_len = roundup(prefetch_len, 4);
@@ -431,6 +476,7 @@ err:
 		ath10k_htt_tx_free_msdu_id(htt, msdu_id);
 		spin_unlock_bh(&htt->tx_lock);
 	}
+	ath10k_htt_tx_dec_pending(htt);
 	ath10k_skb_unmap(dev, msdu);
 	return res;
 }

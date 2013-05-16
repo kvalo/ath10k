@@ -1262,6 +1262,7 @@ struct ath10k_htt {
 
 	/* Protects access to %pending_tx, %used_msdu_ids */
 	spinlock_t tx_lock;
+	int num_pending_tx;
 	struct sk_buff *pending_tx[HTT_MAX_NUM_PENDING_TX];
 	DECLARE_BITMAP(used_msdu_ids, HTT_MAX_NUM_PENDING_TX);
 	wait_queue_head_t empty_tx_wq;
@@ -1330,6 +1331,7 @@ void ath10k_htt_t2h_msg_handler(struct ath10k *ar, struct sk_buff *skb);
 int ath10k_htt_h2t_ver_req_msg(struct ath10k_htt *htt);
 int ath10k_htt_send_rx_ring_cfg_ll(struct ath10k_htt *htt);
 
+void __ath10k_htt_tx_dec_pending(struct ath10k_htt *htt);
 int ath10k_htt_tx_alloc_msdu_id(struct ath10k_htt *htt);
 void ath10k_htt_tx_free_msdu_id(struct ath10k_htt *htt, u16 msdu_id);
 int ath10k_htt_mgmt_tx(struct ath10k_htt *htt, struct sk_buff *);
