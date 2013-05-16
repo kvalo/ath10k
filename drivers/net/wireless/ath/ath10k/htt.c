@@ -21,16 +21,6 @@
 #include "core.h"
 #include "debug.h"
 
-static void ath10k_htt_stop_queue(struct ath10k *ar)
-{
-	ieee80211_stop_queues(ar->hw);
-}
-
-static void ath10k_htt_wake_queue(struct ath10k *ar)
-{
-	ieee80211_wake_queues(ar->hw);
-}
-
 static int ath10k_htt_htc_attach(struct ath10k_htt *htt)
 {
 	struct ath10k_htc_svc_conn_req conn_req;
@@ -42,8 +32,6 @@ static int ath10k_htt_htc_attach(struct ath10k_htt *htt)
 
 	conn_req.ep_ops.ep_tx_complete = ath10k_htt_htc_tx_complete;
 	conn_req.ep_ops.ep_rx_complete = ath10k_htt_t2h_msg_handler;
-	conn_req.ep_ops.stop_queue = ath10k_htt_stop_queue;
-	conn_req.ep_ops.wake_queue = ath10k_htt_wake_queue;
 
 	/*
 	 * Specify how deep to let a queue get before ath10k_htc_send will

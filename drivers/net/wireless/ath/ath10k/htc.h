@@ -276,8 +276,6 @@ struct ath10k_htc_ops {
 struct ath10k_htc_ep_ops {
 	void (*ep_tx_complete)(struct ath10k *, struct sk_buff *);
 	void (*ep_rx_complete)(struct ath10k *, struct sk_buff *);
-	void (*stop_queue)(struct ath10k *);
-	void (*wake_queue)(struct ath10k *);
 };
 
 /* service connection information */
@@ -318,8 +316,6 @@ struct ath10k_htc_ep {
 	int dl_is_polled; /* call HIF to fetch rx (not implemented) */
 
 	struct sk_buff_head tx_queue;
-	int tx_queue_len;
-	bool tx_queue_stopped;
 
 	u8 seq_no; /* for debugging */
 	int tx_credits;

@@ -23,48 +23,6 @@
 /* Send */
 /********/
 
-static inline void ath10k_htc_stop_queue(struct ath10k_htc_ep *ep)
-{
-	if (ep->tx_queue_stopped)
-		return;
-
-	if (ep->ep_ops.stop_queue)
-		ep->ep_ops.stop_queue(ep->htc->ar);
-
-	ath10k_dbg(ATH10K_DBG_HTC, "ep %d stop\n", ep->eid);
-	ep->tx_queue_stopped = true;
-}
-
-static inline void ath10k_htc_wake_queue(struct ath10k_htc_ep *ep)
-{
-	if (!ep->tx_queue_stopped)
-		return;
-
-	if (ep->ep_ops.wake_queue)
-		ep->ep_ops.wake_queue(ep->htc->ar);
-
-	ath10k_dbg(ATH10K_DBG_HTC, "ep %d wake\n", ep->eid);
-	ep->tx_queue_stopped = false;
-}
-
-static inline void ath10k_htc_recalc_queue(struct ath10k_htc_ep *ep, int delta)
-{
-	ath10k_dbg(ATH10K_DBG_HTC, "ep %d queue len %d +%d max %d\n",
-		   ep->eid, ep->tx_queue_len, delta, ep->max_tx_queue_depth);
-
-	if (ep->max_tx_queue_depth == 0)
-		return;
-
-	ep->tx_queue_len += delta;
-
-	if (ep->tx_queue_stopped) {
-		if (ep->tx_queue_len <= ep->max_tx_queue_depth/2)
-			ath10k_htc_wake_queue(ep);
-	} else if (ep->tx_queue_len >= ep->max_tx_queue_depth) {
-		ath10k_htc_stop_queue(ep);
-	}
-}
-
 static inline void ath10k_htc_send_complete_check(struct ath10k_htc_ep *ep,
 						  int force)
 {
@@ -192,6 +150,17 @@ err:
 	ep->tx_credits += credits;
 	spin_unlock_bh(&htc->tx_lock);
 
+	/* this is the simplest way to handle out-of-resources for non-credit
+	 * based endpoints. credit based endpoints can still get -ENOSR, but
+	 * this is highly unlikely as credit reservation should prevent that */
+	if (ret == -ENOSR) {
+		spin_lock_bh(&htc->tx_lock);
+		__skb_queue_head(&ep->tx_queue, skb);
+		spin_unlock_bh(&htc->tx_lock);
+
+		return ret;
+	}
+
 	skb_cb->is_aborted = true;
 	ath10k_htc_notify_tx_completion(ep, skb);
 
@@ -233,34 +202,11 @@ static struct sk_buff *ath10k_htc_get_skb_credit_based(struct ath10k_htc *htc,
 
 	if (ep->tx_credits < credits_required) {
 		__skb_queue_head(&ep->tx_queue, skb);
-		ath10k_htc_recalc_queue(ep, 1);
 		return NULL;
 	}
 
 	ep->tx_credits -= credits_required;
 	*credits = credits_required;
-	return skb;
-}
-
-static struct sk_buff *ath10k_htc_get_skb(struct ath10k_htc *htc,
-					  struct ath10k_htc_ep *ep,
-					  int resources)
-{
-	struct sk_buff *skb;
-	struct ath10k_skb_cb *skb_cb;
-
-	lockdep_assert_held(&htc->tx_lock);
-
-	if (!resources)
-		return NULL;
-
-	skb = __skb_dequeue(&ep->tx_queue);
-	if (!skb)
-		return NULL;
-
-	skb_cb = ATH10K_SKB_CB(skb);
-	ath10k_htc_recalc_queue(ep, -1);
-
 	return skb;
 }
 
@@ -270,31 +216,27 @@ static void ath10k_htc_send_work(struct work_struct *work)
 					struct ath10k_htc_ep, send_work);
 	struct ath10k_htc *htc = ep->htc;
 	struct sk_buff *skb;
-	int tx_resources = 0;
 	u8 credits = 0;
+	int ret;
 
 	while (true) {
-		if (!ep->tx_credit_flow_enabled)
-			tx_resources = ath10k_hif_get_free_queue_number
-					(htc->ar, ep->ul_pipe_id);
-
 		if (ep->ul_is_polled)
 			ath10k_htc_send_complete_check(ep, 0);
 
 		spin_lock_bh(&htc->tx_lock);
-
 		if (ep->tx_credit_flow_enabled)
 			skb = ath10k_htc_get_skb_credit_based(htc, ep,
 							      &credits);
 		else
-			skb = ath10k_htc_get_skb(htc, ep, tx_resources);
-
+			skb = __skb_dequeue(&ep->tx_queue);
 		spin_unlock_bh(&htc->tx_lock);
 
 		if (!skb)
-			break; /* tx_queue empty or out of resources */
+			break;
 
-		ath10k_htc_issue_skb(htc, ep, skb, credits);
+		ret = ath10k_htc_issue_skb(htc, ep, skb, credits);
+		if (ret == -ENOSR)
+			break;
 	}
 }
 
@@ -313,7 +255,6 @@ int ath10k_htc_send(struct ath10k_htc *htc,
 
 	spin_lock_bh(&htc->tx_lock);
 	__skb_queue_tail(&ep->tx_queue, skb);
-	ath10k_htc_recalc_queue(ep, 1);
 	spin_unlock_bh(&htc->tx_lock);
 
 	queue_work(htc->ar->workqueue, &ep->send_work);
@@ -658,7 +599,6 @@ static void ath10k_htc_reset_endpoint_states(struct ath10k_htc *htc)
 		ep->max_tx_queue_depth = 0;
 		ep->eid = i;
 		skb_queue_head_init(&ep->tx_queue);
-		ep->tx_queue_len = 0;
 		ep->htc = htc;
 		ep->tx_credit_flow_enabled = true;
 		INIT_WORK(&ep->send_work, ath10k_htc_send_work);
