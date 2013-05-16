@@ -2941,7 +2941,6 @@ int ath10k_mac_register(struct ath10k *ar)
 	ar->hw->wiphy->iface_combinations = &ath10k_if_comb;
 	ar->hw->wiphy->n_iface_combinations = 1;
 
-	ar->ath_common.regulatory.country_code = CTRY_DEFAULT;
 	ret = ath_regd_init(&ar->ath_common.regulatory, ar->hw->wiphy,
 			    ath10k_reg_notifier);
 	if (ret) {
