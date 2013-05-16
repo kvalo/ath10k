@@ -1184,8 +1184,6 @@ struct htt_rx_info {
 	bool fcs_err;
 };
 
-#define HTT_MAX_NUM_PENDING_TX 512 /* FIXME: find proper value? */
-
 struct ath10k_htt {
 	struct ath10k *ar;
 	enum ath10k_htc_ep_id eid;
@@ -1262,9 +1260,10 @@ struct ath10k_htt {
 
 	/* Protects access to %pending_tx, %used_msdu_ids */
 	spinlock_t tx_lock;
+	int max_num_pending_tx;
 	int num_pending_tx;
-	struct sk_buff *pending_tx[HTT_MAX_NUM_PENDING_TX];
-	DECLARE_BITMAP(used_msdu_ids, HTT_MAX_NUM_PENDING_TX);
+	struct sk_buff **pending_tx;
+	unsigned long *used_msdu_ids; /* bitmap */
 	wait_queue_head_t empty_tx_wq;
 
 	/* set if host-fw communication goes haywire
@@ -1322,7 +1321,7 @@ struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar);
 int ath10k_htt_attach_target(struct ath10k_htt *htt);
 void ath10k_htt_detach(struct ath10k_htt *htt);
 
-void ath10k_htt_tx_attach(struct ath10k_htt *htt);
+int ath10k_htt_tx_attach(struct ath10k_htt *htt);
 void ath10k_htt_tx_detach(struct ath10k_htt *htt);
 int ath10k_htt_rx_attach(struct ath10k_htt *htt);
 void ath10k_htt_rx_detach(struct ath10k_htt *htt);

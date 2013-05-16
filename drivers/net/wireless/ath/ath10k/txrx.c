@@ -96,7 +96,7 @@ exit:
 	htt->pending_tx[ATH10K_SKB_CB(txdesc)->htt.msdu_id] = NULL;
 	ath10k_htt_tx_free_msdu_id(htt, ATH10K_SKB_CB(txdesc)->htt.msdu_id);
 	__ath10k_htt_tx_dec_pending(htt);
-	if (bitmap_empty(htt->used_msdu_ids, HTT_MAX_NUM_PENDING_TX))
+	if (bitmap_empty(htt->used_msdu_ids, htt->max_num_pending_tx))
 		wake_up(&htt->empty_tx_wq);
 	spin_unlock_bh(&htt->tx_lock);
 
@@ -111,7 +111,7 @@ void ath10k_txrx_tx_completed(struct ath10k_htt *htt,
 	ath10k_dbg(ATH10K_DBG_HTT, "htt tx completion msdu_id %u discard %d no_ack %d\n",
 		   tx_done->msdu_id, !!tx_done->discard, !!tx_done->no_ack);
 
-	if (tx_done->msdu_id >= ARRAY_SIZE(htt->pending_tx)) {
+	if (tx_done->msdu_id >= htt->max_num_pending_tx) {
 		ath10k_warn("warning: msdu_id %d too big, ignoring\n",
 			    tx_done->msdu_id);
 		return;

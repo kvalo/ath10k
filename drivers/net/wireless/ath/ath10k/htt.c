@@ -50,6 +50,7 @@ static int ath10k_htt_htc_attach(struct ath10k_htt *htt)
 struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar)
 {
 	struct ath10k_htt *htt;
+	int ret;
 
 	htt = kzalloc(sizeof(*htt), GFP_KERNEL);
 	if (!htt)
@@ -67,7 +68,11 @@ struct ath10k_htt *ath10k_htt_attach(struct ath10k *ar)
 	if (ath10k_htt_htc_attach(htt))
 		goto err_htc_attach;
 
-	ath10k_htt_tx_attach(htt);
+	ret = ath10k_htt_tx_attach(htt);
+	if (ret) {
+		ath10k_err("could not attach htt tx (%d)\n", ret);
+		goto err_htc_attach;
+	}
 
 	if (ath10k_htt_rx_attach(htt))
 		goto err_rx_attach;

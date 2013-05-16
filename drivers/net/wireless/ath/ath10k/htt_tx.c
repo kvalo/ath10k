@@ -25,7 +25,7 @@
 void __ath10k_htt_tx_dec_pending(struct ath10k_htt *htt)
 {
 	htt->num_pending_tx--;
-	if (htt->num_pending_tx == HTT_MAX_NUM_PENDING_TX - 1)
+	if (htt->num_pending_tx == htt->max_num_pending_tx - 1)
 		ieee80211_wake_queues(htt->ar->hw);
 }
 
@@ -42,13 +42,13 @@ static int ath10k_htt_tx_inc_pending(struct ath10k_htt *htt)
 
 	spin_lock_bh(&htt->tx_lock);
 
-	if (htt->num_pending_tx >= HTT_MAX_NUM_PENDING_TX) {
+	if (htt->num_pending_tx >= htt->max_num_pending_tx) {
 		ret = -EBUSY;
 		goto exit;
 	}
 
 	htt->num_pending_tx++;
-	if (htt->num_pending_tx == HTT_MAX_NUM_PENDING_TX)
+	if (htt->num_pending_tx == htt->max_num_pending_tx)
 		ieee80211_stop_queues(htt->ar->hw);
 
 exit:
@@ -63,8 +63,8 @@ int ath10k_htt_tx_alloc_msdu_id(struct ath10k_htt *htt)
 	lockdep_assert_held(&htt->tx_lock);
 
 	msdu_id = find_first_zero_bit(htt->used_msdu_ids,
-				      HTT_MAX_NUM_PENDING_TX);
-	if (msdu_id == HTT_MAX_NUM_PENDING_TX)
+				      htt->max_num_pending_tx);
+	if (msdu_id == htt->max_num_pending_tx)
 		return -ENOBUFS;
 
 	ath10k_dbg(ATH10K_DBG_HTT, "htt tx alloc msdu_id %d\n", msdu_id);
@@ -83,10 +83,35 @@ void ath10k_htt_tx_free_msdu_id(struct ath10k_htt *htt, u16 msdu_id)
 	__clear_bit(msdu_id, htt->used_msdu_ids);
 }
 
-void ath10k_htt_tx_attach(struct ath10k_htt *htt)
+int ath10k_htt_tx_attach(struct ath10k_htt *htt)
 {
+	u8 pipe;
+
 	spin_lock_init(&htt->tx_lock);
 	init_waitqueue_head(&htt->empty_tx_wq);
+
+	/* At the beginning free queue number should hint us the maximum
+	 * queue length */
+	pipe = htt->ar->htc->endpoint[htt->eid].ul_pipe_id;
+	htt->max_num_pending_tx = ath10k_hif_get_free_queue_number(htt->ar, pipe);
+
+	ath10k_dbg(ATH10K_DBG_HTT, "htt tx max num pending tx %d\n",
+		   htt->max_num_pending_tx);
+
+	htt->pending_tx = kzalloc(sizeof(*htt->pending_tx) *
+				  htt->max_num_pending_tx, GFP_KERNEL);
+	if (!htt->pending_tx)
+		return -ENOMEM;
+
+	htt->used_msdu_ids = kzalloc(sizeof(unsigned long) *
+				     BITS_TO_LONGS(htt->max_num_pending_tx),
+				     GFP_KERNEL);
+	if (!htt->used_msdu_ids) {
+		kfree(htt->pending_tx);
+		return -ENOMEM;
+	}
+
+	return 0;
 }
 
 static void ath10k_htt_tx_cleanup_pending(struct ath10k_htt *htt)
@@ -97,7 +122,7 @@ static void ath10k_htt_tx_cleanup_pending(struct ath10k_htt *htt)
 	/* No locks needed. Called after communication with the device has
 	 * been stopped. */
 
-	for (msdu_id = 0; msdu_id < HTT_MAX_NUM_PENDING_TX; msdu_id++) {
+	for (msdu_id = 0; msdu_id < htt->max_num_pending_tx; msdu_id++) {
 		if (!test_bit(msdu_id, htt->used_msdu_ids))
 			continue;
 
@@ -119,6 +144,8 @@ static void ath10k_htt_tx_cleanup_pending(struct ath10k_htt *htt)
 void ath10k_htt_tx_detach(struct ath10k_htt *htt)
 {
 	ath10k_htt_tx_cleanup_pending(htt);
+	kfree(htt->pending_tx);
+	kfree(htt->used_msdu_ids);
 	return;
 }
 

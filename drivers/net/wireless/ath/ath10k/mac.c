@@ -2640,7 +2640,7 @@ static void ath10k_flush(struct ieee80211_hw *hw, u32 queues, bool drop)
 			bool empty;
 			spin_lock_bh(&ar->htt->tx_lock);
 			empty = bitmap_empty(ar->htt->used_msdu_ids,
-					     HTT_MAX_NUM_PENDING_TX);
+					     ar->htt->max_num_pending_tx);
 			spin_unlock_bh(&ar->htt->tx_lock);
 			(empty);
 		}), ATH10K_FLUSH_TIMEOUT_HZ);
