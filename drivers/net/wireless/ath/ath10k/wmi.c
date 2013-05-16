@@ -907,14 +907,6 @@ static int ath10k_wmi_ready_event_rx(struct ath10k *ar, struct sk_buff *skb)
 
 	memcpy(ar->mac_addr, ev->mac_addr.addr, ETH_ALEN);
 
-	/* FIXME: FW should report possible addresses we can use. This is a
-	 *        development workaround. wpa_supplicant generates addresses
-	 *        that do not work with the FW without this. Once this is
-	 *        submitted upstream we should either get rid of this either by
-	 *        reducing functionality or forcing FW team to take action. */
-	memcpy(ar->hw->wiphy->perm_addr, ev->mac_addr.addr, ETH_ALEN);
-	memcpy(ar->hw->wiphy->addr_mask, "\x00\x00\x00\xFF\xFF\xFF", ETH_ALEN);
-
 	ath10k_dbg(ATH10K_DBG_WMI,
 		   "wmi event ready sw_version %u abi_version %u mac_addr %pM status %d\n",
 		   __le32_to_cpu(ev->sw_version),
