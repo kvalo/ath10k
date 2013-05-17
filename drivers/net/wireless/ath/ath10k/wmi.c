@@ -1124,7 +1124,8 @@ int ath10k_wmi_connect_htc_service(struct ath10k *ar)
 	return 0;
 }
 
-int ath10k_wmi_pdev_set_regdomain(struct ath10k *ar)
+int ath10k_wmi_pdev_set_regdomain(struct ath10k *ar, u16 rd, u16 rd2g,
+				  u16 rd5g, u16 ctl2g, u16 ctl5g)
 {
 	struct wmi_pdev_set_regdomain_cmd *cmd;
 	struct sk_buff *skb;
@@ -1134,14 +1135,15 @@ int ath10k_wmi_pdev_set_regdomain(struct ath10k *ar)
 		return -ENOMEM;
 
 	cmd = (struct wmi_pdev_set_regdomain_cmd *)skb->data;
+	cmd->reg_domain = __cpu_to_le32(rd);
+	cmd->reg_domain_2G = __cpu_to_le32(rd2g);
+	cmd->reg_domain_5G = __cpu_to_le32(rd5g);
+	cmd->conformance_test_limit_2G = __cpu_to_le32(ctl2g);
+	cmd->conformance_test_limit_5G = __cpu_to_le32(ctl5g);
 
-	/* FIXME: do not use hardcoded values */
-	/* TODO: provide correct values for reg domain */
-	cmd->reg_domain                = __cpu_to_le32(0x3a); /* FCC3_FCCA */
-	cmd->reg_domain_2G             = __cpu_to_le32(0x0a10); /* FCCA */
-	cmd->reg_domain_5G             = __cpu_to_le32(0x160); /* FCC3 */
-	cmd->conformance_test_limit_2G = __cpu_to_le32(0x12); /* FCC4-FCCA */
-	cmd->conformance_test_limit_5G = __cpu_to_le32(0x10); /* FCC1-FCCA */
+	ath10k_dbg(ATH10K_DBG_WMI,
+		   "wmi pdev regdomain rd %x rd2g %x rd5g %x ctl2g %x ctl5g %x\n",
+		   rd, rd2g, rd5g, ctl2g, ctl5g);
 
 	return ath10k_wmi_cmd_send(ar, skb, WMI_PDEV_SET_REGDOMAIN_CMDID);
 }

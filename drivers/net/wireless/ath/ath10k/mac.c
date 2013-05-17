@@ -1249,6 +1249,7 @@ static void ath10k_reg_notifier(struct wiphy *wiphy,
 				struct regulatory_request *request)
 {
 	struct ieee80211_hw *hw = wiphy_to_ieee80211_hw(wiphy);
+	struct reg_dmn_pair_mapping *regpair;
 	struct ath10k *ar = hw->priv;
 	int ret;
 
@@ -1257,6 +1258,18 @@ static void ath10k_reg_notifier(struct wiphy *wiphy,
 	ret = ath10k_update_channel_list(ar);
 	if (ret)
 		ath10k_warn("could not update channel list (%d)\n", ret);
+
+	regpair = ar->ath_common.regulatory.regpair;
+	/* Target allows setting up per-band regdomain but ath_common provides
+	 * a combined one only */
+	ret = ath10k_wmi_pdev_set_regdomain(ar,
+					    regpair->regDmnEnum,
+					    regpair->regDmnEnum, /* 2ghz */
+					    regpair->regDmnEnum, /* 5ghz */
+					    regpair->reg_2ghz_ctl,
+					    regpair->reg_5ghz_ctl);
+	if (ret)
+		ath10k_warn("could not set pdev regdomain (%d)\n", ret);
 }
 
 /***************/
