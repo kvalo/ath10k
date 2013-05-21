@@ -278,7 +278,7 @@ void ath10k_process_rx(struct ath10k *ar, struct htt_rx_info *info)
 	status->band = ch->band;
 	status->freq = ch->center_freq;
 
-	ath10k_dbg(ATH10K_DBG_HTT,
+	ath10k_dbg(ATH10K_DBG_DATA,
 		   "rx skb %p len %u %s%s%s%s%s %srate_idx %u vht_nss %u freq %u band %u\n",
 		   info->skb,
 		   info->skb->len,
