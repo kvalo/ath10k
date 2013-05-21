@@ -220,37 +220,45 @@ static int ath10k_clear_vdev_key(struct ath10k_vif *arvif,
 /* General utilities */
 /*********************/
 
-static inline enum wmi_phy_mode chan_to_phymode(struct ieee80211_channel *chan,
-					enum nl80211_channel_type channel_type)
+static inline enum wmi_phy_mode
+chan_to_phymode(const struct cfg80211_chan_def *chandef)
 {
 	enum wmi_phy_mode phymode = MODE_UNKNOWN;
 
-	switch (chan->band) {
+	switch (chandef->chan->band) {
 	case IEEE80211_BAND_2GHZ:
-		switch (channel_type) {
-		case NL80211_CHAN_NO_HT:
+		switch (chandef->width) {
+		case NL80211_CHAN_WIDTH_20_NOHT:
 			phymode = MODE_11G;
 			break;
-		case NL80211_CHAN_HT20:
+		case NL80211_CHAN_WIDTH_20:
 			phymode = MODE_11NG_HT20;
 			break;
-		case NL80211_CHAN_HT40PLUS:
-		case NL80211_CHAN_HT40MINUS:
+		case NL80211_CHAN_WIDTH_40:
 			phymode = MODE_11NG_HT40;
+			break;
+		case NL80211_CHAN_WIDTH_80:
+		case NL80211_CHAN_WIDTH_80P80:
+		case NL80211_CHAN_WIDTH_160:
+			phymode = MODE_UNKNOWN;
 			break;
 		}
 		break;
 	case IEEE80211_BAND_5GHZ:
-		switch (channel_type) {
-		case NL80211_CHAN_NO_HT:
+		switch (chandef->width) {
+		case NL80211_CHAN_WIDTH_20_NOHT:
 			phymode = MODE_11A;
 			break;
-		case NL80211_CHAN_HT20:
+		case NL80211_CHAN_WIDTH_20:
 			phymode = MODE_11NA_HT20;
 			break;
-		case NL80211_CHAN_HT40PLUS:
-		case NL80211_CHAN_HT40MINUS:
+		case NL80211_CHAN_WIDTH_40:
 			phymode = MODE_11NA_HT40;
+			break;
+		case NL80211_CHAN_WIDTH_80:
+		case NL80211_CHAN_WIDTH_80P80:
+		case NL80211_CHAN_WIDTH_160:
+			phymode = MODE_UNKNOWN;
 			break;
 		}
 		break;
@@ -408,9 +416,7 @@ static int ath10k_vdev_start(struct ath10k_vif *arvif)
 		band_center_freq(channel,
 				 cfg80211_get_chandef_type(&conf->chandef));
 
-	arg.channel.mode =
-		chan_to_phymode(channel,
-				cfg80211_get_chandef_type(&conf->chandef));
+	arg.channel.mode = chan_to_phymode(&conf->chandef);
 
 	arg.channel.min_power = channel->max_power * 3;
 	arg.channel.max_power = channel->max_power * 4;
@@ -482,7 +488,7 @@ static int ath10k_monitor_start(struct ath10k *ar, int vdev_id)
 
 	/* TODO setup this dynamically, what in case we
 	   don't have any vifs? */
-	arg.channel.mode = chan_to_phymode(channel, type);
+	arg.channel.mode = chan_to_phymode(&ar->hw->conf.chandef);
 
 	arg.channel.min_power = channel->max_power * 3;
 	arg.channel.max_power = channel->max_power * 4;
@@ -1224,7 +1230,14 @@ static int ath10k_update_channel_list(struct ath10k *ar)
 			ch->max_reg_power = channel->max_reg_power * 4;
 			ch->max_antenna_gain = channel->max_antenna_gain;
 			ch->reg_class_id = 0; /* FIXME */
-			ch->mode = chan_to_phymode(channel, NL80211_CHAN_NO_HT);
+
+			/* FIXME: why use only legacy modes, why not any
+			 * HT/VHT modes? Would that even make any
+			 * difference? */
+			if (channel->band == IEEE80211_BAND_2GHZ)
+				ch->mode = MODE_11G;
+			else
+				ch->mode = MODE_11A;
 
 			if (WARN_ON_ONCE(ch->mode == MODE_UNKNOWN))
 				continue;
