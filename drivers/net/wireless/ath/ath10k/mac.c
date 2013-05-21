@@ -270,25 +270,6 @@ chan_to_phymode(const struct cfg80211_chan_def *chandef)
 	return phymode;
 }
 
-static int band_center_freq(struct ieee80211_channel *chan,
-			    enum nl80211_channel_type channel_type)
-{
-	u32 center_freq = chan->center_freq;
-
-	switch (channel_type) {
-	case NL80211_CHAN_HT40PLUS:
-		center_freq = chan->center_freq + 10;
-		break;
-	case NL80211_CHAN_HT40MINUS:
-		center_freq = chan->center_freq - 10;
-		break;
-	default:
-		break;
-	}
-
-	return center_freq;
-}
-
 static u8 ath10k_parse_mpdudensity(u8 mpdudensity)
 {
 /*
@@ -412,9 +393,7 @@ static int ath10k_vdev_start(struct ath10k_vif *arvif)
 
 	arg.channel.freq = channel->center_freq;
 
-	arg.channel.band_center_freq1 =
-		band_center_freq(channel,
-				 cfg80211_get_chandef_type(&conf->chandef));
+	arg.channel.band_center_freq1 = conf->chandef.center_freq1;
 
 	arg.channel.mode = chan_to_phymode(&conf->chandef);
 
@@ -484,7 +463,7 @@ static int ath10k_monitor_start(struct ath10k *ar, int vdev_id)
 
 	arg.vdev_id = vdev_id;
 	arg.channel.freq = channel->center_freq;
-	arg.channel.band_center_freq1 = band_center_freq(channel, type);
+	arg.channel.band_center_freq1 = ar->hw->conf.chandef.center_freq1;
 
 	/* TODO setup this dynamically, what in case we
 	   don't have any vifs? */
