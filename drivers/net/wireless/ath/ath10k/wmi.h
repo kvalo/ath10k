@@ -538,6 +538,7 @@ struct wmi_channel_arg {
 	bool passive;
 	bool allow_ibss;
 	bool allow_ht;
+	bool allow_vht;
 	bool ht40plus;
 	/* note: power unit is 1/4th of dBm */
 	u32 min_power;
@@ -2783,6 +2784,13 @@ struct wmi_vht_rate_set {
 	__le32 tx_mcs_set;  /* Negotiated TX VHT rates */
 } __packed;
 
+struct wmi_vht_rate_set_arg {
+	u32 rx_max_rate;
+	u32 rx_mcs_set;
+	u32 tx_max_rate;
+	u32 tx_mcs_set;
+};
+
 struct wmi_peer_set_rates_cmd {
 	/* peer MAC address */
 	struct wmi_mac_addr peer_macaddr;
@@ -2876,7 +2884,9 @@ struct wmi_peer_assoc_complete_arg {
 	struct wmi_rate_set_arg peer_legacy_rates;
 	struct wmi_rate_set_arg peer_ht_rates;
 	u32 peer_num_spatial_streams;
+	u32 peer_vht_caps;
 	enum wmi_phy_mode peer_phymode;
+	struct wmi_vht_rate_set_arg peer_vht_rates;
 };
 
 struct wmi_peer_add_wds_entry_cmd {

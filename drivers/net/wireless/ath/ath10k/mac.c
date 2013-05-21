@@ -256,6 +256,8 @@ chan_to_phymode(const struct cfg80211_chan_def *chandef)
 			phymode = MODE_11NA_HT40;
 			break;
 		case NL80211_CHAN_WIDTH_80:
+			phymode = MODE_11AC_VHT80;
+			break;
 		case NL80211_CHAN_WIDTH_80P80:
 		case NL80211_CHAN_WIDTH_160:
 			phymode = MODE_UNKNOWN;
@@ -958,6 +960,34 @@ static void ath10k_peer_assoc_h_qos_sta(struct ath10k *ar,
 		arg->peer_flags |= WMI_PEER_QOS;
 }
 
+static void ath10k_peer_assoc_h_vht(struct ath10k *ar,
+				    struct ieee80211_sta *sta,
+				    struct wmi_peer_assoc_complete_arg *arg)
+{
+	const struct ieee80211_sta_vht_cap *vht_cap = &sta->vht_cap;
+
+	if (!vht_cap->vht_supported)
+		return;
+
+	arg->peer_flags |= WMI_PEER_VHT;
+
+	arg->peer_vht_caps = vht_cap->cap;
+
+	if (sta->bandwidth == IEEE80211_STA_RX_BW_80)
+		arg->peer_flags |= WMI_PEER_80MHZ;
+
+	arg->peer_vht_rates.rx_max_rate =
+		__le16_to_cpu(vht_cap->vht_mcs.rx_highest);
+	arg->peer_vht_rates.rx_mcs_set =
+		__le16_to_cpu(vht_cap->vht_mcs.rx_mcs_map);
+	arg->peer_vht_rates.tx_max_rate =
+		__le16_to_cpu(vht_cap->vht_mcs.tx_highest);
+	arg->peer_vht_rates.tx_mcs_set =
+		__le16_to_cpu(vht_cap->vht_mcs.tx_mcs_map);
+
+	ath10k_dbg(ATH10K_DBG_MAC, "mac vht peer\n");
+}
+
 static void ath10k_peer_assoc_h_qos(struct ath10k *ar,
 				    struct ath10k_vif *arvif,
 				    struct ieee80211_sta *sta,
@@ -982,6 +1012,8 @@ static void ath10k_peer_assoc_h_phymode(struct ath10k *ar,
 					struct wmi_peer_assoc_complete_arg *arg)
 {
 	enum wmi_phy_mode phymode = MODE_UNKNOWN;
+
+	/* FIXME: add VHT */
 
 	switch (ar->hw->conf.chandef.chan->band) {
 	case IEEE80211_BAND_2GHZ:
@@ -1027,6 +1059,7 @@ static int ath10k_peer_assoc(struct ath10k *ar,
 	ath10k_peer_assoc_h_crypto(ar, arvif, &arg);
 	ath10k_peer_assoc_h_rates(ar, sta, &arg);
 	ath10k_peer_assoc_h_ht(ar, sta, &arg);
+	ath10k_peer_assoc_h_vht(ar, sta, &arg);
 	ath10k_peer_assoc_h_qos(ar, arvif, sta, bss_conf, &arg);
 	ath10k_peer_assoc_h_phymode(ar, arvif, sta, &arg);
 
@@ -1193,6 +1226,9 @@ static int ath10k_update_channel_list(struct ath10k *ar)
 				continue;
 
 			ch->allow_ht   = true;
+
+			/* FIXME: when should we really allow VHT? */
+			ch->allow_vht = true;
 
 			ch->allow_ibss =
 				!(channel->flags & IEEE80211_CHAN_NO_IBSS);
@@ -2754,6 +2790,30 @@ static const struct ieee80211_iface_combination ath10k_if_comb = {
 	.beacon_int_infra_match = true,
 };
 
+static struct ieee80211_sta_vht_cap ath10k_create_vht_cap(struct ath10k *ar)
+{
+	struct ieee80211_sta_vht_cap vht_cap = {0};
+	u16 mcs_map;
+
+	vht_cap.vht_supported = 1;
+	vht_cap.cap = ar->vht_cap_info;
+
+	/* FIXME: check dynamically how many streams board supports */
+	mcs_map = IEEE80211_VHT_MCS_SUPPORT_0_9 << 0 |
+		IEEE80211_VHT_MCS_SUPPORT_0_9 << 2 |
+		IEEE80211_VHT_MCS_SUPPORT_0_9 << 4 |
+		IEEE80211_VHT_MCS_NOT_SUPPORTED << 6 |
+		IEEE80211_VHT_MCS_NOT_SUPPORTED << 8 |
+		IEEE80211_VHT_MCS_NOT_SUPPORTED << 10 |
+		IEEE80211_VHT_MCS_NOT_SUPPORTED << 12 |
+		IEEE80211_VHT_MCS_NOT_SUPPORTED << 14;
+
+	vht_cap.vht_mcs.rx_mcs_map = cpu_to_le16(mcs_map);
+	vht_cap.vht_mcs.tx_mcs_map = cpu_to_le16(mcs_map);
+
+	return vht_cap;
+}
+
 static struct ieee80211_sta_ht_cap ath10k_get_ht_cap(struct ath10k *ar)
 {
 	int i;
@@ -2852,6 +2912,7 @@ struct ath10k_vif *ath10k_get_arvif(struct ath10k *ar, u32 vdev_id)
 int ath10k_mac_register(struct ath10k *ar)
 {
 	struct ieee80211_supported_band *band;
+	struct ieee80211_sta_vht_cap vht_cap;
 	struct ieee80211_sta_ht_cap ht_cap;
 	void *channels;
 	int ret;
@@ -2861,6 +2922,7 @@ int ath10k_mac_register(struct ath10k *ar)
 	SET_IEEE80211_DEV(ar->hw, ar->dev);
 
 	ht_cap = ath10k_get_ht_cap(ar);
+	vht_cap = ath10k_create_vht_cap(ar);
 
 	if (ar->phy_capability & WHAL_WLAN_11G_CAPABILITY) {
 		channels = kmemdup(ath10k_2ghz_channels,
@@ -2875,6 +2937,9 @@ int ath10k_mac_register(struct ath10k *ar)
 		band->n_bitrates = ath10k_g_rates_size;
 		band->bitrates = ath10k_g_rates;
 		band->ht_cap = ht_cap;
+
+		/* vht is not supported in 2.4 GHz */
+
 		ar->hw->wiphy->bands[IEEE80211_BAND_2GHZ] = band;
 	}
 
@@ -2896,6 +2961,7 @@ int ath10k_mac_register(struct ath10k *ar)
 		band->n_bitrates = ath10k_a_rates_size;
 		band->bitrates = ath10k_a_rates;
 		band->ht_cap = ht_cap;
+		band->vht_cap = vht_cap;
 		ar->hw->wiphy->bands[IEEE80211_BAND_5GHZ] = band;
 	}
 

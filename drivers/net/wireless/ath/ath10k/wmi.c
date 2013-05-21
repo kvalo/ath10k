@@ -1936,6 +1936,8 @@ int ath10k_wmi_scan_chan_list(struct ath10k *ar,
 			flags |= WMI_CHAN_FLAG_ADHOC_ALLOWED;
 		if (ch->allow_ht)
 			flags |= WMI_CHAN_FLAG_ALLOW_HT;
+		if (ch->allow_vht)
+			flags |= WMI_CHAN_FLAG_ALLOW_VHT;
 		if (ch->ht40plus)
 			flags |= WMI_CHAN_FLAG_HT40_PLUS;
 
@@ -1985,8 +1987,8 @@ int ath10k_wmi_peer_assoc(struct ath10k *ar,
 	cmd->peer_mpdu_density  = __cpu_to_le32(arg->peer_mpdu_density);
 	cmd->peer_rate_caps     = __cpu_to_le32(arg->peer_rate_caps);
 	cmd->peer_nss           = __cpu_to_le32(arg->peer_num_spatial_streams);
+	cmd->peer_vht_caps      = __cpu_to_le32(arg->peer_vht_caps);
 	cmd->peer_phymode       = __cpu_to_le32(arg->peer_phymode);
-	/* FIXME: we dont touch VHT options */
 
 	memcpy(cmd->peer_macaddr.addr, arg->addr, ETH_ALEN);
 
@@ -1999,6 +2001,15 @@ int ath10k_wmi_peer_assoc(struct ath10k *ar,
 		__cpu_to_le32(arg->peer_ht_rates.num_rates);
 	memcpy(cmd->peer_ht_rates.rates, arg->peer_ht_rates.rates,
 	       arg->peer_ht_rates.num_rates);
+
+	cmd->peer_vht_rates.rx_max_rate =
+		__cpu_to_le32(arg->peer_vht_rates.rx_max_rate);
+	cmd->peer_vht_rates.rx_mcs_set =
+		__cpu_to_le32(arg->peer_vht_rates.rx_mcs_set);
+	cmd->peer_vht_rates.tx_max_rate =
+		__cpu_to_le32(arg->peer_vht_rates.tx_max_rate);
+	cmd->peer_vht_rates.tx_mcs_set =
+		__cpu_to_le32(arg->peer_vht_rates.tx_mcs_set);
 
 	return ath10k_wmi_cmd_send(ar, skb, WMI_PEER_ASSOC_CMDID);
 }
