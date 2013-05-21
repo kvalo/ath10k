@@ -328,7 +328,8 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 
 	memset(status, 0, sizeof(*status));
 
-	ath10k_dbg(ATH10K_DBG_WMI, "event mgmt rx status %08x\n", rx_status);
+	ath10k_dbg(ATH10K_DBG_MGMT,
+		   "event mgmt rx status %08x\n", rx_status);
 
 	if (rx_status & WMI_RX_STATUS_ERR_DECRYPT) {
 		dev_kfree_skb(skb);
@@ -362,12 +363,12 @@ static int ath10k_wmi_event_mgmt_rx(struct ath10k *ar, struct sk_buff *skb)
 					~IEEE80211_FCTL_PROTECTED);
 	}
 
-	ath10k_dbg(ATH10K_DBG_WMI,
+	ath10k_dbg(ATH10K_DBG_MGMT,
 		   "event mgmt rx skb %p len %d ftype %02x stype %02x\n",
 		   skb, skb->len,
 		   fc & IEEE80211_FCTL_FTYPE, fc & IEEE80211_FCTL_STYPE);
 
-	ath10k_dbg(ATH10K_DBG_WMI,
+	ath10k_dbg(ATH10K_DBG_MGMT,
 		   "event mgmt rx freq %d band %d snr %d, rate_idx %d\n",
 		   status->freq, status->band, status->signal,
 		   status->rate_idx);
@@ -533,7 +534,7 @@ static void ath10k_wmi_update_tim(struct ath10k *ar,
 	tim->bitmap_ctrl = !!__le32_to_cpu(bcn_info->tim_info.tim_mcast);
 	memcpy(tim->virtual_map, arvif->u.ap.tim_bitmap, pvm_len);
 
-	ath10k_dbg(ATH10K_DBG_BEACON, "dtim %d/%d mcast %d pvmlen %d\n",
+	ath10k_dbg(ATH10K_DBG_MGMT, "dtim %d/%d mcast %d pvmlen %d\n",
 		   tim->dtim_count, tim->dtim_period,
 		   tim->bitmap_ctrl, pvm_len);
 }
@@ -611,7 +612,7 @@ static void ath10k_wmi_update_noa(struct ath10k *ar, struct ath10k_vif *arvif,
 	if (arvif->vdev_subtype != WMI_VDEV_SUBTYPE_P2P_GO)
 		return;
 
-	ath10k_dbg(ATH10K_DBG_BEACON, "noa changed: %d\n", noa->changed);
+	ath10k_dbg(ATH10K_DBG_MGMT, "noa changed: %d\n", noa->changed);
 	if (noa->changed & WMI_P2P_NOA_CHANGED_BIT) {
 		new_len = ath10k_p2p_calc_noa_ie_len(noa);
 		if (!new_len)
@@ -658,12 +659,12 @@ static void ath10k_wmi_event_host_swba(struct ath10k *ar, struct sk_buff *skb)
 	int vdev_id = 0;
 	int ret;
 
-	ath10k_dbg(ATH10K_DBG_BEACON, "WMI_HOST_SWBA_EVENTID\n");
+	ath10k_dbg(ATH10K_DBG_MGMT, "WMI_HOST_SWBA_EVENTID\n");
 
 	ev = (struct wmi_host_swba_event *)skb->data;
 	map = __le32_to_cpu(ev->vdev_map);
 
-	ath10k_dbg(ATH10K_DBG_BEACON, "host swba:\n"
+	ath10k_dbg(ATH10K_DBG_MGMT, "host swba:\n"
 		   "-vdev map 0x%x\n",
 		   ev->vdev_map);
 
@@ -680,7 +681,7 @@ static void ath10k_wmi_event_host_swba(struct ath10k *ar, struct sk_buff *skb)
 
 		bcn_info = &ev->bcn_info[i];
 
-		ath10k_dbg(ATH10K_DBG_BEACON,
+		ath10k_dbg(ATH10K_DBG_MGMT,
 			   "-bcn_info[%d]:\n"
 			   "--tim_len %d\n"
 			   "--tim_mcast %d\n"
