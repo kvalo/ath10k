@@ -211,7 +211,8 @@ static void process_rx_rates(struct ath10k *ar, struct htt_rx_info *info,
 		bw = info1 & 3;
 		sgi = info2 & 1;
 
-		status->rate_idx = mcs + (nss * 10);
+		status->rate_idx = mcs;
+		status->vht_nss = nss;
 
 		if (sgi)
 			status->flag |= RX_FLAG_SHORT_GI;
