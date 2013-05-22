@@ -104,6 +104,7 @@ enum wmi_service_id {
 	WMI_SERVICE_STA_DTIM_PS_MODULATED_DTIM, /* Modulated DTIM support */
 	WMI_STA_UAPSD_BASIC_AUTO_TRIG,    /* UAPSD AC Trigger Generation  */
 	WMI_STA_UAPSD_VAR_AUTO_TRIG,      /* -do- */
+	WMI_SERVICE_STA_KEEP_ALIVE,       /* STA keep alive mechanism support */
 	WMI_SERVICE_TX_ENCAP,             /* Packet type for TX encapsulation */
 
 	WMI_SERVICE_LAST,
@@ -173,6 +174,8 @@ static inline char *wmi_service_name(int service_id)
 		return "BASIC UAPSD";
 	case WMI_STA_UAPSD_VAR_AUTO_TRIG:
 		return "VAR UAPSD";
+	case WMI_SERVICE_STA_KEEP_ALIVE:
+		return "STA KEEP ALIVE";
 	case WMI_SERVICE_TX_ENCAP:
 		return "TX ENCAP";
 	default:
@@ -400,6 +403,10 @@ enum wmi_cmd_id {
 	WMI_STA_DTIM_PS_METHOD_CMDID,
 	/* Configure the Station UAPSD AC Auto Trigger Parameters */
 	WMI_STA_UAPSD_AUTO_TRIG_CMDID,
+
+	/* STA Keep alive parameter configuration,
+	   Requires WMI_SERVICE_STA_KEEP_ALIVE */
+	WMI_STA_KEEPALIVE_CMD,
 
 	/* misc command group */
 	WMI_ECHO_CMDID = WMI_CMD_GRP(WMI_GRP_MISC),
@@ -1161,6 +1168,11 @@ struct wmi_start_scan_arg {
 #define WMI_SCAN_CHAN_STAT_EVENT 0x10
 /* Filter Probe request frames  */
 #define WMI_SCAN_FILTER_PROBE_REQ 0x20
+/* When set, DFS channels will not be scanned */
+#define WMI_SCAN_BYPASS_DFS_CHN 0x40
+/* Different FW scan engine may choose to bail out on errors.
+ * Allow the driver to have influence over that. */
+#define WMI_SCAN_CONTINUE_ON_ERROR 0x80
 
 /* WMI_SCAN_CLASS_MASK must be the same value as IEEE80211_SCAN_CLASS_MASK */
 #define WMI_SCAN_CLASS_MASK 0xFF000000
@@ -2938,6 +2950,26 @@ struct bcn_filter_stats {
 struct wmi_add_bcn_filter_cmd {
 	u32 vdev_id;
 	u32 ie_map[BCN_FLT_MAX_ELEMS_IE_LIST];
+} __packed;
+
+enum wmi_sta_keepalive_method {
+	WMI_STA_KEEPALIVE_METHOD_NULL_FRAME = 1,
+	WMI_STA_KEEPALIVE_METHOD_UNSOLICITATED_ARP_RESPONSE = 2,
+};
+
+/* note: ip4 addresses are in network byte order, i.e. big endian */
+struct wmi_sta_keepalive_arp_resp {
+	__be32 src_ip4_addr;
+	__be32 dest_ip4_addr;
+	struct wmi_mac_addr dest_mac_addr;
+} __packed;
+
+struct wmi_sta_keepalive_cmd {
+	__le32 vdev_id;
+	__le32 enabled;
+	__le32 method; /* WMI_STA_KEEPALIVE_METHOD_ */
+	__le32 interval; /* in seconds */
+	struct wmi_sta_keepalive_arp_resp arp_resp;
 } __packed;
 
 #define ATH10K_RTS_MAX		2347
