@@ -1524,7 +1524,7 @@ void ath10k_reset_scan(unsigned long ptr)
 	spin_unlock_bh(&ar->data_lock);
 }
 
-static void ath10k_abort_scan(struct ath10k *ar)
+static int ath10k_abort_scan(struct ath10k *ar)
 {
 	struct wmi_stop_scan_arg arg = {
 		.req_id = 1, /* FIXME */
@@ -1540,15 +1540,17 @@ static void ath10k_abort_scan(struct ath10k *ar)
 	spin_lock_bh(&ar->data_lock);
 	if (!ar->scan.in_progress) {
 		spin_unlock_bh(&ar->data_lock);
-		return;
+		return 0;
 	}
 
 	ar->scan.aborting = true;
 	spin_unlock_bh(&ar->data_lock);
 
 	ret = ath10k_wmi_stop_scan(ar, &arg);
-	if (ret)
+	if (ret) {
 		ath10k_warn("could not submit wmi stop scan (%d)\n", ret);
+		return -EIO;
+	}
 
 	ath10k_wmi_flush_tx(ar);
 
@@ -1556,13 +1558,22 @@ static void ath10k_abort_scan(struct ath10k *ar)
 	if (ret == 0)
 		ath10k_warn("timed out while waiting for scan to stop\n");
 
+	/* scan completion may be done right after we timeout here, so let's
+	 * check the in_progress and tell mac80211 scan is completed. if we
+	 * don't do that and FW fails to send us scan completion indication
+	 * then userspace won't be able to scan anymore */
+	ret = 0;
+
 	spin_lock_bh(&ar->data_lock);
 	if (ar->scan.in_progress) {
 		ath10k_warn("could not stop scan. its still in progress\n");
 		ar->scan.in_progress = false;
 		ath10k_offchan_tx_purge(ar);
+		ret = -ETIMEDOUT;
 	}
 	spin_unlock_bh(&ar->data_lock);
+
+	return ret;
 }
 
 static int ath10k_start_scan(struct ath10k *ar,
@@ -2175,9 +2186,15 @@ static void ath10k_cancel_hw_scan(struct ieee80211_hw *hw,
 				  struct ieee80211_vif *vif)
 {
 	struct ath10k *ar = hw->priv;
+	int ret;
 
 	mutex_lock(&ar->conf_mutex);
-	ath10k_abort_scan(ar);
+	ret = ath10k_abort_scan(ar);
+	if (ret) {
+		ath10k_warn("couldn't abort scan (%d). forcefully sending scan completion to mac80211\n",
+			    ret);
+		ieee80211_scan_completed(hw, 1 /* aborted */);
+	}
 	mutex_unlock(&ar->conf_mutex);
 }
 
