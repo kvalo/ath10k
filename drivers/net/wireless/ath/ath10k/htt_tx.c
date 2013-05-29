@@ -93,7 +93,8 @@ int ath10k_htt_tx_attach(struct ath10k_htt *htt)
 	/* At the beginning free queue number should hint us the maximum
 	 * queue length */
 	pipe = htt->ar->htc->endpoint[htt->eid].ul_pipe_id;
-	htt->max_num_pending_tx = ath10k_hif_get_free_queue_number(htt->ar, pipe);
+	htt->max_num_pending_tx = ath10k_hif_get_free_queue_number(htt->ar,
+								   pipe);
 
 	ath10k_dbg(ATH10K_DBG_HTT, "htt tx max num pending tx %d\n",
 		   htt->max_num_pending_tx);
