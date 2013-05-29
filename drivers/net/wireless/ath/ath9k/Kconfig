@@ -17,7 +17,7 @@ config ATH9K_BTCOEX_SUPPORT
 
 config ATH9K
 	tristate "Atheros 802.11n wireless cards support"
-	depends on MAC80211
+	depends on MAC80211 && HAS_DMA
 	select ATH9K_HW
 	select MAC80211_LEDS
 	select LEDS_CLASS
@@ -83,14 +83,6 @@ config ATH9K_DFS_CERTIFIED
 	  as DFS support requires more components that still need to be
 	  developed. At this point enabling this option won't do anything
 	  except increase code size.
-
-config ATH9K_MAC_DEBUG
-	bool "Atheros MAC statistics"
-	depends on ATH9K_DEBUGFS
-	default y
-	---help---
-	  This option enables collection of statistics for Rx/Tx status
-	  data and some other MAC related statistics
 
 config ATH9K_RATE_CONTROL
 	bool "Atheros ath9k rate control"

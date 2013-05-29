@@ -193,7 +193,6 @@ static bool ath_prepare_reset(struct ath_softc *sc)
 	ath_stop_ani(sc);
 	del_timer_sync(&sc->rx_poll_timer);
 
-	ath9k_debug_samp_bb_mac(sc);
 	ath9k_hw_disable_interrupts(ah);
 
 	if (!ath_drain_all_txq(sc))
@@ -1273,7 +1272,7 @@ static int ath9k_config(struct ieee80211_hw *hw, u32 changed)
 				curchan->center_freq);
 		} else {
 			/* perform spectral scan if requested. */
-			if (sc->scanning &&
+			if (test_bit(SC_OP_SCANNING, &sc->sc_flags) &&
 			    sc->spectral_mode == SPECTRAL_CHANSCAN)
 				ath9k_spectral_scan_trigger(hw);
 		}
@@ -1687,9 +1686,10 @@ static int ath9k_ampdu_action(struct ieee80211_hw *hw,
 			      u16 tid, u16 *ssn, u8 buf_size)
 {
 	struct ath_softc *sc = hw->priv;
+	bool flush = false;
 	int ret = 0;
 
-	local_bh_disable();
+	mutex_lock(&sc->mutex);
 
 	switch (action) {
 	case IEEE80211_AMPDU_RX_START:
@@ -1703,12 +1703,14 @@ static int ath9k_ampdu_action(struct ieee80211_hw *hw,
 			ieee80211_start_tx_ba_cb_irqsafe(vif, sta->addr, tid);
 		ath9k_ps_restore(sc);
 		break;
-	case IEEE80211_AMPDU_TX_STOP_CONT:
 	case IEEE80211_AMPDU_TX_STOP_FLUSH:
 	case IEEE80211_AMPDU_TX_STOP_FLUSH_CONT:
+		flush = true;
+	case IEEE80211_AMPDU_TX_STOP_CONT:
 		ath9k_ps_wakeup(sc);
 		ath_tx_aggr_stop(sc, sta, tid);
-		ieee80211_stop_tx_ba_cb_irqsafe(vif, sta->addr, tid);
+		if (!flush)
+			ieee80211_stop_tx_ba_cb_irqsafe(vif, sta->addr, tid);
 		ath9k_ps_restore(sc);
 		break;
 	case IEEE80211_AMPDU_TX_OPERATIONAL:
@@ -1720,7 +1722,7 @@ static int ath9k_ampdu_action(struct ieee80211_hw *hw,
 		ath_err(ath9k_hw_common(sc->sc_ah), "Unknown AMPDU action\n");
 	}
 
-	local_bh_enable();
+	mutex_unlock(&sc->mutex);
 
 	return ret;
 }
@@ -2339,15 +2341,13 @@ static void ath9k_set_wakeup(struct ieee80211_hw *hw, bool enabled)
 static void ath9k_sw_scan_start(struct ieee80211_hw *hw)
 {
 	struct ath_softc *sc = hw->priv;
-
-	sc->scanning = 1;
+	set_bit(SC_OP_SCANNING, &sc->sc_flags);
 }
 
 static void ath9k_sw_scan_complete(struct ieee80211_hw *hw)
 {
 	struct ath_softc *sc = hw->priv;
-
-	sc->scanning = 0;
+	clear_bit(SC_OP_SCANNING, &sc->sc_flags);
 }
 
 struct ieee80211_ops ath9k_ops = {
